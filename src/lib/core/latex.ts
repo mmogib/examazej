@@ -303,8 +303,9 @@ ${versionQuestionsSection}`;
         m.masterQNo === qIndex + 1 && 
         m.version === version.name.replace('version_', '').toUpperCase()
       );
-      const masterQNo = qIndex + 1;
-      return mapping ? `${mapping.correct}\\; {\\tiny $_{${masterQNo}}$}` : `A\\; {\\tiny $_{masterQNo}$}`;
+      // Find the position of this master question in the version
+      const versionPosition = mapping ? mapping.versionQNo : qIndex + 1;
+      return mapping ? `${mapping.correct}\\; {\\tiny $_{${versionPosition}}$}` : `A\\; {\\tiny $_{${versionPosition}}$}`;
     });
     
     return `${qIndex + 1}&${masterAnswer}&${versionAnswers.join('&')}`;
