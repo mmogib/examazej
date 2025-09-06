@@ -6,35 +6,29 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { PrivacyNotice } from '@/components/ui/privacy-notice';
 import { parseLatexTemplate, validateParsedTemplate } from '@/lib/core/parser';
 import type { ExamJSON, ParsedLatexTemplate } from '@/lib/types';
-
 interface StartPageProps {
   onDataLoaded: (data: ExamJSON) => void;
 }
-
-export function StartPage({ onDataLoaded }: StartPageProps) {
+export function StartPage({
+  onDataLoaded
+}: StartPageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setError(null);
   };
-
   const handleFileRemove = () => {
     setSelectedFile(null);
     setError(null);
   };
-
   const processFile = async () => {
     if (!selectedFile) return;
-    
     setLoading(true);
     setError(null);
-
     try {
       const text = await selectedFile.text();
-      
       if (selectedFile.name.endsWith('.json')) {
         // Parse JSON file
         try {
@@ -47,12 +41,11 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
         // Parse LaTeX template
         const parsed: ParsedLatexTemplate = parseLatexTemplate(text);
         const validationErrors = validateParsedTemplate(parsed);
-        
         if (validationErrors.length > 0) {
           setError(`Template validation failed:\n${validationErrors.join('\n')}`);
           return;
         }
-        
+
         // Convert to ExamJSON format
         const examData: ExamJSON = {
           setting: {
@@ -64,7 +57,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             examdate: '',
             timeallowed: '',
             numberofvestions: parsed.questions.length,
-            groups: '', // Will be set in the details page
+            groups: '',
+            // Will be set in the details page
             examtype: 'MAJOR',
             code_name: 'VERSION',
             code_numbering: 'ALPHA',
@@ -77,14 +71,14 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             preamble: '',
             questions: parsed.questions.map((q, index) => ({
               ...q,
-              group: 1, // Will be reassigned based on partition
+              group: 1,
+              // Will be reassigned based on partition
               order: index + 1
             })),
             kept_in_one_page: []
           },
           options_order: {}
         };
-        
         onDataLoaded(examData);
       } else {
         setError('Unsupported file type. Please upload a .tex or .json file.');
@@ -95,7 +89,6 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       setLoading(false);
     }
   };
-
   const downloadTemplate = () => {
     const template = `%{#setting}
 %    university=Your University
@@ -134,8 +127,9 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     %{#o} $\\sec(x) + C$ %{/o}
   \\end{enumerate}
 \\end{enumerate}`;
-
-    const blob = new Blob([template], { type: 'text/plain' });
+    const blob = new Blob([template], {
+      type: 'text/plain'
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -145,13 +139,9 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+  return <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-          Create Professional Exams
-        </h1>
+        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Create Professional MCQ Exams</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Generate randomized exam versions with automatic answer keys. 
           Built for university professors who value privacy and precision.
@@ -171,34 +161,18 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                selectedFile={selectedFile}
-                onFileRemove={handleFileRemove}
-                accept=".tex,.json"
-                label="Choose LaTeX Template or JSON"
-                description="Upload .tex template or .json session file"
-              />
+              <FileUpload onFileSelect={handleFileSelect} selectedFile={selectedFile} onFileRemove={handleFileRemove} accept=".tex,.json" label="Choose LaTeX Template or JSON" description="Upload .tex template or .json session file" />
               
-              {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              {error && <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                   <p className="text-sm text-destructive whitespace-pre-line">{error}</p>
-                </div>
-              )}
+                </div>}
               
-              {selectedFile && (
-                <div className="flex gap-3">
-                  <Button 
-                    onClick={processFile} 
-                    disabled={loading}
-                    variant="hero"
-                    className="flex-1"
-                  >
+              {selectedFile && <div className="flex gap-3">
+                  <Button onClick={processFile} disabled={loading} variant="hero" className="flex-1">
                     {loading ? 'Processing...' : 'Continue'}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
 
@@ -213,11 +187,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                onClick={downloadTemplate}
-                variant="academic"
-                className="w-full"
-              >
+              <Button onClick={downloadTemplate} variant="academic" className="w-full">
                 <FileText className="h-4 w-4 mr-2" />
                 Download Sample Template
               </Button>
@@ -253,6 +223,5 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
