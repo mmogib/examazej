@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileUpload } from '@/components/ui/file-upload';
 import { PrivacyNotice } from '@/components/ui/privacy-notice';
+import { TemplateDialog } from '@/components/ui/template-dialog';
 import { parseLatexTemplate, validateParsedTemplate } from '@/lib/core/parser';
 import type { ExamJSON, ParsedLatexTemplate } from '@/lib/types';
 interface StartPageProps {
@@ -89,6 +90,52 @@ export function StartPage({
       setLoading(false);
     }
   };
+
+  const generateTemplate = (numQuestions: number) => {
+    const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
+      const questionNumber = i + 1;
+      return `  \\item
+  %{#q} Question ${questionNumber} - Replace this with your actual question. %{/q}
+  \\begin{enumerate}
+    %{#o} Option A for question ${questionNumber} %{/o}
+    %{#o} Correct answer for question ${questionNumber} %{/o}
+    %{#o} Option C for question ${questionNumber} %{/o}
+    %{#o} Option D for question ${questionNumber} %{/o}
+    %{#o} Option E for question ${questionNumber} %{/o}
+  \\end{enumerate}`;
+    }).join('\n\n');
+
+    const template = `%{#setting}
+%    university=Your University
+%    department=Your Department
+%    term=Current Term
+%    coursecode=COURSE101
+%    examname=Exam Name
+%    examdate=Exam Date
+%    timeallowed=Time Allowed
+%    numberofvestions=${numQuestions}
+%    groups=${numQuestions}
+%    examtype=MAJOR
+%    code_name=VERSION
+%    code_numbering=ALPHA
+%    paper_size=A4
+%{/setting}
+
+\\begin{enumerate}
+${templateQuestions}
+\\end{enumerate}`;
+
+    const blob = new Blob([template], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exam-template-${numQuestions}-questions.tex`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const downloadTemplate = () => {
     const template = `%{#setting}
 %    university=Your University
@@ -186,11 +233,13 @@ export function StartPage({
                 Download our sample LaTeX template to get started
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <Button onClick={downloadTemplate} variant="academic" className="w-full">
                 <FileText className="h-4 w-4 mr-2" />
                 Download Sample Template
               </Button>
+              
+              <TemplateDialog onTemplateGenerate={generateTemplate} />
             </CardContent>
           </Card>
         </div>

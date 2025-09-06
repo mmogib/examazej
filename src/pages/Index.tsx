@@ -33,9 +33,18 @@ const Index = () => {
     setCurrentStep('results');
   };
 
+  const handleStartOver = () => {
+    setCurrentStep('start');
+    setExamData(null);
+    setGenerationSeed('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-academic flex flex-col">
-      <Header />
+      <Header 
+        onStartOver={handleStartOver}
+        showStartOver={currentStep !== 'start'}
+      />
       <main className="flex-1">
         {currentStep === 'start' && (
           <StartPage onDataLoaded={handleDataLoaded} />
