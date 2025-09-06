@@ -84,8 +84,14 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     if (!generationState) return;
 
     // Generate template LaTeX (just the master exam without versions)
+    // Set grouping to match number of questions for template
+    const templateSettings = {
+      ...generationState.settings,
+      groups: examData.exam.questions.length.toString()
+    };
+    
     const templateContent = generateLatexDocument(
-      generationState.settings,
+      templateSettings,
       examData.exam,
       [], // No versions for template
       [], // No mappings for template
