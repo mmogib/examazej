@@ -23,8 +23,8 @@ export function generateLatexDocument(
 ): string {
   const processText = allowTrustedTex ? (text: string) => text : escapeLatex;
   
-  // Generate settings block (commented) - ensure numberofvestions reflects actual versions count
-  const actualVersions = versions.length || 4;
+  // Generate settings block (commented) - ensure numberofvestions reflects actual versions count  
+  const actualVersions = versions.length || settings.numberofvestions;
   const settingsBlock = `%{#setting}
 % code_name=${settings.code_name}
 % code_numbering=${settings.code_numbering}

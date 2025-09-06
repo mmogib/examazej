@@ -84,10 +84,11 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     if (!generationState) return;
 
     // Generate template LaTeX (just the master exam without versions)
-    // Set grouping for full randomization (all questions in one group)
+    // Set grouping for full randomization (all questions in one group) and versions to 1
     const templateSettings = {
       ...generationState.settings,
-      groups: examData.exam.questions.length.toString()
+      groups: examData.exam.questions.length.toString(),
+      numberofvestions: 1
     };
     
     const templateContent = generateLatexDocument(
