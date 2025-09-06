@@ -99,6 +99,22 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Handle question start marker
     if (trimmed.includes('%{#q}')) {
       console.log('Found question start marker at line:', i + 1);
+      
+      // Save previous question if complete
+      if (currentQuestion && currentOptions.length === 5) {
+        console.log('Saving previous complete question:', currentQuestion);
+        result.questions.push({
+          text: currentQuestion,
+          choices: [
+            currentOptions.map(text => ({ text })),
+            0,
+            null
+          ]
+        });
+        currentQuestion = null;
+        currentOptions = [];
+      }
+      
       inQuestionBlock = true;
       
       // Check if question is on same line
@@ -134,12 +150,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
-    // Handle options (only when we have a current question and are in options enumerate)
-    if (currentQuestion && enumerateDepth === 2 && trimmed.includes('%{#o}')) {
+    // Handle options (when we have a current question)
+    if (currentQuestion && trimmed.includes('%{#o}')) {
       const optionMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
       if (optionMatch) {
         const optionText = optionMatch[1].trim();
-        console.log('Found option:', optionText);
+        console.log('Found option:', optionText, 'Current options count:', currentOptions.length);
         currentOptions.push(optionText);
       }
       continue;
