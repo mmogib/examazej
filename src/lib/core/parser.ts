@@ -32,6 +32,11 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
     }
     
+    // Set default seed if not present
+    if (!settings.seed) {
+      settings.seed = 'exam2024';
+    }
+    
     result.settings = settings;
   }
 
