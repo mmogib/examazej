@@ -32,8 +32,10 @@ const Index = () => {
     setCurrentStep('results');
   };
 
+  console.log('Index rendering, currentStep:', currentStep);
+  
   return (
-    <div className="min-h-screen bg-gradient-academic">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary">
       <Header />
       <main>
         {currentStep === 'start' && (
