@@ -251,7 +251,7 @@ ${isLastQuestion ? '\\eogseparator' : separator}`;
     const versionCode = version.name.replace('version_', '').toUpperCase();
     
     // Generate questions for this version
-    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ ${settings.code_name}${versionCode} }}}
+    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
 \\setcounter{page}{1}
  %% questions start here
 \\begin{large}
@@ -279,7 +279,7 @@ ${isLastQuestion ? '\\eogseparator' : separator}`;
 \\end{large}`;
 
     return `
-\\newcodecover{${settings.code_name}${versionCode}}
+\\newcodecover{${settings.code_name} ${versionCode}}
 ${versionQuestionsSection}`;
   }).join('');
 
