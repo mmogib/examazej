@@ -137,7 +137,7 @@ This is the body of question ${questionNumber}
 %		examname=Exam 1
 %		examdate=November 07, 2025
 %		timeallowed=120 Minutes
-%		numberofvestions=${numQuestions}
+%		numberofvestions=4
 %		groups=5,10,5
 %		examtype=MAJOR
 %		code_name=VERSION
