@@ -39,12 +39,6 @@ export function getDefaultSettings(): Partial<ExamSettings> {
 export function generateSettingsBlock(settings: ExamSettings, actualVersions?: number): string {
   const versionCount = actualVersions !== undefined ? actualVersions : settings.numberofvestions;
   
-  // Format instructions with proper commenting
-  const formattedInstructions = settings.instructions
-    .split('\n')
-    .map(line => `%${line}`)
-    .join('\n');
-  
   return `%{#setting}
 %		university=${settings.university}
 %		department=${settings.department}
@@ -58,8 +52,11 @@ export function generateSettingsBlock(settings: ExamSettings, actualVersions?: n
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
 %		code_numbering=${settings.code_numbering}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
-%		instructions=${formattedInstructions}
-%{/setting}`;
+%{/setting}
+
+%{#instructions}
+${settings.instructions.split('\n').map(line => `%${line}`).join('\n')}
+%{/instructions}`;
 }
 
 export function generateTemplateSettings(numQuestions: number): ExamSettings {

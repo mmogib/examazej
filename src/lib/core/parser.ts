@@ -49,6 +49,24 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     result.preamble = preambleLines.join('\n');
   }
 
+  // Parse instructions section
+  const instructionsStart = lines.findIndex(line => line.trim() === '%{#instructions}');
+  const instructionsEnd = lines.findIndex(line => line.trim() === '%{/instructions}');
+  
+  if (instructionsStart !== -1 && instructionsEnd !== -1) {
+    const instructionsLines = lines.slice(instructionsStart + 1, instructionsEnd);
+    // Remove the % prefix from each line and join
+    const instructions = instructionsLines
+      .map(line => line.startsWith('%') ? line.substring(1) : line)
+      .join('\n');
+    
+    if (result.settings) {
+      result.settings.instructions = instructions;
+    } else {
+      result.settings = { instructions };
+    }
+  }
+
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
