@@ -44,12 +44,14 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     result.preamble = preambleLines.join('\n');
   }
 
-  // Parse questions with simplified robust logic
+  // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
+  let inOptionBlock = false;
+  let currentOptionText = '';
 
   console.log('Starting question parsing with', lines.length, 'lines');
 
@@ -150,14 +152,44 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
-    // Handle options (when we have a current question)
+    // Handle option start marker
     if (currentQuestion && trimmed.includes('%{#o}')) {
-      const optionMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
-      if (optionMatch) {
-        const optionText = optionMatch[1].trim();
-        console.log('Found option:', optionText, 'Current options count:', currentOptions.length);
+      console.log('Found option start marker at line:', i + 1);
+      inOptionBlock = true;
+      
+      // Check if option is on same line
+      const sameLineMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
+      if (sameLineMatch) {
+        const optionText = sameLineMatch[1].trim();
+        console.log('Found complete inline option:', optionText);
         currentOptions.push(optionText);
+        inOptionBlock = false;
+      } else {
+        // Extract any text after the opening tag
+        const afterTag = trimmed.replace('%{#o}', '').trim();
+        currentOptionText = afterTag || '';
       }
+      continue;
+    }
+    
+    // Handle option end marker
+    if (trimmed.includes('%{/o}') && inOptionBlock) {
+      console.log('Found option end marker at line:', i + 1);
+      const beforeTag = trimmed.replace('%{/o}', '').trim();
+      if (beforeTag) {
+        currentOptionText = currentOptionText ? currentOptionText + ' ' + beforeTag : beforeTag;
+      }
+      console.log('Complete option text:', currentOptionText);
+      currentOptions.push(currentOptionText);
+      currentOptionText = '';
+      inOptionBlock = false;
+      continue;
+    }
+    
+    // Collect option text between markers
+    if (inOptionBlock && trimmed && !trimmed.startsWith('\\') && !trimmed.startsWith('%')) {
+      currentOptionText = currentOptionText ? currentOptionText + ' ' + trimmed : trimmed;
+      console.log('Collecting option text:', trimmed);
       continue;
     }
   }
