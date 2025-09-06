@@ -1,7 +1,13 @@
-import { Shield, FileText } from 'lucide-react';
+import { Shield, FileText, Home } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-export function Header() {
+interface HeaderProps {
+  onStartOver?: () => void;
+  showStartOver?: boolean;
+}
+
+export function Header({ onStartOver, showStartOver = false }: HeaderProps) {
   return (
     <header className="border-b bg-card shadow-card">
       <div className="container mx-auto px-4 py-4">
@@ -11,23 +17,33 @@ export function Header() {
               <FileText className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-heading font-bold text-foreground">
-                Exam Generator
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Professional Exam Creation Tool
-              </p>
+              <h1 className="text-xl font-heading font-bold text-foreground">MCQ Exam Generator</h1>
+              <p className="text-sm text-muted-foreground">Professional MCQ Exam Creation Tool</p>
             </div>
           </div>
           
-          <Card className="px-3 py-2 bg-accent/50 border-accent">
-            <div className="flex items-center gap-2 text-accent-foreground">
-              <Shield className="h-4 w-4" />
-              <span className="text-xs font-medium">
-                100% Private & Local
-              </span>
-            </div>
-          </Card>
+          <div className="flex items-center gap-3">
+            {showStartOver && onStartOver && (
+              <Button 
+                onClick={onStartOver}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Home className="h-4 w-4" />
+                Start Over
+              </Button>
+            )}
+            
+            <Card className="px-3 py-2 bg-accent/50 border-accent">
+              <div className="flex items-center gap-2 text-accent-foreground">
+                <Shield className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  100% Private & Local
+                </span>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </header>

@@ -80,13 +80,52 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     URL.revokeObjectURL(url);
   };
 
+  const downloadTemplate = () => {
+    if (!generationState) return;
+
+    // Generate template LaTeX (just the master exam without versions)
+    // Set grouping for full randomization (all questions in one group) and versions to 1
+    const templateSettings = {
+      ...generationState.settings,
+      groups: examData.exam.questions.length.toString(),
+      numberofvestions: 1
+    };
+    
+    const templateContent = generateLatexDocument(
+      templateSettings,
+      examData.exam,
+      [], // No versions for template
+      [], // No mappings for template
+      allowTrustedTex
+    );
+
+    const blob = new Blob([templateContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${examData.setting.examname.replace(/\s+/g, '_')}_template.tex`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const downloadSessionJSON = () => {
+    if (!generationState) return;
+
     const sessionData = {
       ...examData,
       generation: {
         seed,
         generated_at: new Date().toISOString(),
-        versions: generationState?.versions.length || 0
+        versions: generationState.versions.length,
+        complete_state: {
+          settings: generationState.settings,
+          questions: generationState.questions,
+          versions: generationState.versions,
+          mappings: generationState.mappings,
+          seed: generationState.seed
+        }
       }
     };
 
@@ -392,12 +431,21 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Download LaTeX
+                Download Full Exam
+              </Button>
+              
+              <Button 
+                onClick={downloadTemplate}
+                variant="academic"
+                className="w-full"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Download Template
               </Button>
               
               <Button 
                 onClick={downloadMappingCSV}
-                variant="academic"
+                variant="outline"
                 className="w-full"
               >
                 <TableIcon className="h-4 w-4 mr-2" />

@@ -22,7 +22,7 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
   const [groupPartition, setGroupPartition] = useState<string>(
     examData.setting.groups || `${examData.exam.questions.length}`
   );
-  const [versions, setVersions] = useState<number>(8);
+  const [versions, setVersions] = useState<number>(examData.setting.numberofvestions || 8);
   const [seed, setSeed] = useState<string>('exam2024');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
@@ -268,11 +268,23 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="code_name">Version Label</Label>
+                  <Select 
+                    value={settings.code_name} 
+                    onValueChange={(value) => handleSettingChange('code_name', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="VERSION">VERSION</SelectItem>
+                      <SelectItem value="CODE">CODE</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Input
-                    id="code_name"
                     value={settings.code_name}
                     onChange={(e) => handleSettingChange('code_name', e.target.value)}
-                    placeholder="VERSION"
+                    placeholder="Enter custom label"
+                    className="mt-2"
                   />
                 </div>
                 <div className="space-y-2">

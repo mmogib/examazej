@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { StartPage } from './Start';
 import { DetailsPage } from './Details';
 import { ResultsPage } from './Results';
@@ -32,10 +33,19 @@ const Index = () => {
     setCurrentStep('results');
   };
 
+  const handleStartOver = () => {
+    setCurrentStep('start');
+    setExamData(null);
+    setGenerationSeed('');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-academic">
-      <Header />
-      <main>
+    <div className="min-h-screen bg-gradient-academic flex flex-col">
+      <Header 
+        onStartOver={handleStartOver}
+        showStartOver={currentStep !== 'start'}
+      />
+      <main className="flex-1">
         {currentStep === 'start' && (
           <StartPage onDataLoaded={handleDataLoaded} />
         )}
@@ -55,6 +65,7 @@ const Index = () => {
           />
         )}
       </main>
+      <Footer />
     </div>
   );
 };
