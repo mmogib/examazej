@@ -23,9 +23,9 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="academic" className="w-full">
           <FileText className="h-4 w-4 mr-2" />
-          Create Template
+          Download Sample Template
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
