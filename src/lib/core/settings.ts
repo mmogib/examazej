@@ -20,7 +20,19 @@ export function getDefaultSettings(): Partial<ExamSettings> {
     examtype: "MAJOR",
     code_name: "VERSION",
     code_numbering: "ALPHA",
-    paper_size: "A4"
+    paper_size: "A4",
+    instructions: `\\begin{enumerate}
+    \\begin{normalsize}
+        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
+        \\item  Use HB 2.5 pencils only.
+        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
+        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
+        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
+        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
+        \\item  When bubbling, make sure that the bubbled space is fully covered.
+        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
+    \\end{normalsize}
+\\end{enumerate}`
   };
 }
 
@@ -39,8 +51,12 @@ export function generateSettingsBlock(settings: ExamSettings, actualVersions?: n
 %		groups=${settings.groups}
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
-%		code_numbering=${settings.code_numbering}
-%{/setting}`;
+%		code_numbering=${settings.code_numbering}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
+%{/setting}
+
+%{#instructions}
+${settings.instructions.split('\n').map(line => `%${line}`).join('\n')}
+%{/instructions}`;
 }
 
 export function generateTemplateSettings(numQuestions: number): ExamSettings {
@@ -59,6 +75,7 @@ export function generateTemplateSettings(numQuestions: number): ExamSettings {
     examtype: defaults.examtype!,
     code_name: defaults.code_name!,
     code_numbering: defaults.code_numbering!,
-    paper_size: defaults.paper_size!
+    paper_size: defaults.paper_size!,
+    instructions: defaults.instructions!
   };
 }

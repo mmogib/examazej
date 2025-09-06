@@ -102,18 +102,8 @@ export function generateLatexDocument(
 
 \\underline{\\bf Important Instructions:}
 
-\\begin{enumerate}
-    \\begin{normalsize}
-        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
-        \\item  Use HB 2.5 pencils only.
-        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
-        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
-        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
-        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
-        \\item  When bubbling, make sure that the bubbled space is fully covered.
-        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
-    \\end{normalsize}
-\\end{enumerate}
+${settings.instructions}
+
 \\end{large}
 
  \\vspace*{\\fill}
