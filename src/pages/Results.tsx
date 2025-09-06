@@ -124,11 +124,11 @@ This is the body of question ${questionNumber}
   \\end{enumerate}`;
     }).join('\n\n');
 
-    // Use current exam settings for the template
+    // Use current exam settings for the template with actual generated values
     const templateSettings = {
       ...generationState.settings,
-      groups: numQuestions.toString(),
-      numberofvestions: 1
+      groups: generationState.settings.groups, // Keep the actual groups configuration
+      numberofvestions: generationState.versions.length // Use actual number of versions generated
     };
     
     const settingsBlock = generateSettingsBlock(templateSettings);
