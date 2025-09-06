@@ -75,7 +75,8 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
       setting: {
         ...settings,
         numberofvestions: versions,
-        groups: groupPartition
+        groups: groupPartition,
+        seed: seed // Save the seed in settings
       }
     };
     

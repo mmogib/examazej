@@ -51,7 +51,7 @@ export function generateSettingsBlock(settings: ExamSettings, actualVersions?: n
 %		groups=${settings.groups}
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
-%		code_numbering=${settings.code_numbering}
+%		code_numbering=${settings.code_numbering}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
 %{/setting}`;
 }
 

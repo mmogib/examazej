@@ -128,7 +128,8 @@ This is the body of question ${questionNumber}
     const templateSettings = {
       ...generationState.settings,
       groups: generationState.settings.groups, // Keep the actual groups configuration
-      numberofvestions: generationState.versions.length // Use actual number of versions generated
+      numberofvestions: generationState.versions.length, // Use actual number of versions generated
+      seed: generationState.seed // Include the seed used for generation
     };
     
     const settingsBlock = generateSettingsBlock(templateSettings);
