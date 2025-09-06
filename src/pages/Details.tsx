@@ -24,7 +24,7 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
     examData.setting.groups || `${examData.exam.questions.length}`
   );
   const [versions, setVersions] = useState<number>(examData.setting.numberofvestions || 8);
-  const [seed, setSeed] = useState<string>('exam2024');
+  const [seed, setSeed] = useState<string>(examData.setting.seed || 'exam2024');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const validateSettings = () => {
