@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { StartPage } from './Start';
 import { DetailsPage } from './Details';
+import { ResultsPage } from './Results';
 import type { ExamJSON } from '@/lib/types';
 
 const Index = () => {
   const [examData, setExamData] = useState<ExamJSON | null>(null);
   const [currentStep, setCurrentStep] = useState<'start' | 'details' | 'results'>('start');
+  const [generationSeed, setGenerationSeed] = useState<string>('');
 
   const handleDataLoaded = (data: ExamJSON) => {
     setExamData(data);
@@ -21,7 +23,12 @@ const Index = () => {
     setCurrentStep('start');
   };
 
-  const handleContinueToResults = () => {
+  const handleBackToDetails = () => {
+    setCurrentStep('details');
+  };
+
+  const handleContinueToResults = (seed: string) => {
+    setGenerationSeed(seed);
     setCurrentStep('results');
   };
 
@@ -40,11 +47,12 @@ const Index = () => {
             onContinue={handleContinueToResults}
           />
         )}
-        {currentStep === 'results' && (
-          <div className="container mx-auto px-4 py-8">
-            <h2 className="text-2xl font-bold mb-4">Generated Results</h2>
-            <p className="text-muted-foreground">Results page coming soon...</p>
-          </div>
+        {currentStep === 'results' && examData && generationSeed && (
+          <ResultsPage 
+            examData={examData}
+            seed={generationSeed}
+            onBack={handleBackToDetails}
+          />
         )}
       </main>
     </div>

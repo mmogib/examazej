@@ -14,7 +14,7 @@ interface DetailsPageProps {
   examData: ExamJSON;
   onDataUpdated: (data: ExamJSON) => void;
   onBack: () => void;
-  onContinue: () => void;
+  onContinue: (seed: string) => void;
 }
 
 export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: DetailsPageProps) {
@@ -79,7 +79,7 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
     };
     
     onDataUpdated(updatedData);
-    onContinue();
+    onContinue(seed);
   };
 
   const groupSizes = groupPartition.split(',').map(g => parseInt(g.trim())).filter(n => !isNaN(n));
