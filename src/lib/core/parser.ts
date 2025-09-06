@@ -35,28 +35,31 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     result.settings = settings;
   }
 
-  // Parse questions
+  // Parse questions - improved logic to handle nested enumerate
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
-  let insideEnumerate = false;
+  let enumerateDepth = 0;
+  let inQuestionEnumerate = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
     if (line.includes('\\begin{enumerate}')) {
-      console.log('Found enumerate start at line', i, ':', line);
-      insideEnumerate = true;
+      enumerateDepth++;
+      console.log('Enumerate depth increased to', enumerateDepth, 'at line', i);
+      if (enumerateDepth === 1) {
+        inQuestionEnumerate = true;
+      }
       continue;
     }
     
     if (line.includes('\\end{enumerate}')) {
-      console.log('Found enumerate end at line', i, ':', line);
-      console.log('Current question:', currentQuestion);
-      console.log('Current options count:', currentOptions.length);
+      console.log('Enumerate depth decreased from', enumerateDepth, 'at line', i);
+      enumerateDepth--;
       
-      // If we have a current question, save it
-      if (currentQuestion && currentOptions.length === 5) {
-        console.log('Saving question:', currentQuestion);
+      // If we're ending an inner enumerate (options list) and have a complete question
+      if (enumerateDepth === 1 && currentQuestion && currentOptions.length === 5) {
+        console.log('Saving question after inner enumerate end:', currentQuestion);
         result.questions.push({
           text: currentQuestion,
           choices: [
@@ -65,20 +68,25 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
             null
           ]
         });
+        currentQuestion = null;
+        currentOptions = [];
       }
-      insideEnumerate = false;
-      currentQuestion = null;
-      currentOptions = [];
+      
+      // If we're ending the outer enumerate, we're done with questions
+      if (enumerateDepth === 0) {
+        inQuestionEnumerate = false;
+      }
       continue;
     }
     
-    if (!insideEnumerate) continue;
+    if (!inQuestionEnumerate || enumerateDepth === 0) continue;
     
-    // Parse question
+    // Parse question - only at depth 1 (outer enumerate)
     const questionMatch = line.match(/%\{#q\}(.*?)%\{\/q\}/);
-    if (questionMatch) {
+    if (questionMatch && enumerateDepth === 1) {
       console.log('Found question at line', i, ':', questionMatch[1]);
-      // Save previous question if exists
+      
+      // Save previous question if exists and complete
       if (currentQuestion && currentOptions.length === 5) {
         console.log('Saving previous question before new one:', currentQuestion);
         result.questions.push({
@@ -96,33 +104,51 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
-    // Parse option
+    // Parse option - only at depth 2 (inner enumerate)
     const optionMatch = line.match(/%\{#o\}(.*?)%\{\/o\}/);
-    if (optionMatch && currentQuestion) {
+    if (optionMatch && currentQuestion && enumerateDepth === 2) {
       console.log('Found option for question:', optionMatch[1]);
       currentOptions.push(optionMatch[1].trim());
       continue;
     }
     
-    // Handle item markers
-    if (line.includes('\\item') && !line.includes('%{#')) {
-      // This might be the start of a new question without explicit markers
-      if (currentQuestion && currentOptions.length === 5) {
-        result.questions.push({
-          text: currentQuestion,
-          choices: [
-            currentOptions.map(text => ({ text })),
-            0,
-            null
-          ]
-        });
-        currentQuestion = null;
+    // Handle item markers for questions without explicit %{#q} markers
+    if (line.includes('\\item') && !line.includes('%{#') && enumerateDepth === 1) {
+      // Look ahead to see if there's a question on the next lines
+      let questionText = '';
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const nextLine = lines[j].trim();
+        if (nextLine.includes('%{#q}')) {
+          break; // Found explicit question marker, let it handle this
+        }
+        if (nextLine.includes('\\begin{enumerate}') || nextLine.includes('\\item')) {
+          break; // Found next structure
+        }
+        if (nextLine && !nextLine.includes('%{#') && !nextLine.includes('\\')) {
+          questionText += (questionText ? ' ' : '') + nextLine;
+        }
+      }
+      
+      if (questionText.trim()) {
+        console.log('Found implicit question from \\item:', questionText);
+        if (currentQuestion && currentOptions.length === 5) {
+          console.log('Saving previous question before implicit one:', currentQuestion);
+          result.questions.push({
+            text: currentQuestion,
+            choices: [
+              currentOptions.map(text => ({ text })),
+              0,
+              null
+            ]
+          });
+        }
+        currentQuestion = questionText.trim();
         currentOptions = [];
       }
     }
   }
   
-  // Save the last question if exists
+  // Save the last question if exists and complete
   if (currentQuestion && currentOptions.length === 5) {
     console.log('Saving final question:', currentQuestion);
     result.questions.push({
