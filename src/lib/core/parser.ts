@@ -44,37 +44,40 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     result.preamble = preambleLines.join('\n');
   }
 
-  // Parse questions - improved logic to handle the new template format
+  // Parse questions with simplified robust logic
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
-  let collectingQuestion = false;
+  let inQuestionBlock = false;
+
+  console.log('Starting question parsing with', lines.length, 'lines');
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i];
+    const trimmed = line.trim();
     
-    if (line.includes('\\begin{enumerate}')) {
+    // Track enumerate depth
+    if (trimmed.includes('\\begin{enumerate}')) {
       enumerateDepth++;
-      console.log('Enumerate depth increased to', enumerateDepth, 'at line', i);
+      console.log('Found enumerate begin, depth:', enumerateDepth, 'at line:', i + 1);
       if (enumerateDepth === 1) {
         inQuestionEnumerate = true;
       }
       continue;
     }
     
-    if (line.includes('\\end{enumerate}')) {
-      console.log('Enumerate depth decreased from', enumerateDepth, 'at line', i);
-      enumerateDepth--;
+    if (trimmed.includes('\\end{enumerate}')) {
+      console.log('Found enumerate end, depth was:', enumerateDepth, 'at line:', i + 1);
       
-      // If we're ending an inner enumerate (options list) and have a complete question
-      if (enumerateDepth === 1 && currentQuestion && currentOptions.length === 5) {
-        console.log('Saving question after inner enumerate end:', currentQuestion);
+      // Save question when ending options enumerate
+      if (enumerateDepth === 2 && currentQuestion && currentOptions.length === 5) {
+        console.log('Saving complete question:', currentQuestion);
         result.questions.push({
           text: currentQuestion,
           choices: [
             currentOptions.map(text => ({ text })),
-            0, // Master correct index is always 0
+            0,
             null
           ]
         });
@@ -82,118 +85,64 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptions = [];
       }
       
-      // If we're ending the outer enumerate, we're done with questions
+      enumerateDepth--;
+      
       if (enumerateDepth === 0) {
         inQuestionEnumerate = false;
       }
       continue;
     }
     
+    // Only process within question enumerate
     if (!inQuestionEnumerate) continue;
     
-    // Handle question markers - can be inline or on separate lines
-    if (line.includes('%{#q}')) {
-      collectingQuestion = true;
-      const inlineMatch = line.match(/%\{#q\}(.*?)%\{\/q\}/);
-      if (inlineMatch) {
-        // Inline question format
-        console.log('Found inline question:', inlineMatch[1]);
-        
-        // Save previous question if exists and complete
-        if (currentQuestion && currentOptions.length === 5) {
-          console.log('Saving previous question before new one:', currentQuestion);
-          result.questions.push({
-            text: currentQuestion,
-            choices: [
-              currentOptions.map(text => ({ text })),
-              0,
-              null
-            ]
-          });
-        }
-        
-        currentQuestion = inlineMatch[1].trim();
-        currentOptions = [];
-        collectingQuestion = false;
-      } else {
-        // Start collecting multi-line question
-        currentQuestion = line.replace('%{#q}', '').trim();
-      }
-      continue;
-    }
-    
-    // Handle end of question marker
-    if (line.includes('%{/q}') && collectingQuestion) {
-      const questionPart = line.replace('%{/q}', '').trim();
-      if (questionPart) {
-        currentQuestion += (currentQuestion ? ' ' : '') + questionPart;
-      }
-      console.log('Completed multi-line question:', currentQuestion);
-      collectingQuestion = false;
-      continue;
-    }
-    
-    // Collect question text when in collection mode
-    if (collectingQuestion && line && !line.includes('\\') && !line.includes('%{')) {
-      currentQuestion += (currentQuestion ? ' ' : '') + line;
-      continue;
-    }
-    
-    // Handle option markers - can be inline or on separate lines
-    if (line.includes('%{#o}') && currentQuestion && enumerateDepth === 2) {
-      const inlineMatch = line.match(/%\{#o\}(.*?)%\{\/o\}/);
-      if (inlineMatch) {
-        console.log('Found inline option:', inlineMatch[1]);
-        currentOptions.push(inlineMatch[1].trim());
-      }
-      continue;
-    }
-    
-    // Handle multi-line options (though most should be inline in the new format)
-    if (line.includes('%{/o}') && currentQuestion && enumerateDepth === 2) {
-      const optionPart = line.replace('%{/o}', '').trim();
-      if (optionPart && currentOptions.length < 5) {
-        // This handles cases where option text might span lines
-        if (currentOptions.length > 0) {
-          currentOptions[currentOptions.length - 1] += ' ' + optionPart;
-        }
-      }
-      continue;
-    }
-    
-    // Handle \item markers for questions (backup parsing)
-    if (line.includes('\\item') && !line.includes('%{#') && enumerateDepth === 1) {
-      // Look ahead to find question text
-      let questionText = '';
-      for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
-        const nextLine = lines[j].trim();
-        if (nextLine.includes('%{#q}')) {
-          break; // Found explicit question marker
-        }
-        if (nextLine.includes('\\begin{enumerate}') || nextLine.includes('\\item') || nextLine.includes('\\bodyoptionseparator')) {
-          break; // Found next structure
-        }
-        if (nextLine && !nextLine.includes('%{') && !nextLine.includes('\\')) {
-          questionText += (questionText ? ' ' : '') + nextLine;
-        }
-      }
+    // Handle question start marker
+    if (trimmed.includes('%{#q}')) {
+      console.log('Found question start marker at line:', i + 1);
+      inQuestionBlock = true;
       
-      if (questionText.trim()) {
-        console.log('Found implicit question from \\item:', questionText);
-        if (currentQuestion && currentOptions.length === 5) {
-          console.log('Saving previous question before implicit one:', currentQuestion);
-          result.questions.push({
-            text: currentQuestion,
-            choices: [
-              currentOptions.map(text => ({ text })),
-              0,
-              null
-            ]
-          });
-        }
-        currentQuestion = questionText.trim();
-        currentOptions = [];
+      // Check if question is on same line
+      const sameLineMatch = trimmed.match(/%\{#q\}(.*?)%\{\/q\}/);
+      if (sameLineMatch) {
+        currentQuestion = sameLineMatch[1].trim();
+        console.log('Found complete inline question:', currentQuestion);
+        inQuestionBlock = false;
+      } else {
+        // Extract any text after the opening tag
+        const afterTag = trimmed.replace('%{#q}', '').trim();
+        currentQuestion = afterTag || '';
       }
+      continue;
+    }
+    
+    // Handle question end marker
+    if (trimmed.includes('%{/q}') && inQuestionBlock) {
+      console.log('Found question end marker at line:', i + 1);
+      const beforeTag = trimmed.replace('%{/q}', '').trim();
+      if (beforeTag) {
+        currentQuestion = currentQuestion ? currentQuestion + ' ' + beforeTag : beforeTag;
+      }
+      console.log('Complete question text:', currentQuestion);
+      inQuestionBlock = false;
+      continue;
+    }
+    
+    // Collect question text between markers
+    if (inQuestionBlock && trimmed && !trimmed.startsWith('\\') && !trimmed.startsWith('%')) {
+      currentQuestion = currentQuestion ? currentQuestion + ' ' + trimmed : trimmed;
+      console.log('Collecting question text:', trimmed);
+      continue;
+    }
+    
+    // Handle options (only when we have a current question and are in options enumerate)
+    if (currentQuestion && enumerateDepth === 2 && trimmed.includes('%{#o}')) {
+      const optionMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
+      if (optionMatch) {
+        const optionText = optionMatch[1].trim();
+        console.log('Found option:', optionText);
+        currentOptions.push(optionText);
+      }
+      continue;
     }
   }
   
