@@ -23,7 +23,8 @@ export function generateLatexDocument(
 ): string {
   const processText = allowTrustedTex ? (text: string) => text : escapeLatex;
   
-  // Generate settings block (commented)
+  // Generate settings block (commented) - ensure numberofvestions reflects actual versions count
+  const actualVersions = versions.length || 4;
   const settingsBlock = `%{#setting}
 % code_name=${settings.code_name}
 % code_numbering=${settings.code_numbering}
@@ -33,7 +34,7 @@ export function generateLatexDocument(
 % examname=${settings.examname}
 % examtype=${settings.examtype}
 % groups=${settings.groups}
-% numberofvestions=${settings.numberofvestions}
+% numberofvestions=${actualVersions}
 % paper_size=${settings.paper_size}
 % term=${settings.term}
 % timeallowed=${settings.timeallowed}
