@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { StartPage } from './Start';
+import { DetailsPage } from './Details';
 import type { ExamJSON } from '@/lib/types';
 
 const Index = () => {
@@ -12,6 +13,18 @@ const Index = () => {
     setCurrentStep('details');
   };
 
+  const handleDataUpdated = (data: ExamJSON) => {
+    setExamData(data);
+  };
+
+  const handleBackToStart = () => {
+    setCurrentStep('start');
+  };
+
+  const handleContinueToResults = () => {
+    setCurrentStep('results');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-academic">
       <Header />
@@ -20,10 +33,12 @@ const Index = () => {
           <StartPage onDataLoaded={handleDataLoaded} />
         )}
         {currentStep === 'details' && examData && (
-          <div className="container mx-auto px-4 py-8">
-            <h2 className="text-2xl font-bold mb-4">Exam Details</h2>
-            <p className="text-muted-foreground">Details page coming soon...</p>
-          </div>
+          <DetailsPage 
+            examData={examData}
+            onDataUpdated={handleDataUpdated}
+            onBack={handleBackToStart}
+            onContinue={handleContinueToResults}
+          />
         )}
         {currentStep === 'results' && (
           <div className="container mx-auto px-4 py-8">
