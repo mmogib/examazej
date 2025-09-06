@@ -11,46 +11,45 @@ interface InstructionsDialogProps {
 
 // Convert LaTeX to HTML for initial display
 const convertLatexToHtml = (latex: string): string => {
+  console.log('Converting LaTeX to HTML:', latex);
+  
   let html = latex;
   
-  // Handle enumerate with normalsize
-  html = html.replace(/\\begin{enumerate}\s*\\begin{normalsize}(.*?)\\end{normalsize}\s*\\end{enumerate}/gs, (match, content) => {
-    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-    ).join('');
-    return `<ol>${items}</ol>`;
+  // First, handle the enumerate with normalsize structure
+  const enumerateWithNormalsizeRegex = /\\begin{enumerate}[\s\S]*?\\begin{normalsize}([\s\S]*?)\\end{normalsize}[\s\S]*?\\end{enumerate}/g;
+  html = html.replace(enumerateWithNormalsizeRegex, (match, content) => {
+    console.log('Found enumerate with normalsize:', content);
+    // Split by \item and filter out empty entries
+    const items = content.split(/\\item\s+/).filter(item => item.trim().length > 0);
+    console.log('Items found:', items);
+    
+    const listItems = items.map(item => {
+      const cleanItem = item.trim().replace(/\s+/g, ' ');
+      return `<li><p>${cleanItem}</p></li>`;
+    }).join('');
+    
+    return `<ol>${listItems}</ol>`;
   });
   
-  // Handle simple enumerate
-  html = html.replace(/\\begin{enumerate}(.*?)\\end{enumerate}/gs, (match, content) => {
-    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-    ).join('');
-    return `<ol>${items}</ol>`;
-  });
-  
-  // Handle itemize with normalsize  
-  html = html.replace(/\\begin{itemize}\s*\\begin{normalsize}(.*?)\\end{normalsize}\s*\\end{itemize}/gs, (match, content) => {
-    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-    ).join('');
-    return `<ul>${items}</ul>`;
-  });
-  
-  // Handle simple itemize
-  html = html.replace(/\\begin{itemize}(.*?)\\end{itemize}/gs, (match, content) => {
-    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-    ).join('');
-    return `<ul>${items}</ul>`;
+  // Handle simple enumerate (fallback)
+  const simpleEnumerateRegex = /\\begin{enumerate}([\s\S]*?)\\end{enumerate}/g;
+  html = html.replace(simpleEnumerateRegex, (match, content) => {
+    console.log('Found simple enumerate:', content);
+    const items = content.split(/\\item\s+/).filter(item => item.trim().length > 0);
+    const listItems = items.map(item => {
+      const cleanItem = item.trim().replace(/\s+/g, ' ');
+      return `<li><p>${cleanItem}</p></li>`;
+    }).join('');
+    
+    return `<ol>${listItems}</ol>`;
   });
   
   // Handle other LaTeX formatting
-  html = html.replace(/\\underline{\\bf ([^}]*)}/g, '<p><strong>$1</strong></p>');
   html = html.replace(/\\textbf{([^}]*)}/g, '<strong>$1</strong>');
   html = html.replace(/\\textit{([^}]*)}/g, '<em>$1</em>');
-  html = html.replace(/\\\\\\/g, '<br>');
+  html = html.replace(/\\underline{([^}]*)}/g, '<u>$1</u>');
   
+  console.log('Final HTML:', html);
   return html.trim();
 };
 
