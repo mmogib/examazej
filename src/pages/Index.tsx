@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { StartPage } from './Start';
 import { DetailsPage } from './Details';
 import { ResultsPage } from './Results';
@@ -33,9 +34,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-academic">
+    <div className="min-h-screen bg-gradient-academic flex flex-col">
       <Header />
-      <main>
+      <main className="flex-1">
         {currentStep === 'start' && (
           <StartPage onDataLoaded={handleDataLoaded} />
         )}
@@ -55,6 +56,7 @@ const Index = () => {
           />
         )}
       </main>
+      <Footer />
     </div>
   );
 };
