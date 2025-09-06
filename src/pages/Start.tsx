@@ -94,36 +94,169 @@ export function StartPage({
   const generateTemplate = (numQuestions: number) => {
     const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
       const questionNumber = i + 1;
-      return `  \\item
-  %{#q} Question ${questionNumber} - Replace this with your actual question. %{/q}
+      return `\\item
+%{#q}
+This is the body of question ${questionNumber}
+%{/q}
+
   \\begin{enumerate}
-    %{#o} Option A for question ${questionNumber} %{/o}
-    %{#o} Correct answer for question ${questionNumber} %{/o}
-    %{#o} Option C for question ${questionNumber} %{/o}
-    %{#o} Option D for question ${questionNumber} %{/o}
-    %{#o} Option E for question ${questionNumber} %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 5
+    %{/o}
+
   \\end{enumerate}`;
     }).join('\n\n');
 
     const template = `%{#setting}
-%    university=Your University
-%    department=Your Department
-%    term=Current Term
-%    coursecode=COURSE101
-%    examname=Exam Name
-%    examdate=Exam Date
-%    timeallowed=Time Allowed
-%    numberofvestions=${numQuestions}
-%    groups=${numQuestions}
-%    examtype=MAJOR
-%    code_name=VERSION
-%    code_numbering=ALPHA
-%    paper_size=A4
+%		university=King Fahd University of Petroleum and Minerals
+%		department=Department of Mathematics
+%		term=T241
+%		coursecode=MATH557
+%		examname=Exam 1
+%		examdate=November 07, 2025
+%		timeallowed=120 Minutes
+%		numberofvestions=${numQuestions}
+%		groups=5,10,5
+%		examtype=MAJOR
+%		code_name=VERSION
+%		code_numbering=ALPHA
 %{/setting}
+\\documentclass{article}
+\\usepackage{graphicx}
+%% put your preamble between the two tags {#preamble} and {/preamble} below
+%% You can also redefine the following commans
+%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
+%% by typing
+%\\renewcommand{\\bodyoptionseparator}{
+%\\vspace {0.8cm}
+%}
+%\\renewcommand{\\questionseparator}{
+%\\vspace*{\\fill}
+%}
+%\\renewcommand{\\eogseparator}{
+%\\vspace*{\\fill}
+ %\\newpage}
+
+%% Predefined commands
+\\newcommand{\\bodyoptionseparator}{
+\\vspace {0.8cm}
+}
+\\newcommand{\\questionseparator}{
+\\vspace*{\\fill}
+}
+\\newcommand{\\eogseparator}{
+\\vspace*{\\fill}
+ \\newpage
+}
+\\newcommand{\\newcodecover}[1]{}
+%%
+%%
+%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
+%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
+%\\renewcommand{\\newcodecover}[1]{%
+
+%\\newpage
+%\\thispagestyle{empty}
+%\\begin{large}
+%\\begin{center}
+%        {UNIVERSITY_NAME} \\\\
+%        {DEPT_NAME}  \\\\
+%        \\vspace*{4.5cm}
+%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
+%        {\\bf {COURSE_CODE} }  \\\\
+%        {\\bf {EXAM_NAME} }  \\\\
+%        {\\bf {TERM} }  \\\\
+%        {\\bf {EXAM_DATE} }  \\\\
+%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
+%        \\vspace*{0.2cm}
+%\\end{center}
+%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\begin{large}\\textbf{Sec}\\end{large}
+%\\end{tcolorbox}
+%\\end{tcbraster}
+%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
+%%     \\hspace*{-4pt}\\textbf{Instructor}
+%% \\end{tcolorbox}
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%%     \\textbf{Serial}
+%% \\end{tcolorbox}
+%% \\end{tcbraster}
+%\\end{tcbraster}
+%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
+%
+%\\vspace{2cm}
+
+%\\underline{\\bf Important Instructions:}
+ %
+%\\begin{enumerate}
+%    \\begin{normalsize}
+%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
+%        \\item  Use HB 2.5 pencils only.
+%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
+%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
+%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
+%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
+%        \\item  When bubbling, make sure that the bubbled space is fully covered.
+%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
+%    \\end{normalsize}
+%\\end{enumerate}
+%\\end{large}
+%
+ %\\vspace*{\\fill}
+%\\newpage
+
+%}
+%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
+%%
+%%
+%%
+%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
+%{#preamble}
+
+%{/preamble}
+%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
+%%
+%% document body
+\\begin{document}
+
 
 \\begin{enumerate}
+
 ${templateQuestions}
-\\end{enumerate}`;
+
+\\end{enumerate} % end of questions items
+\\end{document}`;
 
     const blob = new Blob([template], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -138,42 +271,267 @@ ${templateQuestions}
 
   const downloadTemplate = () => {
     const template = `%{#setting}
-%    university=Your University
-%    department=Department of Mathematics
-%    term=Fall 2024
-%    coursecode=MATH101
-%    examname=Midterm Examination
-%    examdate=November 15, 2024
-%    timeallowed=2 hours
-%    numberofvestions=10
-%    groups=5,5
-%    examtype=MAJOR
-%    code_name=VERSION
-%    code_numbering=ALPHA
-%    paper_size=A4
+%		university=King Fahd University of Petroleum and Minerals
+%		department=Department of Mathematics
+%		term=T241
+%		coursecode=MATH557
+%		examname=Exam 1
+%		examdate=November 07, 2025
+%		timeallowed=120 Minutes
+%		numberofvestions=4
+%		groups=5,10,5
+%		examtype=MAJOR
+%		code_name=VERSION
+%		code_numbering=ALPHA
 %{/setting}
+\\documentclass{article}
+\\usepackage{graphicx}
+%% put your preamble between the two tags {#preamble} and {/preamble} below
+%% You can also redefine the following commans
+%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
+%% by typing
+%\\renewcommand{\\bodyoptionseparator}{
+%\\vspace {0.8cm}
+%}
+%\\renewcommand{\\questionseparator}{
+%\\vspace*{\\fill}
+%}
+%\\renewcommand{\\eogseparator}{
+%\\vspace*{\\fill}
+ %\\newpage}
+
+%% Predefined commands
+\\newcommand{\\bodyoptionseparator}{
+\\vspace {0.8cm}
+}
+\\newcommand{\\questionseparator}{
+\\vspace*{\\fill}
+}
+\\newcommand{\\eogseparator}{
+\\vspace*{\\fill}
+ \\newpage
+}
+\\newcommand{\\newcodecover}[1]{}
+%%
+%%
+%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
+%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
+%\\renewcommand{\\newcodecover}[1]{%
+
+%\\newpage
+%\\thispagestyle{empty}
+%\\begin{large}
+%\\begin{center}
+%        {UNIVERSITY_NAME} \\\\
+%        {DEPT_NAME}  \\\\
+%        \\vspace*{4.5cm}
+%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
+%        {\\bf {COURSE_CODE} }  \\\\
+%        {\\bf {EXAM_NAME} }  \\\\
+%        {\\bf {TERM} }  \\\\
+%        {\\bf {EXAM_DATE} }  \\\\
+%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
+%        \\vspace*{0.2cm}
+%\\end{center}
+%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\begin{large}\\textbf{Sec}\\end{large}
+%\\end{tcolorbox}
+%\\end{tcbraster}
+%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
+%%     \\hspace*{-4pt}\\textbf{Instructor}
+%% \\end{tcolorbox}
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%%     \\textbf{Serial}
+%% \\end{tcolorbox}
+%% \\end{tcbraster}
+%\\end{tcbraster}
+%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
+%
+%\\vspace{2cm}
+
+%\\underline{\\bf Important Instructions:}
+ %
+%\\begin{enumerate}
+%    \\begin{normalsize}
+%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
+%        \\item  Use HB 2.5 pencils only.
+%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
+%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
+%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
+%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
+%        \\item  When bubbling, make sure that the bubbled space is fully covered.
+%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
+%    \\end{normalsize}
+%\\end{enumerate}
+%\\end{large}
+%
+ %\\vspace*{\\fill}
+%\\newpage
+
+%}
+%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
+%%
+%%
+%%
+%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
+%{#preamble}
+
+%{/preamble}
+%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
+%%
+%% document body
+\\begin{document}
+
 
 \\begin{enumerate}
-  \\item
-  %{#q} What is the derivative of $x^2 + 3x + 1$? %{/q}
+
+\\item
+%{#q}
+This is the body of question 1
+%{/q}
+
   \\begin{enumerate}
-    %{#o} $2x + 3$ %{/o}
-    %{#o} $x^2 + 3$ %{/o}
-    %{#o} $2x + 1$ %{/o}
-    %{#o} $x + 3$ %{/o}
-    %{#o} $2x^2 + 3x$ %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 5
+    %{/o}
+
   \\end{enumerate}
 
-  \\item
-  %{#q} Find the integral of $\\sin(x)$. %{/q}
+\\item
+%{#q}
+This is the body of question 2
+%{/q}
+
   \\begin{enumerate}
-    %{#o} $-\\cos(x) + C$ %{/o}
-    %{#o} $\\cos(x) + C$ %{/o}
-    %{#o} $\\tan(x) + C$ %{/o}
-    %{#o} $-\\sin(x) + C$ %{/o}
-    %{#o} $\\sec(x) + C$ %{/o}
+
+    \\item
+    %{#o}
+    question 2, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question 2, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question 2, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question 2, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question 2, Item 5
+    %{/o}
+
   \\end{enumerate}
-\\end{enumerate}`;
+
+\\item
+%{#q}
+This is the body of question 3
+%{/q}
+
+  \\begin{enumerate}
+
+    \\item
+    %{#o}
+    question 3, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question 3, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question 3, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question 3, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question 3, Item 5
+    %{/o}
+
+  \\end{enumerate}
+
+\\item
+%{#q}
+This is the body of question 4
+%{/q}
+
+  \\begin{enumerate}
+
+    \\item
+    %{#o}
+    question 4, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question 4, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question 4, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question 4, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question 4, Item 5
+    %{/o}
+
+  \\end{enumerate}
+
+\\end{enumerate} % end of questions items
+\\end{document}`;
     const blob = new Blob([template], {
       type: 'text/plain'
     });
