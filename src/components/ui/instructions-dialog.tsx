@@ -11,37 +11,47 @@ interface InstructionsDialogProps {
 
 // Convert LaTeX to HTML for initial display
 const convertLatexToHtml = (latex: string): string => {
-  return latex
-    .replace(/\\underline{\\bf ([^}]*)}/g, '<p><strong>$1</strong></p>')
-    .replace(/\\begin{enumerate}\s*\\begin{normalsize}(.*?)\\end{normalsize}\s*\\end{enumerate}/gs, (match, content) => {
-      const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-        `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-      ).join('');
-      return `<ol>${items}</ol>`;
-    })
-    .replace(/\\begin{itemize}\s*\\begin{normalsize}(.*?)\\end{normalsize}\s*\\end{itemize}/gs, (match, content) => {
-      const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-        `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-      ).join('');
-      return `<ul>${items}</ul>`;
-    })
-    .replace(/\\begin{enumerate}(.*?)\\end{enumerate}/gs, (match, content) => {
-      const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-        `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-      ).join('');
-      return `<ol>${items}</ol>`;
-    })
-    .replace(/\\begin{itemize}(.*?)\\end{itemize}/gs, (match, content) => {
-      const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
-        `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
-      ).join('');
-      return `<ul>${items}</ul>`;
-    })
-    .replace(/\\textbf{([^}]*)}/g, '<strong>$1</strong>')
-    .replace(/\\textit{([^}]*)}/g, '<em>$1</em>')
-    .replace(/\\\\\\/g, '<br>')
-    .replace(/\n\n/g, '</p><p>')
-    .trim();
+  let html = latex;
+  
+  // Handle enumerate with normalsize
+  html = html.replace(/\\begin{enumerate}\s*\\begin{normalsize}(.*?)\\end{normalsize}\s*\\end{enumerate}/gs, (match, content) => {
+    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
+      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
+    ).join('');
+    return `<ol>${items}</ol>`;
+  });
+  
+  // Handle simple enumerate
+  html = html.replace(/\\begin{enumerate}(.*?)\\end{enumerate}/gs, (match, content) => {
+    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
+      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
+    ).join('');
+    return `<ol>${items}</ol>`;
+  });
+  
+  // Handle itemize with normalsize  
+  html = html.replace(/\\begin{itemize}\s*\\begin{normalsize}(.*?)\\end{normalsize}\s*\\end{itemize}/gs, (match, content) => {
+    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
+      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
+    ).join('');
+    return `<ul>${items}</ul>`;
+  });
+  
+  // Handle simple itemize
+  html = html.replace(/\\begin{itemize}(.*?)\\end{itemize}/gs, (match, content) => {
+    const items = content.split(/\\item\s+/).filter(Boolean).map((item: string) => 
+      `<li><p>${item.trim().replace(/\s+/g, ' ')}</p></li>`
+    ).join('');
+    return `<ul>${items}</ul>`;
+  });
+  
+  // Handle other LaTeX formatting
+  html = html.replace(/\\underline{\\bf ([^}]*)}/g, '<p><strong>$1</strong></p>');
+  html = html.replace(/\\textbf{([^}]*)}/g, '<strong>$1</strong>');
+  html = html.replace(/\\textit{([^}]*)}/g, '<em>$1</em>');
+  html = html.replace(/\\\\\\/g, '<br>');
+  
+  return html.trim();
 };
 
 // Convert HTML back to LaTeX when saving
@@ -75,6 +85,14 @@ export function InstructionsDialog({ instructions, onInstructionsChange }: Instr
   const [isOpen, setIsOpen] = useState(false);
   const [localInstructions, setLocalInstructions] = useState(() => convertLatexToHtml(instructions));
 
+  // Update local instructions when dialog opens or instructions prop changes
+  const handleOpen = (open: boolean) => {
+    if (open) {
+      setLocalInstructions(convertLatexToHtml(instructions));
+    }
+    setIsOpen(open);
+  };
+
   const handleSave = () => {
     // Convert HTML back to LaTeX before saving
     const latexInstructions = convertHtmlToLatex(localInstructions);
@@ -88,7 +106,7 @@ export function InstructionsDialog({ instructions, onInstructionsChange }: Instr
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
