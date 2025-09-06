@@ -11,19 +11,23 @@ interface InstructionsDialogProps {
 
 // Convert LaTeX to HTML for initial display
 const convertLatexToHtml = (latex: string): string => {
-  console.log('Converting LaTeX to HTML:', latex);
-  
   let html = latex;
   
   // First, handle the enumerate with normalsize structure
   const enumerateWithNormalsizeRegex = /\\begin{enumerate}[\s\S]*?\\begin{normalsize}([\s\S]*?)\\end{normalsize}[\s\S]*?\\end{enumerate}/g;
   html = html.replace(enumerateWithNormalsizeRegex, (match, content) => {
-    console.log('Found enumerate with normalsize:', content);
-    // Split by \item and filter out empty entries
-    const items = content.split(/\\item\s+/).filter(item => item.trim().length > 0);
-    console.log('Items found:', items);
+    // Handle case where items might be concatenated without proper spacing
+    // Split by \item but be more careful about whitespace
+    let processedContent = content;
+    
+    // If we don't have proper newlines, add them before \item
+    processedContent = processedContent.replace(/(\s+)\\item/g, '\n\\item');
+    
+    // Now split by \item and filter out empty entries
+    const items = processedContent.split(/\\item\s*/).filter(item => item.trim().length > 0);
     
     const listItems = items.map(item => {
+      // Clean up excessive whitespace but preserve sentence structure
       const cleanItem = item.trim().replace(/\s+/g, ' ');
       return `<li><p>${cleanItem}</p></li>`;
     }).join('');
@@ -34,8 +38,12 @@ const convertLatexToHtml = (latex: string): string => {
   // Handle simple enumerate (fallback)
   const simpleEnumerateRegex = /\\begin{enumerate}([\s\S]*?)\\end{enumerate}/g;
   html = html.replace(simpleEnumerateRegex, (match, content) => {
-    console.log('Found simple enumerate:', content);
-    const items = content.split(/\\item\s+/).filter(item => item.trim().length > 0);
+    let processedContent = content;
+    
+    // If we don't have proper newlines, add them before \item
+    processedContent = processedContent.replace(/(\s+)\\item/g, '\n\\item');
+    
+    const items = processedContent.split(/\\item\s*/).filter(item => item.trim().length > 0);
     const listItems = items.map(item => {
       const cleanItem = item.trim().replace(/\s+/g, ' ');
       return `<li><p>${cleanItem}</p></li>`;
@@ -49,7 +57,6 @@ const convertLatexToHtml = (latex: string): string => {
   html = html.replace(/\\textit{([^}]*)}/g, '<em>$1</em>');
   html = html.replace(/\\underline{([^}]*)}/g, '<u>$1</u>');
   
-  console.log('Final HTML:', html);
   return html.trim();
 };
 
