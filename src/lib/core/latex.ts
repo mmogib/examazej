@@ -162,8 +162,13 @@ ${masterExam.preamble || ''}
 %{/preamble}
 %% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------`;
 
-  // Cover page
-  const coverPage = `\\thispagestyle{empty}
+  // Generate all versions
+  const versionsContent = versions.map((version, versionIndex) => {
+    const versionCode = version.name.replace('version_', '');
+    
+    // Cover page for this version
+    const coverPage = `%% This is the cover page for version ${versionCode}
+\\thispagestyle{empty}
 \\begin{large}
   \\begin{center}
         ${processText(settings.university)} \\\\
@@ -174,26 +179,26 @@ ${masterExam.preamble || ''}
         {\\bf ${processText(settings.examdate)} }  \\\\
         {\\bf Net Time Allowed: ${processText(settings.timeallowed)} }  \\\\
         \\vspace*{6cm}
-        {\\bf {\\Huge{USE THIS AS A TEMPLATE}}}  \\\\
+        {\\bf {\\Huge{VERSION ${versionCode}}}}  \\\\
         \\vspace*{2cm}
-        {\\bf Write your questions, once you are satisfied upload this file.}  \\\\
+        {\\bf Check that this exam has {\\underline{ ${version.questions.length} }} questions.}  \\\\
         \\end{center}
   \\end{large}
 \\newpage`;
 
-  // Header for subsequent pages
-  const pageHeader = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ MASTER }}}
+    // Header for subsequent pages
+    const pageHeader = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${Math.ceil(version.questions.length / 2) + 1} } \\hfill {\\bf \\fbox{ ${versionCode} }}}
 \\setcounter{page}{1}`;
 
-  // Generate questions with proper formatting
-  const questionsSection = `\\begin{large}
+    // Generate questions with proper formatting
+    const questionsSection = `\\begin{large}
 \\begin{enumerate}
 
-${masterExam.questions.map((question, index) => {
-    const isLastQuestion = index === masterExam.questions.length - 1;
-    const separator = (index + 1) % 2 === 0 ? '\\eogseparator' : '\\questionseparator';
-    
-    return `% question ${index + 1}
+${version.questions.map((question, index) => {
+      const isLastQuestion = index === version.questions.length - 1;
+      const separator = (index + 1) % 2 === 0 ? '\\eogseparator' : '\\questionseparator';
+      
+      return `% question ${index + 1}
 \\item
 %{#q}
 ${processText(question.text)}
@@ -224,26 +229,26 @@ ${processText(question.choices[0][4]?.text || `question ${index + 1}, Item 5`)}
 %{/o}
 \\end{enumerate}
 ${isLastQuestion ? '' : separator}`;
-  }).join('\n\n')}
+    }).join('\n\n')}
 
 \\end{enumerate}
-\\end{large}`;
+\\end{large}
+
+\\newpage`;
+
+    return `${coverPage}
+${pageHeader}
+
+ %% questions start here for version ${versionCode}
+${questionsSection}`;
+  }).join('\n\n');
 
   return `${settingsBlock}
 ${documentPreamble}
 
-
 \\begin{document}
 
-
-%% This is the cover page for the template
-${coverPage}
-${pageHeader}
-
- %% questions start here
-${questionsSection}
-
-
+${versionsContent}
 
 \\end{document}`;
 }
