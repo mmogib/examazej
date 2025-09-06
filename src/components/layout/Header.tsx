@@ -1,9 +1,7 @@
 import { Shield, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-
 export function Header() {
-  return (
-    <header className="border-b bg-card shadow-card">
+  return <header className="border-b bg-card shadow-card">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -11,12 +9,8 @@ export function Header() {
               <FileText className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-heading font-bold text-foreground">
-                Exam Generator
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Professional Exam Creation Tool
-              </p>
+              <h1 className="text-xl font-heading font-bold text-foreground">MCQ Exam Generator</h1>
+              <p className="text-sm text-muted-foreground">Professional MCQ Exam Creation Tool</p>
             </div>
           </div>
           
@@ -30,6 +24,5 @@ export function Header() {
           </Card>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 }
