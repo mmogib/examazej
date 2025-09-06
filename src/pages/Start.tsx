@@ -6,8 +6,8 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { PrivacyNotice } from '@/components/ui/privacy-notice';
 import { TemplateDialog } from '@/components/ui/template-dialog';
 import { parseLatexTemplate, validateParsedTemplate } from '@/lib/core/parser';
-import { generateTemplateSettings, generateSettingsBlock } from '@/lib/core/settings';
-import type { ExamJSON, ParsedLatexTemplate } from '@/lib/types';
+import { generateTemplateSettings, generateSettingsBlock, getDefaultSettings } from '@/lib/core/settings';
+import type { ExamJSON, ParsedLatexTemplate, ExamSettings } from '@/lib/types';
 
 interface StartPageProps {
   onDataLoaded: (data: ExamJSON) => void;
@@ -18,27 +18,12 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const defaultSettings = {
-    university: 'King Fahd University of Petroleum and Minerals',
-    department: 'Department of Mathematics',
-    term: 'T241',
-    coursecode: 'MATH557',
-    examname: 'Exam 1',
-    examdate: 'November 07, 2025',
-    timeallowed: '120 Minutes',
-    numberofvestions: 4,
-    groups: '5,10,5',
-    examtype: 'MAJOR',
-    code_name: 'VERSION',
-    code_numbering: 'ALPHA' as const,
-    paper_size: 'A4' as const
-  };
-
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
-    const settings = { ...defaultSettings, ...template.settings };
+    const defaults = getDefaultSettings();
+    const settings = { ...defaults, ...template.settings };
     
     return {
-      setting: settings,
+      setting: settings as ExamSettings,
       exam: {
         name: 'master',
         ordering: null,

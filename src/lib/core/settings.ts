@@ -20,7 +20,14 @@ export function getDefaultSettings(): Partial<ExamSettings> {
     examtype: "MAJOR",
     code_name: "VERSION",
     code_numbering: "ALPHA",
-    paper_size: "A4"
+    paper_size: "A4",
+    instructions: `\\begin{enumerate}
+\\item Read all instructions carefully before attempting any question.
+\\item Answer all questions in the space provided. Use additional sheets if necessary.
+\\item Show all work for full credit. Partial credit may be given for incomplete solutions.
+\\item Electronic devices are not permitted unless explicitly stated.
+\\item Time limit is strictly enforced.
+\\end{enumerate}`
   };
 }
 
@@ -59,6 +66,7 @@ export function generateTemplateSettings(numQuestions: number): ExamSettings {
     examtype: defaults.examtype!,
     code_name: defaults.code_name!,
     code_numbering: defaults.code_numbering!,
-    paper_size: defaults.paper_size!
+    paper_size: defaults.paper_size!,
+    instructions: defaults.instructions!
   };
 }

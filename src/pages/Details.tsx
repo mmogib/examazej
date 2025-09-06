@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Settings, Users, Hash, Shuffle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Settings, Users, Hash, Shuffle, FileText } from 'lucide-react';
 import type { ExamJSON, ExamSettings } from '@/lib/types';
+import { InstructionsDialog } from '@/components/ui/instructions-dialog';
 
 interface DetailsPageProps {
   examData: ExamJSON;
@@ -336,6 +337,27 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   </Select>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Instructions
+              </CardTitle>
+              <CardDescription>
+                Customize the instructions that appear on each exam version
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InstructionsDialog
+                instructions={settings.instructions}
+                onInstructionsChange={(instructions) => handleSettingChange('instructions', instructions)}
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                Instructions will be formatted and included on each exam version cover page
+              </p>
             </CardContent>
           </Card>
         </div>

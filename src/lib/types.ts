@@ -14,6 +14,7 @@ export interface ExamSettings {
   code_name: string;
   code_numbering: 'ALPHA' | 'NUMERIC' | 'ROMAN';
   paper_size: 'A4' | 'Letter';
+  instructions: string;
 }
 
 export interface QuestionChoice {
