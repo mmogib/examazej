@@ -23,21 +23,21 @@ export function generateLatexDocument(
 ): string {
   const processText = allowTrustedTex ? (text: string) => text : escapeLatex;
   
-  // Generate settings block
+  // Generate settings block (commented)
   const settingsBlock = `%{#setting}
-code_name=${settings.code_name}
-code_numbering=${settings.code_numbering}
-coursecode=${settings.coursecode}
-department=${settings.department}
-examdate=${settings.examdate}
-examname=${settings.examname}
-examtype=${settings.examtype}
-groups=${settings.groups}
-numberofvestions=${settings.numberofvestions}
-paper_size=${settings.paper_size}
-term=${settings.term}
-timeallowed=${settings.timeallowed}
-university=${settings.university}
+% code_name=${settings.code_name}
+% code_numbering=${settings.code_numbering}
+% coursecode=${settings.coursecode}
+% department=${settings.department}
+% examdate=${settings.examdate}
+% examname=${settings.examname}
+% examtype=${settings.examtype}
+% groups=${settings.groups}
+% numberofvestions=${settings.numberofvestions}
+% paper_size=${settings.paper_size}
+% term=${settings.term}
+% timeallowed=${settings.timeallowed}
+% university=${settings.university}
 %{/setting}`;
 
   // Document preamble
@@ -250,7 +250,7 @@ ${isLastQuestion ? '\\eogseparator' : separator}`;
     const versionCode = version.name.replace('version_', '').toUpperCase();
     
     // Generate questions for this version
-    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ ${versionCode} }}}
+    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ ${settings.code_name}${versionCode} }}}
 \\setcounter{page}{1}
  %% questions start here
 \\begin{large}
@@ -278,7 +278,7 @@ ${isLastQuestion ? '\\eogseparator' : separator}`;
 \\end{large}`;
 
     return `
-\\newcodecover{${versionCode}}
+\\newcodecover{${settings.code_name}${versionCode}}
 ${versionQuestionsSection}`;
   }).join('');
 
