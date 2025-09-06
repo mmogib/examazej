@@ -3,6 +3,7 @@
 import { ParsedLatexTemplate, ExamSettings, Question } from '../types';
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
+  console.log('Parsing LaTeX template, content length:', content.length);
   const lines = content.split('\n');
   const result: ParsedLatexTemplate = {
     questions: []
@@ -43,13 +44,19 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     const line = lines[i].trim();
     
     if (line.includes('\\begin{enumerate}')) {
+      console.log('Found enumerate start at line', i, ':', line);
       insideEnumerate = true;
       continue;
     }
     
     if (line.includes('\\end{enumerate}')) {
+      console.log('Found enumerate end at line', i, ':', line);
+      console.log('Current question:', currentQuestion);
+      console.log('Current options count:', currentOptions.length);
+      
       // If we have a current question, save it
       if (currentQuestion && currentOptions.length === 5) {
+        console.log('Saving question:', currentQuestion);
         result.questions.push({
           text: currentQuestion,
           choices: [
@@ -70,8 +77,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Parse question
     const questionMatch = line.match(/%\{#q\}(.*?)%\{\/q\}/);
     if (questionMatch) {
+      console.log('Found question at line', i, ':', questionMatch[1]);
       // Save previous question if exists
       if (currentQuestion && currentOptions.length === 5) {
+        console.log('Saving previous question before new one:', currentQuestion);
         result.questions.push({
           text: currentQuestion,
           choices: [
@@ -90,6 +99,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Parse option
     const optionMatch = line.match(/%\{#o\}(.*?)%\{\/o\}/);
     if (optionMatch && currentQuestion) {
+      console.log('Found option for question:', optionMatch[1]);
       currentOptions.push(optionMatch[1].trim());
       continue;
     }
@@ -114,6 +124,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   
   // Save the last question if exists
   if (currentQuestion && currentOptions.length === 5) {
+    console.log('Saving final question:', currentQuestion);
     result.questions.push({
       text: currentQuestion,
       choices: [
@@ -124,6 +135,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     });
   }
 
+  console.log('Parsing complete. Found', result.questions.length, 'questions');
   return result;
 }
 
