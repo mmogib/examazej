@@ -69,7 +69,7 @@ export function StartPage({
           exam: {
             name: 'master',
             ordering: null,
-            preamble: '',
+            preamble: parsed.preamble || '',
             questions: parsed.questions.map((q, index) => ({
               ...q,
               group: 1,

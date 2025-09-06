@@ -44,6 +44,7 @@ export interface ExamJSON {
 export interface ParsedLatexTemplate {
   settings?: Partial<ExamSettings>;
   questions: Omit<Question, 'group' | 'order'>[];
+  preamble?: string;
 }
 
 export interface VersionMapping {

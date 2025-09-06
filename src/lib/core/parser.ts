@@ -35,6 +35,15 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     result.settings = settings;
   }
 
+  // Parse preamble section
+  const preambleStart = lines.findIndex(line => line.trim() === '%{#preamble}');
+  const preambleEnd = lines.findIndex(line => line.trim() === '%{/preamble}');
+  
+  if (preambleStart !== -1 && preambleEnd !== -1) {
+    const preambleLines = lines.slice(preambleStart + 1, preambleEnd);
+    result.preamble = preambleLines.join('\n');
+  }
+
   // Parse questions - improved logic to handle nested enumerate
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
