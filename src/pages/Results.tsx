@@ -424,7 +424,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Download {examData.setting.examname} (LaTeX)
+                Download Full Exam
               </Button>
               
               <Button 
@@ -433,7 +433,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Download {examData.setting.examname} Template (LaTeX)
+                Download Template
               </Button>
               
               <Button 
