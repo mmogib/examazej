@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2 } from 'lucide-react';
 import { generateExamVersions, generateCorrectnessSummary } from '@/lib/core/versioning';
 import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
+import { generateSettingsBlock } from '@/lib/core/settings';
 import type { ExamJSON, ExamData, VersionMapping, GenerationState } from '@/lib/types';
 
 interface ResultsPageProps {
@@ -83,23 +84,172 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
   const downloadTemplate = () => {
     if (!generationState) return;
 
-    // Generate template LaTeX (just the master exam without versions)
-    // Set grouping for full randomization (all questions in one group) and versions to 1
+    const numQuestions = examData.exam.questions.length;
+    
+    // Generate template questions with placeholder content
+    const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
+      const questionNumber = i + 1;
+      return `\\item
+%{#q}
+This is the body of question ${questionNumber}
+%{/q}
+
+  \\begin{enumerate}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question ${questionNumber}, Item 5
+    %{/o}
+
+  \\end{enumerate}`;
+    }).join('\n\n');
+
+    // Use current exam settings for the template
     const templateSettings = {
       ...generationState.settings,
-      groups: examData.exam.questions.length.toString(),
+      groups: numQuestions.toString(),
       numberofvestions: 1
     };
     
-    const templateContent = generateLatexDocument(
-      templateSettings,
-      examData.exam,
-      [], // No versions for template
-      [], // No mappings for template
-      allowTrustedTex
-    );
+    const settingsBlock = generateSettingsBlock(templateSettings);
 
-    const blob = new Blob([templateContent], { type: 'text/plain' });
+    const template = `${settingsBlock}
+\\documentclass{article}
+\\usepackage{graphicx}
+%% put your preamble between the two tags {#preamble} and {/preamble} below
+%% You can also redefine the following commans
+%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
+%% by typing
+%\\renewcommand{\\bodyoptionseparator}{
+%\\vspace {0.8cm}
+%}
+%\\renewcommand{\\questionseparator}{
+%\\vspace*{\\fill}
+%}
+%\\renewcommand{\\eogseparator}{
+%\\vspace*{\\fill}
+ %\\newpage}
+
+%% Predefined commands
+\\newcommand{\\bodyoptionseparator}{
+\\vspace {0.8cm}
+}
+\\newcommand{\\questionseparator}{
+\\vspace*{\\fill}
+}
+\\newcommand{\\eogseparator}{
+\\vspace*{\\fill}
+ \\newpage
+}
+\\newcommand{\\newcodecover}[1]{}
+%%
+%%
+%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
+%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
+%\\renewcommand{\\newcodecover}[1]{%
+
+%\\newpage
+%\\thispagestyle{empty}
+%\\begin{large}
+%\\begin{center}
+%        {UNIVERSITY_NAME} \\\\
+%        {DEPT_NAME}  \\\\
+%        \\vspace*{4.5cm}
+%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
+%        {\\bf {COURSE_CODE} }  \\\\
+%        {\\bf {EXAM_NAME} }  \\\\
+%        {\\bf {TERM} }  \\\\
+%        {\\bf {EXAM_DATE} }  \\\\
+%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
+%        \\vspace*{0.2cm}
+%\\end{center}
+%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\begin{large}\\textbf{Sec}\\end{large}
+%\\end{tcolorbox}
+%\\end{tcbraster}
+%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
+%%     \\hspace*{-4pt}\\textbf{Instructor}
+%% \\end{tcolorbox}
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%%     \\textbf{Serial}
+%% \\end{tcolorbox}
+%% \\end{tcbraster}
+%\\end{tcbraster}
+%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
+%
+%\\vspace{2cm}
+
+%\\underline{\\bf Important Instructions:}
+ %
+%\\begin{enumerate}
+%    \\begin{normalsize}
+%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
+%        \\item  Use HB 2.5 pencils only.
+%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
+%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
+%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
+%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
+%        \\item  When bubbling, make sure that the bubbled space is fully covered.
+%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
+%    \\end{normalsize}
+%\\end{enumerate}
+%\\end{large}
+%
+ %\\vspace*{\\fill}
+%\\newpage
+
+%}
+%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
+%%
+%%
+%%
+%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
+%{#preamble}
+
+%{/preamble}
+%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
+%%
+%% document body
+\\begin{document}
+
+
+\\begin{enumerate}
+
+${templateQuestions}
+
+\\end{enumerate} % end of questions items
+\\end{document}`;
+
+    const blob = new Blob([template], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
