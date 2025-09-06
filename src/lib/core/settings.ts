@@ -21,9 +21,7 @@ export function getDefaultSettings(): Partial<ExamSettings> {
     code_name: "VERSION",
     code_numbering: "ALPHA",
     paper_size: "A4",
-    instructions: `\\underline{\\bf Important Instructions:}
-
-\\begin{enumerate}
+    instructions: `\\begin{enumerate}
     \\begin{normalsize}
         \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
         \\item  Use HB 2.5 pencils only.
