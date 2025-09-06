@@ -6,6 +6,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { PrivacyNotice } from '@/components/ui/privacy-notice';
 import { TemplateDialog } from '@/components/ui/template-dialog';
 import { parseLatexTemplate, validateParsedTemplate } from '@/lib/core/parser';
+import { generateTemplateSettings, generateSettingsBlock } from '@/lib/core/settings';
 import type { ExamJSON, ParsedLatexTemplate } from '@/lib/types';
 
 interface StartPageProps {
@@ -122,20 +123,10 @@ This is the body of question ${questionNumber}
   \\end{enumerate}`;
     }).join('\n\n');
 
-    const template = `%{#setting}
-%		university=King Fahd University of Petroleum and Minerals
-%		department=Department of Mathematics
-%		term=T241
-%		coursecode=MATH557
-%		examname=Exam 1
-%		examdate=November 07, 2025
-%		timeallowed=120 Minutes
-%		numberofvestions=4
-%		groups=5,10,5
-%		examtype=MAJOR
-%		code_name=VERSION
-%		code_numbering=ALPHA
-%{/setting}
+    const templateSettings = generateTemplateSettings(numQuestions);
+    const settingsBlock = generateSettingsBlock(templateSettings);
+
+    const template = `${settingsBlock}
 \\documentclass{article}
 \\usepackage{graphicx}
 %% put your preamble between the two tags {#preamble} and {/preamble} below

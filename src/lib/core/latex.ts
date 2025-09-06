@@ -1,4 +1,5 @@
 import type { ExamSettings, ExamData, VersionMapping } from '../types';
+import { generateSettingsBlock } from './settings';
 
 export function escapeLatex(text: string): string {
   return text
@@ -25,21 +26,7 @@ export function generateLatexDocument(
   
   // Generate settings block (commented) - ensure numberofvestions reflects actual versions count  
   const actualVersions = versions.length || settings.numberofvestions;
-  const settingsBlock = `%{#setting}
-% code_name=${settings.code_name}
-% code_numbering=${settings.code_numbering}
-% coursecode=${settings.coursecode}
-% department=${settings.department}
-% examdate=${settings.examdate}
-% examname=${settings.examname}
-% examtype=${settings.examtype}
-% groups=${settings.groups}
-% numberofvestions=${actualVersions}
-% paper_size=${settings.paper_size}
-% term=${settings.term}
-% timeallowed=${settings.timeallowed}
-% university=${settings.university}
-%{/setting}`;
+  const settingsBlock = generateSettingsBlock(settings, actualVersions);
 
   // Document preamble
   const documentPreamble = `\\documentclass[leqno,fleqn,12pt]{article}
