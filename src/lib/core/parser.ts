@@ -158,34 +158,6 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     if (trimmed.includes('%{#q}')) {
       console.log('Found question start marker at line:', i + 1);
       
-      // Save previous question if complete
-      if (currentQuestion !== null) {
-        console.log('Saving previous complete question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
-        const question: any = {
-          text: currentQuestion,
-          choices: [
-            currentOptions.map(text => ({ text })),
-            currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
-            null
-          ]
-        };
-        
-        if (currentQuestionFixed === true) {
-          question.fixed = true;
-        } else if (currentQuestionFixed === 'fixed-options') {
-          question.fixedOptions = true;
-          question.correctOptionLetter = currentCorrectLetter;
-        }
-        
-        result.questions.push(question);
-        currentQuestion = null;
-        currentOptions = [];
-        currentQuestionFixed = false;
-        currentCorrectLetter = undefined;
-        inOptionBlock = false;
-        currentOptionText = '';
-      }
-      
       inQuestionBlock = true;
       
       // Check if question is on same line
