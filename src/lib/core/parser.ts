@@ -70,7 +70,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
-  let currentQuestionFixed = false;
+  let currentQuestionFixed: boolean | 'fixed-options' = false;
+  let currentCorrectLetter: string | undefined;
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
@@ -99,18 +100,27 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       // Save question when ending options enumerate
       if (enumerateDepth === 2 && currentQuestion && currentOptions.length === 5) {
         console.log('Saving complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
-        result.questions.push({
+        const question: any = {
           text: currentQuestion,
           choices: [
             currentOptions.map(text => ({ text })),
-            0,
+            currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
             null
-          ],
-          fixed: currentQuestionFixed
-        });
+          ]
+        };
+        
+        if (currentQuestionFixed === true) {
+          question.fixed = true;
+        } else if (currentQuestionFixed === 'fixed-options') {
+          question.fixedOptions = true;
+          question.correctOptionLetter = currentCorrectLetter;
+        }
+        
+        result.questions.push(question);
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
+        currentCorrectLetter = undefined;
       }
       
       enumerateDepth--;
@@ -131,6 +141,17 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
+    // Handle fixed-options marker
+    if (trimmed.includes('%{#fixed-options:')) {
+      const fixedOptionsMatch = trimmed.match(/%\{#fixed-options:([A-E])\}/);
+      if (fixedOptionsMatch) {
+        console.log('Found fixed-options marker at line:', i + 1, 'correct answer:', fixedOptionsMatch[1]);
+        currentQuestionFixed = 'fixed-options';
+        currentCorrectLetter = fixedOptionsMatch[1];
+        continue;
+      }
+    }
+    
     // Handle question start marker
     if (trimmed.includes('%{#q}')) {
       console.log('Found question start marker at line:', i + 1);
@@ -138,18 +159,27 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       // Save previous question if complete
       if (currentQuestion && currentOptions.length === 5) {
         console.log('Saving previous complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
-        result.questions.push({
+        const question: any = {
           text: currentQuestion,
           choices: [
             currentOptions.map(text => ({ text })),
-            0,
+            currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
             null
-          ],
-          fixed: currentQuestionFixed
-        });
+          ]
+        };
+        
+        if (currentQuestionFixed === true) {
+          question.fixed = true;
+        } else if (currentQuestionFixed === 'fixed-options') {
+          question.fixedOptions = true;
+          question.correctOptionLetter = currentCorrectLetter;
+        }
+        
+        result.questions.push(question);
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
+        currentCorrectLetter = undefined;
       }
       
       inQuestionBlock = true;
@@ -232,15 +262,23 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Save the last question if exists and complete
   if (currentQuestion && currentOptions.length === 5) {
     console.log('Saving final question:', currentQuestion, 'fixed:', currentQuestionFixed);
-    result.questions.push({
+    const question: any = {
       text: currentQuestion,
       choices: [
         currentOptions.map(text => ({ text })),
-        0,
+        currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
         null
-      ],
-      fixed: currentQuestionFixed
-    });
+      ]
+    };
+    
+    if (currentQuestionFixed === true) {
+      question.fixed = true;
+    } else if (currentQuestionFixed === 'fixed-options') {
+      question.fixedOptions = true;
+      question.correctOptionLetter = currentCorrectLetter;
+    }
+    
+    result.questions.push(question);
   }
 
   console.log('Parsing complete. Found', result.questions.length, 'questions');

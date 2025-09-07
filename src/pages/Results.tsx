@@ -477,11 +477,16 @@ ${templateQuestions}
                            <Badge variant="outline" className="w-8 h-6 justify-center">
                              {summary.questionNo}
                            </Badge>
-                           {isFixed && (
-                             <Badge variant="secondary" className="text-xs">
-                               Fixed
-                             </Badge>
-                           )}
+                            {isFixed && (
+                              <Badge variant="secondary" className="text-xs">
+                                Fixed
+                              </Badge>
+                            )}
+                            {masterQuestion?.fixedOptions && (
+                              <Badge variant="outline" className="text-xs">
+                                Fixed Options ({masterQuestion.correctOptionLetter})
+                              </Badge>
+                            )}
                            <span className="text-sm font-medium truncate flex-1">
                              {summary.text.length > 80 ? summary.text.substring(0, 80) + '...' : summary.text}
                            </span>
@@ -518,17 +523,23 @@ ${templateQuestions}
                         </h4>
                         <div className="space-y-3">
                            {version.questions.slice(0, 3).map((question, qIndex) => {
-                             const isFixed = question.fixed;
-                             return (
-                             <div key={qIndex} className="text-sm">
-                               <div className="font-medium mb-1 flex items-center gap-2">
-                                 <span>{qIndex + 1}. {question.text}</span>
-                                 {isFixed && (
-                                   <Badge variant="secondary" className="text-xs h-4">
-                                     Fixed
-                                   </Badge>
-                                 )}
-                               </div>
+                              const isFixed = question.fixed;
+                              const isFixedOptions = question.fixedOptions;
+                              return (
+                              <div key={qIndex} className="text-sm">
+                                <div className="font-medium mb-1 flex items-center gap-2">
+                                  <span>{qIndex + 1}. {question.text}</span>
+                                  {isFixed && (
+                                    <Badge variant="secondary" className="text-xs h-4">
+                                      Fixed
+                                    </Badge>
+                                  )}
+                                  {isFixedOptions && (
+                                    <Badge variant="outline" className="text-xs h-4">
+                                      Fixed Options ({question.correctOptionLetter})
+                                    </Badge>
+                                  )}
+                                </div>
                               <div className="ml-4 space-y-1">
                                 {question.choices[0].map((choice, cIndex) => (
                                   <div key={cIndex} className={`

@@ -56,30 +56,36 @@ export function generateExamVersions(
     
     // Process each group
     questionGroups.forEach((group, groupIndex) => {
-      // Separate fixed and regular questions
-      const fixedQuestions = group.filter(q => q.fixed);
-      const regularQuestions = group.filter(q => !q.fixed);
+      // Separate questions by type: fixed position, fixed options, and regular
+      const fixedPositionQuestions = group.filter(q => q.fixed);
+      const fixedOptionsQuestions = group.filter(q => q.fixedOptions && !q.fixed);
+      const regularQuestions = group.filter(q => !q.fixed && !q.fixedOptions);
       
-      // Shuffle only the regular questions within the group
-      const shuffledRegularQuestions = rng.shuffle([...regularQuestions]);
+      // Shuffle regular and fixed-options questions together (position can change)
+      const shufflableQuestions = [...fixedOptionsQuestions, ...regularQuestions];
+      const shuffledQuestions = rng.shuffle(shufflableQuestions);
       
-      // Combine fixed and shuffled regular questions, maintaining original order for fixed ones
+      // Combine fixed position questions with shuffled questions, maintaining original order for fixed ones
       const combinedQuestions = [...group].sort((a, b) => {
-        // If both are fixed or both are regular, maintain original relative order
-        if ((a.fixed && b.fixed) || (!a.fixed && !b.fixed)) {
+        if (a.fixed && b.fixed) {
           return group.indexOf(a) - group.indexOf(b);
         }
-        // If one is fixed and one is regular, maintain the original order
+        if (a.fixed && !b.fixed) {
+          return group.indexOf(a) - group.indexOf(b);
+        }
+        if (!a.fixed && b.fixed) {
+          return group.indexOf(a) - group.indexOf(b);
+        }
         return group.indexOf(a) - group.indexOf(b);
       });
       
-      // Replace regular questions with their shuffled versions
+      // Replace shufflable questions with their shuffled versions
       let shuffledIndex = 0;
       const finalQuestions = combinedQuestions.map(q => {
         if (q.fixed) {
           return q;
         } else {
-          return shuffledRegularQuestions[shuffledIndex++];
+          return shuffledQuestions[shuffledIndex++];
         }
       });
       
@@ -88,8 +94,8 @@ export function generateExamVersions(
         let newCorrectIndex: number;
         let permString: string;
         
-        if (question.fixed) {
-          // For fixed questions, don't shuffle options
+        if (question.fixed || question.fixedOptions) {
+          // For fixed questions or fixed-options questions, don't shuffle options
           shuffledChoices = question.choices[0];
           newCorrectIndex = question.choices[1]; // Use the original correct index
           permString = 'ABCDE'; // No permutation for fixed questions
@@ -98,7 +104,7 @@ export function generateExamVersions(
           const optionIndices = [0, 1, 2, 3, 4];
           const shuffledIndices = rng.shuffle(optionIndices);
           shuffledChoices = shuffledIndices.map(index => question.choices[0][index]);
-          newCorrectIndex = shuffledIndices.indexOf(0); // Find where the original correct answer ended up
+          newCorrectIndex = shuffledIndices.indexOf(question.choices[1]); // Find where the original correct answer ended up
           permString = shuffledIndices.map(i => String.fromCharCode(65 + i)).join('');
         }
         
