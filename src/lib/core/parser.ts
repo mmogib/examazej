@@ -133,18 +133,18 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
-    // Only process within question enumerate
-    if (!inQuestionEnumerate) continue;
+    // Process both inside enumerate blocks and standalone question blocks
+    const shouldProcess = inQuestionEnumerate || inQuestionBlock;
     
     // Handle fixed marker
-    if (trimmed === '%{#fixed}') {
+    if (shouldProcess && trimmed === '%{#fixed}') {
       console.log('Found fixed marker at line:', i + 1);
       currentQuestionFixed = true;
       continue;
     }
     
     // Handle fixed-options marker
-    if (trimmed.includes('%{#fixed-options:')) {
+    if (shouldProcess && trimmed.includes('%{#fixed-options:')) {
       const fixedOptionsMatch = trimmed.match(/%\{#fixed-options:([A-E])\}/);
       if (fixedOptionsMatch) {
         console.log('Found fixed-options marker at line:', i + 1, 'correct answer:', fixedOptionsMatch[1]);
@@ -154,12 +154,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
     }
     
-    // Handle question start marker
+    // Handle question start marker (process even outside enumerate blocks)
     if (trimmed.includes('%{#q}')) {
       console.log('Found question start marker at line:', i + 1);
       
       // Save previous question if complete
-      if (currentQuestion && currentOptions.length >= 0) {
+      if (currentQuestion !== null) {
         console.log('Saving previous complete question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
         const question: any = {
           text: currentQuestion,
@@ -211,6 +211,32 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
       console.log('Complete question text:', currentQuestion);
       inQuestionBlock = false;
+      
+      // If not in enumerate block, save question immediately (for open-ended questions)
+      if (!inQuestionEnumerate && currentQuestion !== null) {
+        console.log('Saving open-ended question immediately:', currentQuestion);
+        const question: any = {
+          text: currentQuestion,
+          choices: [
+            [],
+            0,
+            null
+          ]
+        };
+        
+        if (currentQuestionFixed === true) {
+          question.fixed = true;
+        } else if (currentQuestionFixed === 'fixed-options') {
+          question.fixedOptions = true;
+          question.correctOptionLetter = currentCorrectLetter;
+        }
+        
+        result.questions.push(question);
+        currentQuestion = null;
+        currentOptions = [];
+        currentQuestionFixed = false;
+        currentCorrectLetter = undefined;
+      }
       continue;
     }
     
@@ -264,7 +290,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   }
   
   // Save the last question if exists and complete
-  if (currentQuestion && currentOptions.length >= 0) {
+  if (currentQuestion !== null) {
     console.log('Saving final question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
     const question: any = {
       text: currentQuestion,
