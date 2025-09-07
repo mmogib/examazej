@@ -228,6 +228,81 @@ This is the body of question ${questionNumber}${questionNumber === 1 ? ' (this q
 ${templateQuestions}
 
 \\end{enumerate} % end of questions items
+
+%% ================================ RANDOMIZATION EXAMPLES ================================
+%% The following are examples showing different types of question randomization.
+%% Uncomment and modify these examples as needed for your exam.
+
+%% EXAMPLE 1: Completely Fixed Question (position and option order)
+%% Use %{#fixed} when you want a question to appear in the same position 
+%% in all versions with the same option order
+%
+% \\item %{#fixed}
+% %{#q}
+% This question will always appear in the same position in all exam versions.
+% The option order will also remain the same across all versions.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (will always be option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 2: Fixed Options with Random Position
+%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
+%% This keeps the option order the same but allows the question position to be randomized
+%
+% \\item %{#fixed-options:C}
+% %{#q}
+% This question can appear in different positions across versions,
+% but the option order will remain the same. The correct answer is option C.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1 (always option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2 (always option B)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (always option C)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3 (always option D)
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
+
 \\end{document}`;
 
     const blob = new Blob([template], { type: 'text/plain' });
