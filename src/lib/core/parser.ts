@@ -99,7 +99,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       
       // Save question when ending options enumerate
       if (enumerateDepth === 2 && currentQuestion && currentOptions.length >= 0) {
-        console.log('Saving complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
+        console.log('Saving complete question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
         const question: any = {
           text: currentQuestion,
           choices: [
@@ -121,6 +121,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptions = [];
         currentQuestionFixed = false;
         currentCorrectLetter = undefined;
+        inOptionBlock = false;
+        currentOptionText = '';
       }
       
       enumerateDepth--;
@@ -158,7 +160,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       
       // Save previous question if complete
       if (currentQuestion && currentOptions.length >= 0) {
-        console.log('Saving previous complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
+        console.log('Saving previous complete question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
         const question: any = {
           text: currentQuestion,
           choices: [
@@ -180,6 +182,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptions = [];
         currentQuestionFixed = false;
         currentCorrectLetter = undefined;
+        inOptionBlock = false;
+        currentOptionText = '';
       }
       
       inQuestionBlock = true;
@@ -219,14 +223,14 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     
     // Handle option start marker
     if (currentQuestion && trimmed.includes('%{#o}')) {
-      console.log('Found option start marker at line:', i + 1);
+      console.log('Found option start marker at line:', i + 1, 'current options count:', currentOptions.length);
       inOptionBlock = true;
       
       // Check if option is on same line
       const sameLineMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
       if (sameLineMatch) {
         const optionText = sameLineMatch[1].trim();
-        console.log('Found complete inline option:', optionText);
+        console.log('Found complete inline option:', optionText, 'total options now:', currentOptions.length + 1);
         currentOptions.push(optionText);
         inOptionBlock = false;
       } else {
@@ -244,7 +248,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       if (beforeTag) {
         currentOptionText = currentOptionText ? currentOptionText + ' ' + beforeTag : beforeTag;
       }
-      console.log('Complete option text:', currentOptionText);
+      console.log('Complete option text:', currentOptionText, 'total options now:', currentOptions.length + 1);
       currentOptions.push(currentOptionText);
       currentOptionText = '';
       inOptionBlock = false;
@@ -261,7 +265,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   
   // Save the last question if exists and complete
   if (currentQuestion && currentOptions.length >= 0) {
-    console.log('Saving final question:', currentQuestion, 'fixed:', currentQuestionFixed);
+    console.log('Saving final question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
     const question: any = {
       text: currentQuestion,
       choices: [
