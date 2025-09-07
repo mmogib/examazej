@@ -101,7 +101,8 @@ export function generateExamVersions(
           permString = 'ABCDE'; // No permutation for fixed questions
         } else {
           // Shuffle options for regular questions
-          const optionIndices = [0, 1, 2, 3, 4];
+          const actualOptionCount = question.choices[0].length;
+          const optionIndices = Array.from({ length: actualOptionCount }, (_, i) => i);
           const shuffledIndices = rng.shuffle(optionIndices);
           shuffledChoices = shuffledIndices.map(index => question.choices[0][index]);
           newCorrectIndex = shuffledIndices.indexOf(question.choices[1]); // Find where the original correct answer ended up
