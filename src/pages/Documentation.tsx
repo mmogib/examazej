@@ -67,7 +67,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">1</Badge>
                   <div>
                     <h3 className="font-semibold">Create or Upload Template</h3>
-                    <p className="text-sm text-muted-foreground">Download our sample template and customize it with your questions, or upload an existing LaTeX file.</p>
+                    <p className="text-sm text-muted-foreground">Download our sample template (with optional image question sample) and customize it with your questions, or upload an existing LaTeX file.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -226,10 +226,22 @@ Which planet is closest to the Sun?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Venus%{/o}
-    \\item %{#o}Mercury%{/o}
-    \\item %{#o}Earth%{/o}
-    \\item %{#o}Mars%{/o}
+    \\item
+    %{#o}
+    Venus
+    %{/o}
+    \\item
+    %{#o}
+    Mercury
+    %{/o}
+    \\item
+    %{#o}
+    Earth
+    %{/o}
+    \\item
+    %{#o}
+    Mars
+    %{/o}
   \\end{enumerate}`}
                 </pre>
               </CardContent>
@@ -253,7 +265,10 @@ What is your student ID number?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Fill in the bubble sheet%{/o}
+    \\item
+    %{#o}
+    Fill in the bubble sheet
+    %{/o}
   \\end{enumerate}`}
                 </pre>
               </CardContent>
@@ -277,9 +292,18 @@ Which letter represents the correct answer?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Wrong answer A%{/o}
-    \\item %{#o}Correct answer B%{/o}
-    \\item %{#o}Wrong answer C%{/o}
+    \\item
+    %{#o}
+    Wrong answer A
+    %{/o}
+    \\item
+    %{#o}
+    Correct answer B
+    %{/o}
+    \\item
+    %{#o}
+    Wrong answer C
+    %{/o}
   \\end{enumerate}`}
                 </pre>
               </CardContent>
@@ -306,6 +330,62 @@ Explain the concept of photosynthesis and its importance in ecosystems.
 
             <Card>
               <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-purple-500" />
+                  Image Questions
+                </CardTitle>
+                <CardDescription>Questions with graphics and advanced LaTeX formatting</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm mb-3">For questions that include images, diagrams, or complex formatting, you can use full LaTeX code within the question markers.</p>
+                <pre className="text-sm bg-muted p-3 rounded overflow-x-auto">
+{`\\item
+%{#q}
+    %% play with parameters of the minipage, vspace*, hspace* environments to control positioning
+    \\begin{minipage}[t][10cm][t]{0.5\\textwidth}
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi facilisis nulla semper justo convallis feugiat. Mauris ac orci ut nibh iaculis feugiat. Pellentesque nec molestie felis.
+    \\end{minipage}
+    \\begin{minipage}[t][5cm][t]{0.5\\textwidth}
+    %% replace the image(example-image) with your own
+    \\vspace*{0.5cm}\\hspace*{1cm}%
+    \\includegraphics[width=70mm,height=80mm]{example-image}
+    \\end{minipage}
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    Option A text
+    %{/o}
+    \\item
+    %{#o}
+    Option B text
+    %{/o}
+    \\item
+    %{#o}
+    Option C text
+    %{/o}
+    \\item
+    %{#o}
+    Option D text
+    %{/o}
+    \\item
+    %{#o}
+    Option E text
+    %{/o}
+  \\end{enumerate}`}
+                </pre>
+                <Alert className="mt-3">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    When downloading a sample template, you can choose to include an image question example. Complex LaTeX formatting within question blocks is preserved and processed correctly.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>True/False & Variable Options</CardTitle>
                 <CardDescription>Support for 2-5 options per question</CardDescription>
               </CardHeader>
@@ -320,8 +400,14 @@ The Earth is flat.
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}True%{/o}
-    \\item %{#o}False%{/o}
+    \\item
+    %{#o}
+    True
+    %{/o}
+    \\item
+    %{#o}
+    False
+    %{/o}
   \\end{enumerate}`}
                     </pre>
                   </div>
@@ -335,9 +421,18 @@ Which is largest?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Earth%{/o}
-    \\item %{#o}Moon%{/o}
-    \\item %{#o}Sun%{/o}
+    \\item
+    %{#o}
+    Earth
+    %{/o}
+    \\item
+    %{#o}
+    Moon
+    %{/o}
+    \\item
+    %{#o}
+    Sun
+    %{/o}
   \\end{enumerate}`}
                     </pre>
                   </div>
@@ -430,6 +525,14 @@ Which is largest?
                     <li>• <strong>All exam versions</strong> with randomized questions</li>
                     <li>• <strong>Answer keys</strong> for each version</li>
                     <li>• <strong>Question mapping</strong> to track question positions</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">LaTeX Processing Options</h4>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• <strong>Allow trusted LaTeX</strong> (enabled by default): Preserves LaTeX commands in questions for complex formatting</li>
+                    <li>• When disabled: LaTeX commands are escaped for plain text display</li>
                   </ul>
                 </div>
                 

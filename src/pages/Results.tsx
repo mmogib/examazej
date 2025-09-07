@@ -21,7 +21,7 @@ interface ResultsPageProps {
 
 export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
-  const [allowTrustedTex, setAllowTrustedTex] = useState(false);
+  const [allowTrustedTex, setAllowTrustedTex] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
