@@ -498,10 +498,10 @@ ${templateQuestions}
                               <div className="text-sm text-muted-foreground">{count}</div>
                             </div>
                           ))}
+                         </div>
                         </div>
-                       </div>
-                     )})})
-                  </div>
+                      ))}
+                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -549,9 +549,9 @@ ${templateQuestions}
                                   </div>
                                 ))}
                               </div>
-                             </div>
-                           )})})
-                          {version.questions.length > 3 && (
+                              </div>
+                            ))}
+                           {version.questions.length > 3 && (
                             <div className="text-sm text-muted-foreground italic">
                               ... and {version.questions.length - 3} more questions
                             </div>
