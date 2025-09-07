@@ -3,19 +3,21 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { FileText, Download } from 'lucide-react';
 
 interface TemplateDialogProps {
-  onTemplateGenerate: (numQuestions: number) => void;
+  onTemplateGenerate: (numQuestions: number, includeImageQuestion: boolean) => void;
 }
 
 export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
   const [numQuestions, setNumQuestions] = useState<number>(10);
+  const [includeImageQuestion, setIncludeImageQuestion] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleGenerate = () => {
     if (numQuestions > 0 && numQuestions <= 100) {
-      onTemplateGenerate(numQuestions);
+      onTemplateGenerate(numQuestions, includeImageQuestion);
       setOpen(false);
     }
   };
@@ -64,6 +66,19 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
             <p className="text-sm text-muted-foreground">
               Between 1 and 100 questions
             </p>
+          </div>
+          <div className="flex items-center justify-between space-x-2">
+            <div className="space-y-1">
+              <Label htmlFor="include-image">Include sample image question</Label>
+              <p className="text-sm text-muted-foreground">
+                Add a question with image layout as the first question
+              </p>
+            </div>
+            <Switch
+              id="include-image"
+              checked={includeImageQuestion}
+              onCheckedChange={setIncludeImageQuestion}
+            />
           </div>
         </div>
         <DialogFooter>

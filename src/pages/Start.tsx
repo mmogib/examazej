@@ -82,15 +82,58 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     }
   };
 
-  const generateTemplate = (numQuestions: number) => {
+  const generateTemplate = (numQuestions: number, includeImageQuestion = false) => {
+    // Create image question if requested
+    const imageQuestion = includeImageQuestion ? `\\item
+%{#q}
+    %% play with parameters of the minipage, vspace*, hspace* environments to control the positioning of your text and figures
+    \\begin{minipage}[t][10cm][t]{0.5\\textwidth}
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi facilisis nulla semper justo convallis feugiat. Mauris ac orci ut nibh iaculis feugiat. Pellentesque nec molestie felis. Fusce condimentum risus quis nulla mollis, nec posuere augue rutrum. Sed semper orci a urna fermentum bibendum. Fusce tempor nunc in magna elementum convallis. Donec hendrerit consectetur orci a rutrum. Nullam nec nisi mattis, scelerisque dolor in, porta lectus. Cras non lectus turpis. Ut neque metus, accumsan at odio commodo, finibus faucibus felis. Proin ultricies erat sed nulla imperdiet, a molestie diam tincidunt. Donec tempus dui orci, sed eleifend purus dignissim sit amet. Fusce nibh arcu, sodales ac dignissim sed, finibus sit amet sapien.
+    \\end{minipage}
+    \\begin{minipage}[t][5cm][t]{0.5\\textwidth}
+    %% replace the image(example-image) with your own
+    \\vspace*{0.5cm}\\hspace*{1cm}%
+    \\includegraphics[width=70mm,height=80mm]{example-image}
+    \\end{minipage}
+%{/q}
+
+  \\begin{enumerate}
+
+    \\item
+    %{#o}
+    question 1, Item 1
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 2
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 3
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 4
+    %{/o}
+
+    \\item
+    %{#o}
+    question 1, Item 5
+    %{/o}
+
+  \\end{enumerate}` : '';
+
     const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
-      const questionNumber = i + 1;
-      // Add %{#fixed} comment for the first question as an example
-      const fixedComment = questionNumber === 1 ? `%{#fixed}
+      const questionNumber = includeImageQuestion ? i + 2 : i + 1;
+      // Add %{#fixed} comment for the first non-image question as an example
+      const fixedComment = (!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? `%{#fixed}
 ` : '';
       return `\\item
 ${fixedComment}%{#q}
-This is the body of question ${questionNumber}${questionNumber === 1 ? ' (this question will appear in the same position across all versions)' : ''}
+This is the body of question ${questionNumber}${(!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? ' (this question will appear in the same position across all versions)' : ''}
 %{/q}
 
   \\begin{enumerate}
@@ -121,7 +164,11 @@ This is the body of question ${questionNumber}${questionNumber === 1 ? ' (this q
     %{/o}
 
   \\end{enumerate}`;
-    }).join('\n\n');
+    });
+
+    const allQuestions = includeImageQuestion 
+      ? [imageQuestion, ...templateQuestions]
+      : templateQuestions;
 
     const templateSettings = generateTemplateSettings(numQuestions);
     const settingsBlock = generateSettingsBlock(templateSettings);
@@ -237,7 +284,7 @@ This is the body of question ${questionNumber}${questionNumber === 1 ? ' (this q
 
 \\begin{enumerate}
 
-${templateQuestions}
+${allQuestions.join('\n\n')}
 
 \\end{enumerate} % end of questions items
 
