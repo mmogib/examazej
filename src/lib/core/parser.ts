@@ -3,11 +3,14 @@
 import { ParsedLatexTemplate, ExamSettings, Question } from '../types';
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
+  console.log('==== STARTING LATEX PARSING ====');
   console.log('Parsing LaTeX template, content length:', content.length);
   const lines = content.split('\n');
   const result: ParsedLatexTemplate = {
     questions: []
   };
+  
+  console.log('Total lines to process:', lines.length);
 
   // Parse settings section
   const settingStart = lines.findIndex(line => line.trim() === '%{#setting}');
@@ -99,7 +102,13 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       
       // Save question when ending options enumerate
       if (enumerateDepth === 2 && currentQuestion && currentOptions.length >= 0) {
-        console.log('Saving complete question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
+        console.log('🔥 SAVING QUESTION FROM ENUMERATE END:', {
+          questionText: currentQuestion,
+          optionsCount: currentOptions.length,
+          questionNumber: result.questions.length + 1,
+          fixed: currentQuestionFixed,
+          line: i + 1
+        });
         const question: any = {
           text: currentQuestion,
           choices: [
@@ -117,6 +126,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         }
         
         result.questions.push(question);
+        console.log('✅ Question saved! Total questions now:', result.questions.length);
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
@@ -186,7 +196,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       
       // If not in enumerate block, save question immediately (for open-ended questions)
       if (!inQuestionEnumerate && currentQuestion !== null) {
-        console.log('Saving open-ended question immediately:', currentQuestion);
+        console.log('🔥 SAVING OPEN-ENDED QUESTION:', {
+          questionText: currentQuestion,
+          questionNumber: result.questions.length + 1,
+          fixed: currentQuestionFixed,
+          line: i + 1
+        });
         const question: any = {
           text: currentQuestion,
           choices: [
@@ -204,6 +219,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         }
         
         result.questions.push(question);
+        console.log('✅ Open-ended question saved! Total questions now:', result.questions.length);
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
@@ -263,7 +279,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   
   // Save the last question if exists and complete
   if (currentQuestion !== null) {
-    console.log('Saving final question:', currentQuestion, 'with', currentOptions.length, 'options, fixed:', currentQuestionFixed);
+    console.log('🔥 SAVING FINAL QUESTION:', {
+      questionText: currentQuestion,
+      optionsCount: currentOptions.length,
+      questionNumber: result.questions.length + 1,
+      fixed: currentQuestionFixed
+    });
     const question: any = {
       text: currentQuestion,
       choices: [
@@ -281,9 +302,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     }
     
     result.questions.push(question);
+    console.log('✅ Final question saved! Total questions now:', result.questions.length);
   }
 
-  console.log('Parsing complete. Found', result.questions.length, 'questions');
+  console.log('==== PARSING COMPLETE ====');
+  console.log('Final question count:', result.questions.length);
+  console.log('Questions:', result.questions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
   return result;
 }
 
