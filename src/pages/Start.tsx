@@ -19,24 +19,36 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
+    console.log('🔥 CREATING EXAM FROM TEMPLATE');
+    console.log('Template questions count:', template.questions.length);
+    console.log('Template questions:', template.questions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
+    
     const defaults = getDefaultSettings();
     const settings = { ...defaults, ...template.settings };
     
-    return {
+    const examQuestions = template.questions.map((q, index) => ({
+      ...q,
+      group: 1,
+      order: index + 1
+    }));
+    
+    console.log('Final exam questions count:', examQuestions.length);
+    console.log('Final exam questions:', examQuestions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
+    
+    const result = {
       setting: settings as ExamSettings,
       exam: {
         name: 'master',
         ordering: null,
         preamble: template.preamble || '',
-        questions: template.questions.map((q, index) => ({
-          ...q,
-          group: 1,
-          order: index + 1
-        })),
+        questions: examQuestions,
         kept_in_one_page: []
       },
       options_order: {}
     };
+    
+    console.log('✅ EXAM CREATED - Final questions count:', result.exam.questions.length);
+    return result;
   };
 
   const handleFileSelected = async (file: File) => {
