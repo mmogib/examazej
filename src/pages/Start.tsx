@@ -19,24 +19,36 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
+    console.log('🔥 CREATING EXAM FROM TEMPLATE');
+    console.log('Template questions count:', template.questions.length);
+    console.log('Template questions:', template.questions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
+    
     const defaults = getDefaultSettings();
     const settings = { ...defaults, ...template.settings };
     
-    return {
+    const examQuestions = template.questions.map((q, index) => ({
+      ...q,
+      group: 1,
+      order: index + 1
+    }));
+    
+    console.log('Final exam questions count:', examQuestions.length);
+    console.log('Final exam questions:', examQuestions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
+    
+    const result = {
       setting: settings as ExamSettings,
       exam: {
         name: 'master',
         ordering: null,
         preamble: template.preamble || '',
-        questions: template.questions.map((q, index) => ({
-          ...q,
-          group: 1,
-          order: index + 1
-        })),
+        questions: examQuestions,
         kept_in_one_page: []
       },
       options_order: {}
     };
+    
+    console.log('✅ EXAM CREATED - Final questions count:', result.exam.questions.length);
+    return result;
   };
 
   const handleFileSelected = async (file: File) => {
@@ -73,9 +85,12 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const generateTemplate = (numQuestions: number) => {
     const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
       const questionNumber = i + 1;
+      // Add %{#fixed} comment for the first question as an example
+      const fixedComment = questionNumber === 1 ? `%{#fixed}
+` : '';
       return `\\item
-%{#q}
-This is the body of question ${questionNumber}
+${fixedComment}%{#q}
+This is the body of question ${questionNumber}${questionNumber === 1 ? ' (this question will appear in the same position across all versions)' : ''}
 %{/q}
 
   \\begin{enumerate}
@@ -225,6 +240,122 @@ This is the body of question ${questionNumber}
 ${templateQuestions}
 
 \\end{enumerate} % end of questions items
+
+%% ================================ RANDOMIZATION EXAMPLES ================================
+%% The following are examples showing different types of question randomization.
+%% Uncomment and modify these examples as needed for your exam.
+
+%% EXAMPLE 1: Completely Fixed Question (position and option order)
+%% Use %{#fixed} when you want a question to appear in the same position 
+%% in all versions with the same option order
+%
+% \\item %{#fixed}
+% %{#q}
+% This question will always appear in the same position in all exam versions.
+% The option order will also remain the same across all versions.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (will always be option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 2: Fixed Options with Random Position
+%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
+%% This keeps the option order the same but allows the question position to be randomized
+%
+% \\item %{#fixed-options:C}
+% %{#q}
+% This question can appear in different positions across versions,
+% but the option order will remain the same. The correct answer is option C.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1 (always option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2 (always option B)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (always option C)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3 (always option D)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4 (always option E)
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 3: True/False question (2 options)
+%% You can have 2-5 options or none for open-ended questions
+%
+% \\item
+% %{#q}
+% This is a true or false question - supports variable option counts
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     True
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     False
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 4: Open-ended question (no options)
+%% For essay questions or short-answer format
+%
+% \\item
+% %{#q}
+% This is an open-ended question where students write their own answer.
+% No options are provided, making it suitable for essay or short-answer format.
+% %{/q}
+
+%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
+
 \\end{document}`;
 
     const blob = new Blob([template], { type: 'text/plain' });

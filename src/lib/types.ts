@@ -27,6 +27,9 @@ export interface Question {
   group: number;
   order: number;
   choices: [QuestionChoice[], number, null];
+  fixed?: boolean; // If true, question order and options won't be shuffled
+  fixedOptions?: boolean; // If true, only options won't be shuffled (position can still change)
+  correctOptionLetter?: string; // The letter of the correct option (A, B, C, D, E)
 }
 
 export interface ExamData {

@@ -38,6 +38,17 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
             Generate a LaTeX template with placeholder questions. Specify how many questions you need.
           </DialogDescription>
         </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-2">
+            <h4 className="font-medium">Template Features:</h4>
+            <ul className="space-y-1 text-xs">
+              <li><strong>Fixed Questions:</strong> Add <code>%{"{#fixed}"}</code> after any question text to prevent it from being shuffled in position or having its options reordered across versions.</li>
+              <li><strong>Fixed Options:</strong> Add <code>%{"{#fixed-options:B}"}</code> (where B is the correct answer) to keep option order fixed while allowing question position to be randomized.</li>
+            </ul>
+          </div>
+        </div>
+        <DialogHeader>
+        </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="num-questions">Number of Questions</Label>

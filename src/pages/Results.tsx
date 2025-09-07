@@ -86,42 +86,51 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
     const numQuestions = examData.exam.questions.length;
     
-    // Generate template questions with placeholder content
-    const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
+    // Generate template questions using actual exam data
+    const templateQuestions = examData.exam.questions.map((question, i) => {
       const questionNumber = i + 1;
-      return `\\item
+      
+      // Generate the question tags based on question properties
+      let questionTags = '';
+      if (question.fixed) {
+        questionTags = '%{#fixed}';
+      } else if (question.fixedOptions && question.correctOptionLetter) {
+        questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
+      }
+      
+      const questionText = question.text || `Question ${questionNumber} text`;
+      const choices = question.choices[0] || [];
+      
+      // Only generate options if the question has choices (not open-ended)
+      const optionsText = choices.length > 0 ? 
+        choices.map((choice, index) => {
+          const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
+          return `    \\item
+    %{#o}
+    ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
+    %{/o}`;
+        }).join('\n\n') : '';
+      
+      // Format question with or without options based on choice count
+      if (choices.length === 0) {
+        // Open-ended question (no options)
+        return `\\item ${questionTags}
 %{#q}
-This is the body of question ${questionNumber}
+${questionText}
+%{/q}`;
+      } else {
+        // Multiple choice question
+        return `\\item ${questionTags}
+%{#q}
+${questionText}
 %{/q}
 
   \\begin{enumerate}
 
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 1
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 2
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 3
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 4
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 5
-    %{/o}
+${optionsText}
 
   \\end{enumerate}`;
+      }
     }).join('\n\n');
 
     // Use current exam settings for the template with actual generated values
@@ -248,6 +257,122 @@ This is the body of question ${questionNumber}
 ${templateQuestions}
 
 \\end{enumerate} % end of questions items
+
+%% ================================ RANDOMIZATION EXAMPLES ================================
+%% The following are examples showing different types of question randomization.
+%% Uncomment and modify these examples as needed for your exam.
+
+%% EXAMPLE 1: Completely Fixed Question (position and option order)
+%% Use %{#fixed} when you want a question to appear in the same position 
+%% in all versions with the same option order
+%
+% \\item %{#fixed}
+% %{#q}
+% This question will always appear in the same position in all exam versions.
+% The option order will also remain the same across all versions.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (will always be option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 2: Fixed Options with Random Position
+%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
+%% This keeps the option order the same but allows the question position to be randomized
+%
+% \\item %{#fixed-options:C}
+% %{#q}
+% This question can appear in different positions across versions,
+% but the option order will remain the same. The correct answer is option C.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1 (always option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2 (always option B)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (always option C)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3 (always option D)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4 (always option E)
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 3: True/False question (2 options)
+%% You can have 2-5 options or none for open-ended questions
+%
+% \\item
+% %{#q}
+% This is a true or false question - supports variable option counts
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     True
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     False
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 4: Open-ended question (no options)
+%% For essay questions or short-answer format
+%
+% \\item
+% %{#q}
+% This is an open-ended question where students write their own answer.
+% No options are provided, making it suitable for essay or short-answer format.
+% %{/q}
+
+%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
+
 \\end{document}`;
 
     const blob = new Blob([template], { type: 'text/plain' });
@@ -468,27 +593,53 @@ ${templateQuestions}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {correctnessSummary.map((summary, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="w-8 h-6 justify-center">
-                            {summary.questionNo}
-                          </Badge>
-                          <span className="text-sm font-medium truncate flex-1">
-                            {summary.text.length > 80 ? summary.text.substring(0, 80) + '...' : summary.text}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-5 gap-2">
-                          {Object.entries(summary.correctCounts).map(([letter, count]) => (
-                            <div key={letter} className="text-center p-2 bg-muted/50 rounded">
-                              <div className="font-bold">{letter}</div>
-                              <div className="text-sm text-muted-foreground">{count}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                     {correctnessSummary.map((summary, index) => {
+                       const masterQuestion = examData.exam.questions[index];
+                       const isFixed = masterQuestion?.fixed;
+                       const hasOptions = masterQuestion?.choices[0]?.length > 0;
+                       return (
+                       <div key={index} className="space-y-2">
+                         <div className="flex items-center gap-2">
+                           <Badge variant="outline" className="w-8 h-6 justify-center">
+                             {summary.questionNo}
+                           </Badge>
+                            {isFixed && (
+                              <Badge variant="secondary" className="text-xs">
+                                Fixed
+                              </Badge>
+                            )}
+                            {masterQuestion?.fixedOptions && (
+                              <Badge variant="outline" className="text-xs">
+                                Fixed Options ({masterQuestion.correctOptionLetter})
+                              </Badge>
+                            )}
+                            {!hasOptions && (
+                              <Badge variant="outline" className="text-xs">
+                                Open-ended
+                              </Badge>
+                            )}
+                           <span className="text-sm font-medium truncate flex-1">
+                             {summary.text.length > 80 ? summary.text.substring(0, 80) + "..." : summary.text}
+                           </span>
+                         </div>
+                         {hasOptions ? (
+                           <div className="grid grid-cols-5 gap-2">
+                             {Object.entries(summary.correctCounts).map(([letter, count]) => (
+                               <div key={letter} className="text-center p-2 bg-muted/50 rounded">
+                                 <div className="font-bold">{letter}</div>
+                                 <div className="text-sm text-muted-foreground">{count}</div>
+                               </div>
+                              ))}
+                             </div>
+                         ) : (
+                           <div className="text-sm text-muted-foreground italic p-2 bg-muted/30 rounded">
+                             No options - students provide their own answers
+                           </div>
+                         )}
+                         </div>
+                        );
+                      })}
+                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -509,11 +660,24 @@ ${templateQuestions}
                           {generationState.settings.code_name} {version.name.replace('version_', '')}
                         </h4>
                         <div className="space-y-3">
-                          {version.questions.slice(0, 3).map((question, qIndex) => (
-                            <div key={qIndex} className="text-sm">
-                              <div className="font-medium mb-1">
-                                {qIndex + 1}. {question.text}
-                              </div>
+                           {version.questions.slice(0, 3).map((question, qIndex) => {
+                              const isFixed = question.fixed;
+                              const isFixedOptions = question.fixedOptions;
+                              return (
+                              <div key={qIndex} className="text-sm">
+                                <div className="font-medium mb-1 flex items-center gap-2">
+                                  <span>{qIndex + 1}. {question.text}</span>
+                                  {isFixed && (
+                                    <Badge variant="secondary" className="text-xs h-4">
+                                      Fixed
+                                    </Badge>
+                                  )}
+                                  {isFixedOptions && (
+                                    <Badge variant="outline" className="text-xs h-4">
+                                      Fixed Options ({question.correctOptionLetter})
+                                    </Badge>
+                                  )}
+                                </div>
                               <div className="ml-4 space-y-1">
                                 {question.choices[0].map((choice, cIndex) => (
                                   <div key={cIndex} className={`
@@ -521,11 +685,12 @@ ${templateQuestions}
                                   `}>
                                     {String.fromCharCode(65 + cIndex)}. {choice.text}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                          {version.questions.length > 3 && (
+                                 ))}
+                               </div>
+                               </div>
+                              );
+                            })}
+                           {version.questions.length > 3 && (
                             <div className="text-sm text-muted-foreground italic">
                               ... and {version.questions.length - 3} more questions
                             </div>

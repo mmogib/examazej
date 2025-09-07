@@ -1,13 +1,15 @@
-import { Shield, FileText, Home } from 'lucide-react';
+import { Shield, FileText, Home, BookOpen } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   onStartOver?: () => void;
+  onShowDocs?: () => void;
   showStartOver?: boolean;
+  currentStep?: string;
 }
 
-export function Header({ onStartOver, showStartOver = false }: HeaderProps) {
+export function Header({ onStartOver, onShowDocs, showStartOver = false, currentStep }: HeaderProps) {
   return (
     <header className="border-b bg-card shadow-card">
       <div className="container mx-auto px-4 py-4">
@@ -23,6 +25,16 @@ export function Header({ onStartOver, showStartOver = false }: HeaderProps) {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              onClick={onShowDocs}
+              variant={currentStep === 'docs' ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              Documentation
+            </Button>
+            
             {showStartOver && onStartOver && (
               <Button 
                 onClick={onStartOver}

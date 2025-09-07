@@ -3,11 +3,14 @@
 import { ParsedLatexTemplate, ExamSettings, Question } from '../types';
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
+  console.log('==== STARTING LATEX PARSING ====');
   console.log('Parsing LaTeX template, content length:', content.length);
   const lines = content.split('\n');
   const result: ParsedLatexTemplate = {
     questions: []
   };
+  
+  console.log('Total lines to process:', lines.length);
 
   // Parse settings section
   const settingStart = lines.findIndex(line => line.trim() === '%{#setting}');
@@ -70,6 +73,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
+  let currentQuestionFixed: boolean | 'fixed-options' = false;
+  let currentCorrectLetter: string | undefined;
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
@@ -81,6 +86,11 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
+    
+    // Skip LaTeX comment lines (but not our special markers that start with %)
+    if (trimmed.startsWith('%') && !trimmed.startsWith('%{')) {
+      continue;
+    }
     
     // Track enumerate depth
     if (trimmed.includes('\\begin{enumerate}')) {
@@ -96,18 +106,38 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       console.log('Found enumerate end, depth was:', enumerateDepth, 'at line:', i + 1);
       
       // Save question when ending options enumerate
-      if (enumerateDepth === 2 && currentQuestion && currentOptions.length === 5) {
-        console.log('Saving complete question:', currentQuestion);
-        result.questions.push({
+      if (enumerateDepth === 2 && currentQuestion && currentOptions.length >= 0) {
+        console.log('🔥 SAVING QUESTION FROM ENUMERATE END:', {
+          questionText: currentQuestion,
+          optionsCount: currentOptions.length,
+          questionNumber: result.questions.length + 1,
+          fixed: currentQuestionFixed,
+          line: i + 1
+        });
+        const question: any = {
           text: currentQuestion,
           choices: [
             currentOptions.map(text => ({ text })),
-            0,
+            currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
             null
           ]
-        });
+        };
+        
+        if (currentQuestionFixed === true) {
+          question.fixed = true;
+        } else if (currentQuestionFixed === 'fixed-options') {
+          question.fixedOptions = true;
+          question.correctOptionLetter = currentCorrectLetter;
+        }
+        
+        result.questions.push(question);
+        console.log('✅ Question saved! Total questions now:', result.questions.length);
         currentQuestion = null;
         currentOptions = [];
+        currentQuestionFixed = false;
+        currentCorrectLetter = undefined;
+        inOptionBlock = false;
+        currentOptionText = '';
       }
       
       enumerateDepth--;
@@ -118,27 +148,30 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
-    // Only process within question enumerate
-    if (!inQuestionEnumerate) continue;
+    // Process both inside enumerate blocks and standalone question blocks
+    const shouldProcess = inQuestionEnumerate || inQuestionBlock;
     
-    // Handle question start marker
+    // Handle fixed marker
+    if (shouldProcess && trimmed === '%{#fixed}') {
+      console.log('Found fixed marker at line:', i + 1);
+      currentQuestionFixed = true;
+      continue;
+    }
+    
+    // Handle fixed-options marker
+    if (shouldProcess && trimmed.includes('%{#fixed-options:')) {
+      const fixedOptionsMatch = trimmed.match(/%\{#fixed-options:([A-E])\}/);
+      if (fixedOptionsMatch) {
+        console.log('Found fixed-options marker at line:', i + 1, 'correct answer:', fixedOptionsMatch[1]);
+        currentQuestionFixed = 'fixed-options';
+        currentCorrectLetter = fixedOptionsMatch[1];
+        continue;
+      }
+    }
+    
+    // Handle question start marker (process even outside enumerate blocks)
     if (trimmed.includes('%{#q}')) {
       console.log('Found question start marker at line:', i + 1);
-      
-      // Save previous question if complete
-      if (currentQuestion && currentOptions.length === 5) {
-        console.log('Saving previous complete question:', currentQuestion);
-        result.questions.push({
-          text: currentQuestion,
-          choices: [
-            currentOptions.map(text => ({ text })),
-            0,
-            null
-          ]
-        });
-        currentQuestion = null;
-        currentOptions = [];
-      }
       
       inQuestionBlock = true;
       
@@ -165,6 +198,38 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
       console.log('Complete question text:', currentQuestion);
       inQuestionBlock = false;
+      
+      // If not in enumerate block, save question immediately (for open-ended questions)
+      if (!inQuestionEnumerate && currentQuestion !== null) {
+        console.log('🔥 SAVING OPEN-ENDED QUESTION:', {
+          questionText: currentQuestion,
+          questionNumber: result.questions.length + 1,
+          fixed: currentQuestionFixed,
+          line: i + 1
+        });
+        const question: any = {
+          text: currentQuestion,
+          choices: [
+            [],
+            0,
+            null
+          ]
+        };
+        
+        if (currentQuestionFixed === true) {
+          question.fixed = true;
+        } else if (currentQuestionFixed === 'fixed-options') {
+          question.fixedOptions = true;
+          question.correctOptionLetter = currentCorrectLetter;
+        }
+        
+        result.questions.push(question);
+        console.log('✅ Open-ended question saved! Total questions now:', result.questions.length);
+        currentQuestion = null;
+        currentOptions = [];
+        currentQuestionFixed = false;
+        currentCorrectLetter = undefined;
+      }
       continue;
     }
     
@@ -177,14 +242,14 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     
     // Handle option start marker
     if (currentQuestion && trimmed.includes('%{#o}')) {
-      console.log('Found option start marker at line:', i + 1);
+      console.log('Found option start marker at line:', i + 1, 'current options count:', currentOptions.length);
       inOptionBlock = true;
       
       // Check if option is on same line
       const sameLineMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
       if (sameLineMatch) {
         const optionText = sameLineMatch[1].trim();
-        console.log('Found complete inline option:', optionText);
+        console.log('Found complete inline option:', optionText, 'total options now:', currentOptions.length + 1);
         currentOptions.push(optionText);
         inOptionBlock = false;
       } else {
@@ -202,7 +267,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       if (beforeTag) {
         currentOptionText = currentOptionText ? currentOptionText + ' ' + beforeTag : beforeTag;
       }
-      console.log('Complete option text:', currentOptionText);
+      console.log('Complete option text:', currentOptionText, 'total options now:', currentOptions.length + 1);
       currentOptions.push(currentOptionText);
       currentOptionText = '';
       inOptionBlock = false;
@@ -218,19 +283,36 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   }
   
   // Save the last question if exists and complete
-  if (currentQuestion && currentOptions.length === 5) {
-    console.log('Saving final question:', currentQuestion);
-    result.questions.push({
+  if (currentQuestion !== null) {
+    console.log('🔥 SAVING FINAL QUESTION:', {
+      questionText: currentQuestion,
+      optionsCount: currentOptions.length,
+      questionNumber: result.questions.length + 1,
+      fixed: currentQuestionFixed
+    });
+    const question: any = {
       text: currentQuestion,
       choices: [
         currentOptions.map(text => ({ text })),
-        0,
+        currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
         null
       ]
-    });
+    };
+    
+    if (currentQuestionFixed === true) {
+      question.fixed = true;
+    } else if (currentQuestionFixed === 'fixed-options') {
+      question.fixedOptions = true;
+      question.correctOptionLetter = currentCorrectLetter;
+    }
+    
+    result.questions.push(question);
+    console.log('✅ Final question saved! Total questions now:', result.questions.length);
   }
 
-  console.log('Parsing complete. Found', result.questions.length, 'questions');
+  console.log('==== PARSING COMPLETE ====');
+  console.log('Final question count:', result.questions.length);
+  console.log('Questions:', result.questions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
   return result;
 }
 
@@ -246,8 +328,8 @@ export function validateParsedTemplate(parsed: ParsedLatexTemplate): string[] {
       errors.push(`Question ${index + 1} has empty text`);
     }
     
-    if (question.choices[0].length !== 5) {
-      errors.push(`Question ${index + 1} must have exactly 5 options, found ${question.choices[0].length}`);
+    if (question.choices[0].length > 5) {
+      errors.push(`Question ${index + 1} cannot have more than 5 options, found ${question.choices[0].length}`);
     }
     
     question.choices[0].forEach((choice, choiceIndex) => {
