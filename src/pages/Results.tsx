@@ -86,40 +86,37 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
     const numQuestions = examData.exam.questions.length;
     
-    // Generate template questions with placeholder content (exclude %{#fixed} markers)
-    const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
+    // Generate template questions using actual exam data
+    const templateQuestions = examData.exam.questions.map((question, i) => {
       const questionNumber = i + 1;
-      return `\\item
+      
+      // Generate the question tags based on question properties
+      let questionTags = '';
+      if (question.fixed) {
+        questionTags = '%{#fixed}';
+      } else if (question.fixedOptions && question.correctOptionLetter) {
+        questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
+      }
+      
+      const questionText = question.text || `Question ${questionNumber} text`;
+      const choices = question.choices[0] || [];
+      
+      const optionsText = choices.map((choice, index) => {
+        const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
+        return `    \\item
+    %{#o}
+    ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
+    %{/o}`;
+      }).join('\n\n');
+      
+      return `\\item ${questionTags}
 %{#q}
-This is the body of question ${questionNumber}
+${questionText}
 %{/q}
 
   \\begin{enumerate}
 
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 1
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 2
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 3
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 4
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 5
-    %{/o}
+${optionsText}
 
   \\end{enumerate}`;
     }).join('\n\n');
