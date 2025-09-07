@@ -87,6 +87,11 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     const line = lines[i];
     const trimmed = line.trim();
     
+    // Skip LaTeX comment lines (but not our special markers that start with %)
+    if (trimmed.startsWith('%') && !trimmed.startsWith('%{')) {
+      continue;
+    }
+    
     // Track enumerate depth
     if (trimmed.includes('\\begin{enumerate}')) {
       enumerateDepth++;
