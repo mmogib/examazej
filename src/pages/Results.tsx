@@ -101,15 +101,26 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       const questionText = question.text || `Question ${questionNumber} text`;
       const choices = question.choices[0] || [];
       
-      const optionsText = choices.map((choice, index) => {
-        const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
-        return `    \\item
+      // Only generate options if the question has choices (not open-ended)
+      const optionsText = choices.length > 0 ? 
+        choices.map((choice, index) => {
+          const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
+          return `    \\item
     %{#o}
     ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
     %{/o}`;
-      }).join('\n\n');
+        }).join('\n\n') : '';
       
-      return `\\item ${questionTags}
+      // Format question with or without options based on choice count
+      if (choices.length === 0) {
+        // Open-ended question (no options)
+        return `\\item ${questionTags}
+%{#q}
+${questionText}
+%{/q}`;
+      } else {
+        // Multiple choice question
+        return `\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}
@@ -119,6 +130,7 @@ ${questionText}
 ${optionsText}
 
   \\end{enumerate}`;
+      }
     }).join('\n\n');
 
     // Use current exam settings for the template with actual generated values
@@ -327,6 +339,37 @@ ${templateQuestions}
 %     %{/o}
 % 
 %   \\end{enumerate}
+
+%% EXAMPLE 3: True/False question (2 options)
+%% You can have 2-5 options or none for open-ended questions
+%
+% \\item
+% %{#q}
+% This is a true or false question - supports variable option counts
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     True
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     False
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 4: Open-ended question (no options)
+%% For essay questions or short-answer format
+%
+% \\item
+% %{#q}
+% This is an open-ended question where students write their own answer.
+% No options are provided, making it suitable for essay or short-answer format.
+% %{/q}
 
 %% =========================== END OF RANDOMIZATION EXAMPLES ===========================
 

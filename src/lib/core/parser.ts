@@ -98,7 +98,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       console.log('Found enumerate end, depth was:', enumerateDepth, 'at line:', i + 1);
       
       // Save question when ending options enumerate
-      if (enumerateDepth === 2 && currentQuestion && currentOptions.length === 5) {
+      if (enumerateDepth === 2 && currentQuestion && currentOptions.length >= 0) {
         console.log('Saving complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
         const question: any = {
           text: currentQuestion,
@@ -157,7 +157,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       console.log('Found question start marker at line:', i + 1);
       
       // Save previous question if complete
-      if (currentQuestion && currentOptions.length === 5) {
+      if (currentQuestion && currentOptions.length >= 0) {
         console.log('Saving previous complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
         const question: any = {
           text: currentQuestion,
@@ -260,7 +260,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   }
   
   // Save the last question if exists and complete
-  if (currentQuestion && currentOptions.length === 5) {
+  if (currentQuestion && currentOptions.length >= 0) {
     console.log('Saving final question:', currentQuestion, 'fixed:', currentQuestionFixed);
     const question: any = {
       text: currentQuestion,
@@ -297,8 +297,8 @@ export function validateParsedTemplate(parsed: ParsedLatexTemplate): string[] {
       errors.push(`Question ${index + 1} has empty text`);
     }
     
-    if (question.choices[0].length !== 5) {
-      errors.push(`Question ${index + 1} must have exactly 5 options, found ${question.choices[0].length}`);
+    if (question.choices[0].length > 5) {
+      errors.push(`Question ${index + 1} cannot have more than 5 options, found ${question.choices[0].length}`);
     }
     
     question.choices[0].forEach((choice, choiceIndex) => {

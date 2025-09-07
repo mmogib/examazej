@@ -311,6 +311,37 @@ ${templateQuestions}
 % 
 %   \\end{enumerate}
 
+%% EXAMPLE 3: True/False question (2 options)
+%% You can have 2-5 options or none for open-ended questions
+%
+% \\item
+% %{#q}
+% This is a true or false question - supports variable option counts
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     True
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     False
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 4: Open-ended question (no options)
+%% For essay questions or short-answer format
+%
+% \\item
+% %{#q}
+% This is an open-ended question where students write their own answer.
+% No options are provided, making it suitable for essay or short-answer format.
+% %{/q}
+
 %% =========================== END OF RANDOMIZATION EXAMPLES ===========================
 
 \\end{document}`;
