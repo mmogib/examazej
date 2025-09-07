@@ -70,6 +70,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
+  let currentQuestionFixed = false;
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
@@ -97,17 +98,19 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       
       // Save question when ending options enumerate
       if (enumerateDepth === 2 && currentQuestion && currentOptions.length === 5) {
-        console.log('Saving complete question:', currentQuestion);
+        console.log('Saving complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
         result.questions.push({
           text: currentQuestion,
           choices: [
             currentOptions.map(text => ({ text })),
             0,
             null
-          ]
+          ],
+          fixed: currentQuestionFixed
         });
         currentQuestion = null;
         currentOptions = [];
+        currentQuestionFixed = false;
       }
       
       enumerateDepth--;
@@ -121,23 +124,32 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Only process within question enumerate
     if (!inQuestionEnumerate) continue;
     
+    // Handle fixed marker
+    if (trimmed === '%{#fixed}') {
+      console.log('Found fixed marker at line:', i + 1);
+      currentQuestionFixed = true;
+      continue;
+    }
+    
     // Handle question start marker
     if (trimmed.includes('%{#q}')) {
       console.log('Found question start marker at line:', i + 1);
       
       // Save previous question if complete
       if (currentQuestion && currentOptions.length === 5) {
-        console.log('Saving previous complete question:', currentQuestion);
+        console.log('Saving previous complete question:', currentQuestion, 'fixed:', currentQuestionFixed);
         result.questions.push({
           text: currentQuestion,
           choices: [
             currentOptions.map(text => ({ text })),
             0,
             null
-          ]
+          ],
+          fixed: currentQuestionFixed
         });
         currentQuestion = null;
         currentOptions = [];
+        currentQuestionFixed = false;
       }
       
       inQuestionBlock = true;
@@ -219,14 +231,15 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   
   // Save the last question if exists and complete
   if (currentQuestion && currentOptions.length === 5) {
-    console.log('Saving final question:', currentQuestion);
+    console.log('Saving final question:', currentQuestion, 'fixed:', currentQuestionFixed);
     result.questions.push({
       text: currentQuestion,
       choices: [
         currentOptions.map(text => ({ text })),
         0,
         null
-      ]
+      ],
+      fixed: currentQuestionFixed
     });
   }
 

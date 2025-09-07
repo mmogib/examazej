@@ -27,6 +27,7 @@ export interface Question {
   group: number;
   order: number;
   choices: [QuestionChoice[], number, null];
+  fixed?: boolean; // If true, question order and options won't be shuffled
 }
 
 export interface ExamData {

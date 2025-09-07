@@ -73,9 +73,12 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const generateTemplate = (numQuestions: number) => {
     const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
       const questionNumber = i + 1;
+      // Add %{#fixed} comment for the first question as an example
+      const fixedComment = questionNumber === 1 ? `%{#fixed}
+` : '';
       return `\\item
-%{#q}
-This is the body of question ${questionNumber}
+${fixedComment}%{#q}
+This is the body of question ${questionNumber}${questionNumber === 1 ? ' (this question will appear in the same position across all versions)' : ''}
 %{/q}
 
   \\begin{enumerate}

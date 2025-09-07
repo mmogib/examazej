@@ -86,7 +86,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
     const numQuestions = examData.exam.questions.length;
     
-    // Generate template questions with placeholder content
+    // Generate template questions with placeholder content (exclude %{#fixed} markers)
     const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
       const questionNumber = i + 1;
       return `\\item
@@ -468,16 +468,24 @@ ${templateQuestions}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {correctnessSummary.map((summary, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="w-8 h-6 justify-center">
-                            {summary.questionNo}
-                          </Badge>
-                          <span className="text-sm font-medium truncate flex-1">
-                            {summary.text.length > 80 ? summary.text.substring(0, 80) + '...' : summary.text}
-                          </span>
-                        </div>
+                     {correctnessSummary.map((summary, index) => {
+                       const masterQuestion = examData.exam.questions[index];
+                       const isFixed = masterQuestion?.fixed;
+                       return (
+                       <div key={index} className="space-y-2">
+                         <div className="flex items-center gap-2">
+                           <Badge variant="outline" className="w-8 h-6 justify-center">
+                             {summary.questionNo}
+                           </Badge>
+                           {isFixed && (
+                             <Badge variant="secondary" className="text-xs">
+                               Fixed
+                             </Badge>
+                           )}
+                           <span className="text-sm font-medium truncate flex-1">
+                             {summary.text.length > 80 ? summary.text.substring(0, 80) + '...' : summary.text}
+                           </span>
+                         </div>
                         <div className="grid grid-cols-5 gap-2">
                           {Object.entries(summary.correctCounts).map(([letter, count]) => (
                             <div key={letter} className="text-center p-2 bg-muted/50 rounded">
@@ -486,8 +494,8 @@ ${templateQuestions}
                             </div>
                           ))}
                         </div>
-                      </div>
-                    ))}
+                       </div>
+                     )})})
                   </div>
                 </CardContent>
               </Card>
@@ -509,11 +517,18 @@ ${templateQuestions}
                           {generationState.settings.code_name} {version.name.replace('version_', '')}
                         </h4>
                         <div className="space-y-3">
-                          {version.questions.slice(0, 3).map((question, qIndex) => (
-                            <div key={qIndex} className="text-sm">
-                              <div className="font-medium mb-1">
-                                {qIndex + 1}. {question.text}
-                              </div>
+                           {version.questions.slice(0, 3).map((question, qIndex) => {
+                             const isFixed = question.fixed;
+                             return (
+                             <div key={qIndex} className="text-sm">
+                               <div className="font-medium mb-1 flex items-center gap-2">
+                                 <span>{qIndex + 1}. {question.text}</span>
+                                 {isFixed && (
+                                   <Badge variant="secondary" className="text-xs h-4">
+                                     Fixed
+                                   </Badge>
+                                 )}
+                               </div>
                               <div className="ml-4 space-y-1">
                                 {question.choices[0].map((choice, cIndex) => (
                                   <div key={cIndex} className={`
@@ -523,8 +538,8 @@ ${templateQuestions}
                                   </div>
                                 ))}
                               </div>
-                            </div>
-                          ))}
+                             </div>
+                           )})})
                           {version.questions.length > 3 && (
                             <div className="text-sm text-muted-foreground italic">
                               ... and {version.questions.length - 3} more questions
