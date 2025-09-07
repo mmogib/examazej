@@ -211,12 +211,10 @@ ${masterExam.questions.map((question, index) => {
 \\bodyoptionseparator
 \\setcounter{equation}{0}
 
-\\begin{enumerate}\\item ${processText(question.choices[0][0]?.text || `question ${index + 1}, Item 1`)}\\;\\;\\hrulefill {\\small (correct)}
-\\item ${processText(question.choices[0][1]?.text || `question ${index + 1}, Item 2`)}
-\\item ${processText(question.choices[0][2]?.text || `question ${index + 1}, Item 3`)}
-\\item ${processText(question.choices[0][3]?.text || `question ${index + 1}, Item 4`)}
-\\item ${processText(question.choices[0][4]?.text || `question ${index + 1}, Item 5`)}
-\\end{enumerate}
+${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
+      `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === 0 ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
+    ).join('\n')}
+\\end{enumerate}` : ''}
 ${isLastQuestion ? '\\eogseparator' : separator}`;
   }).join('')}
 
@@ -243,12 +241,10 @@ ${version.questions.map((question, index) => {
 \\bodyoptionseparator
 \\setcounter{equation}{0}
 
-\\begin{enumerate}\\item  ${processText(question.choices[0][0]?.text || `question ${index + 1}, Item 1`)}
-\\item  ${processText(question.choices[0][1]?.text || `question ${index + 1}, Item 2`)}
-\\item  ${processText(question.choices[0][2]?.text || `question ${index + 1}, Item 3`)}
-\\item  ${processText(question.choices[0][3]?.text || `question ${index + 1}, Item 4`)}
-\\item  ${processText(question.choices[0][4]?.text || `question ${index + 1}, Item 5`)}
-\\end{enumerate}
+${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
+        `\\item  ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}`
+      ).join('\n')}
+\\end{enumerate}` : ''}
 ${isLastQuestion ? '\\eogseparator' : separator}`;
     }).join('')}
 
