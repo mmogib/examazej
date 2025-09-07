@@ -233,9 +233,9 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       continue;
     }
     
-    // Collect question text between markers
-    if (inQuestionBlock && trimmed && !trimmed.startsWith('\\') && !trimmed.startsWith('%')) {
-      currentQuestion = currentQuestion ? currentQuestion + ' ' + trimmed : trimmed;
+    // Collect question text between markers (including LaTeX commands)
+    if (inQuestionBlock && trimmed && !trimmed.startsWith('%{')) {
+      currentQuestion = currentQuestion ? currentQuestion + '\n' + line : line;
       console.log('Collecting question text:', trimmed);
       continue;
     }

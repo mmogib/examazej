@@ -126,7 +126,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
   \\end{enumerate}` : '';
 
-    const templateQuestions = Array.from({ length: numQuestions }, (_, i) => {
+    const regularQuestionCount = includeImageQuestion ? numQuestions - 1 : numQuestions;
+    const templateQuestions = Array.from({ length: regularQuestionCount }, (_, i) => {
       const questionNumber = includeImageQuestion ? i + 2 : i + 1;
       // Add %{#fixed} comment for the first non-image question as an example
       const fixedComment = (!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? `%{#fixed}
