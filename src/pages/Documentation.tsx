@@ -226,10 +226,22 @@ Which planet is closest to the Sun?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Venus%{/o}
-    \\item %{#o}Mercury%{/o}
-    \\item %{#o}Earth%{/o}
-    \\item %{#o}Mars%{/o}
+    \\item
+    %{#o}
+    Venus
+    %{/o}
+    \\item
+    %{#o}
+    Mercury
+    %{/o}
+    \\item
+    %{#o}
+    Earth
+    %{/o}
+    \\item
+    %{#o}
+    Mars
+    %{/o}
   \\end{enumerate}`}
                 </pre>
               </CardContent>
@@ -253,7 +265,10 @@ What is your student ID number?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Fill in the bubble sheet%{/o}
+    \\item
+    %{#o}
+    Fill in the bubble sheet
+    %{/o}
   \\end{enumerate}`}
                 </pre>
               </CardContent>
@@ -277,9 +292,18 @@ Which letter represents the correct answer?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Wrong answer A%{/o}
-    \\item %{#o}Correct answer B%{/o}
-    \\item %{#o}Wrong answer C%{/o}
+    \\item
+    %{#o}
+    Wrong answer A
+    %{/o}
+    \\item
+    %{#o}
+    Correct answer B
+    %{/o}
+    \\item
+    %{#o}
+    Wrong answer C
+    %{/o}
   \\end{enumerate}`}
                 </pre>
               </CardContent>
@@ -320,8 +344,14 @@ The Earth is flat.
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}True%{/o}
-    \\item %{#o}False%{/o}
+    \\item
+    %{#o}
+    True
+    %{/o}
+    \\item
+    %{#o}
+    False
+    %{/o}
   \\end{enumerate}`}
                     </pre>
                   </div>
@@ -335,9 +365,18 @@ Which is largest?
 %{/q}
 
   \\begin{enumerate}
-    \\item %{#o}Earth%{/o}
-    \\item %{#o}Moon%{/o}
-    \\item %{#o}Sun%{/o}
+    \\item
+    %{#o}
+    Earth
+    %{/o}
+    \\item
+    %{#o}
+    Moon
+    %{/o}
+    \\item
+    %{#o}
+    Sun
+    %{/o}
   \\end{enumerate}`}
                     </pre>
                   </div>
