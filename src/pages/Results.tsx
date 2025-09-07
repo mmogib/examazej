@@ -596,6 +596,7 @@ ${templateQuestions}
                      {correctnessSummary.map((summary, index) => {
                        const masterQuestion = examData.exam.questions[index];
                        const isFixed = masterQuestion?.fixed;
+                       const hasOptions = masterQuestion?.choices[0]?.length > 0;
                        return (
                        <div key={index} className="space-y-2">
                          <div className="flex items-center gap-2">
@@ -612,18 +613,29 @@ ${templateQuestions}
                                 Fixed Options ({masterQuestion.correctOptionLetter})
                               </Badge>
                             )}
+                            {!hasOptions && (
+                              <Badge variant="outline" className="text-xs">
+                                Open-ended
+                              </Badge>
+                            )}
                            <span className="text-sm font-medium truncate flex-1">
-                             {summary.text.length > 80 ? summary.text.substring(0, 80) + '...' : summary.text}
+                             {summary.text.length > 80 ? summary.text.substring(0, 80) + "..." : summary.text}
                            </span>
                          </div>
-                        <div className="grid grid-cols-5 gap-2">
-                          {Object.entries(summary.correctCounts).map(([letter, count]) => (
-                            <div key={letter} className="text-center p-2 bg-muted/50 rounded">
-                              <div className="font-bold">{letter}</div>
-                              <div className="text-sm text-muted-foreground">{count}</div>
-                            </div>
-                           ))}
-                          </div>
+                         {hasOptions ? (
+                           <div className="grid grid-cols-5 gap-2">
+                             {Object.entries(summary.correctCounts).map(([letter, count]) => (
+                               <div key={letter} className="text-center p-2 bg-muted/50 rounded">
+                                 <div className="font-bold">{letter}</div>
+                                 <div className="text-sm text-muted-foreground">{count}</div>
+                               </div>
+                              ))}
+                             </div>
+                         ) : (
+                           <div className="text-sm text-muted-foreground italic p-2 bg-muted/30 rounded">
+                             No options - students provide their own answers
+                           </div>
+                         )}
                          </div>
                         );
                       })}
