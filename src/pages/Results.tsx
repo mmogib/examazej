@@ -285,6 +285,11 @@ ${templateQuestions}
 %     Wrong answer option 3
 %     %{/o}
 % 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4
+%     %{/o}
+% 
 %   \\end{enumerate}
 
 %% EXAMPLE 2: Fixed Options with Random Position
@@ -317,6 +322,11 @@ ${templateQuestions}
 %     \\item
 %     %{#o}
 %     Wrong answer option 3 (always option D)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4 (always option E)
 %     %{/o}
 % 
 %   \\end{enumerate}
