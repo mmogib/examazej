@@ -28,6 +28,13 @@ export function generateLatexDocument(
   const actualVersions = versions.length || settings.numberofvestions;
   const settingsBlock = generateSettingsBlock(settings, actualVersions);
 
+  // Calculate total pages: 
+  // 1 master cover + 1 master version title + master questions + versions (each with cover + questions) + 1 answer key + 1 answer counts
+  const questionsPerPage = 2; // Based on separator logic (\\eogseparator every 2 questions)
+  const masterQuestionPages = Math.ceil(masterExam.questions.length / questionsPerPage);
+  const versionQuestionPages = Math.ceil(masterExam.questions.length / questionsPerPage);
+  const totalPages = 2 + masterQuestionPages + (versions.length * (1 + versionQuestionPages)) + 2;
+
   // Document preamble
   const documentPreamble = `\\documentclass[leqno,fleqn,12pt]{article}
 % exam paper size and margins
@@ -195,7 +202,7 @@ ${masterExam.preamble || ''}
 \\newpage`;
 
   // Generate master questions with correct answers marked
-  const masterQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ MASTER }}}
+  const masterQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ MASTER }}}
 \\setcounter{page}{1}
 
  %% questions start here
@@ -226,7 +233,7 @@ ${isLastQuestion ? '\\eogseparator' : separator}`;
     const versionCode = version.name.replace('version_', '').toUpperCase();
     
     // Generate questions for this version
-    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
+    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
 \\setcounter{page}{1}
  %% questions start here
 \\begin{large}
