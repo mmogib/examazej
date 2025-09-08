@@ -74,7 +74,7 @@ export function generateTemplateSettings(numQuestions: number): ExamSettings {
     groups: numQuestions.toString(), // Full randomization for template
     examtype: defaults.examtype!,
     code_name: defaults.code_name!,
-    code_numbering: defaults.code_numbering!,
+    code_numbering: "NUMERIC", // Use numeric numbering for sample templates
     paper_size: defaults.paper_size!,
     instructions: defaults.instructions!
   };
