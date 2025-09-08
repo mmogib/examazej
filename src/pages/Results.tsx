@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import overleafIcon from '@/assets/overleaf-icon.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2 } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink } from 'lucide-react';
 import { generateExamVersions, generateCorrectnessSummary } from '@/lib/core/versioning';
 import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
 import { generateSettingsBlock } from '@/lib/core/settings';
@@ -79,6 +80,368 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const openInOverleaf = () => {
+    if (!generationState) return;
+
+    const latexContent = generateLatexDocument(
+      generationState.settings,
+      examData.exam,
+      generationState.versions,
+      generationState.mappings,
+      allowTrustedTex
+    );
+
+    // Create hidden form for Overleaf submission
+    const form = document.createElement('form');
+    form.action = 'https://www.overleaf.com/docs';
+    form.method = 'post';
+    form.target = '_blank';
+    form.style.display = 'none';
+
+    // Add LaTeX content
+    const snippetInput = document.createElement('input');
+    snippetInput.type = 'hidden';
+    snippetInput.name = 'snip';
+    snippetInput.value = latexContent;
+    form.appendChild(snippetInput);
+
+    // Add project name
+    const projectName = `${examData.setting.coursecode}_${examData.setting.examname.replace(/\s+/g, '_')}`;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'hidden';
+    nameInput.name = 'snip_name';
+    nameInput.value = `${projectName}.tex`;
+    form.appendChild(nameInput);
+
+    // Submit form
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
+
+  const openTemplateInOverleaf = () => {
+    if (!generationState) return;
+
+    const numQuestions = examData.exam.questions.length;
+    
+    // Generate template questions using actual exam data
+    const templateQuestions = examData.exam.questions.map((question, i) => {
+      const questionNumber = i + 1;
+      
+      // Generate the question tags based on question properties
+      let questionTags = '';
+      if (question.fixed) {
+        questionTags = '%{#fixed}';
+      } else if (question.fixedOptions && question.correctOptionLetter) {
+        questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
+      }
+      
+      const questionText = question.text || `Question ${questionNumber} text`;
+      const choices = question.choices[0] || [];
+      
+      // Only generate options if the question has choices (not open-ended)
+      const optionsText = choices.length > 0 ? 
+        choices.map((choice, index) => {
+          const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
+          return `    \\item
+    %{#o}
+    ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
+    %{/o}`;
+        }).join('\n\n') : '';
+      
+      // Format question with or without options based on choice count
+      if (choices.length === 0) {
+        // Open-ended question (no options)
+        return `\\item ${questionTags}
+%{#q}
+${questionText}
+%{/q}`;
+      } else {
+        // Multiple choice question
+        return `\\item ${questionTags}
+%{#q}
+${questionText}
+%{/q}
+
+  \\begin{enumerate}
+
+${optionsText}
+
+  \\end{enumerate}`;
+      }
+    }).join('\n\n');
+
+    // Use current exam settings for the template with actual generated values
+    const templateSettings = {
+      ...generationState.settings,
+      groups: generationState.settings.groups,
+      numberofvestions: generationState.versions.length,
+      seed: generationState.seed
+    };
+    
+    const settingsBlock = generateSettingsBlock(templateSettings);
+
+    const template = `${settingsBlock}
+\\documentclass{article}
+\\usepackage{graphicx}
+%% put your preamble between the two tags {#preamble} and {/preamble} below
+%% You can also redefine the following commans
+%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
+%% by typing
+%\\renewcommand{\\bodyoptionseparator}{
+%\\vspace {0.8cm}
+%}
+%\\renewcommand{\\questionseparator}{
+%\\vspace*{\\fill}
+%}
+%\\renewcommand{\\eogseparator}{
+%\\vspace*{\\fill}
+ %\\newpage}
+
+%% Predefined commands
+\\newcommand{\\bodyoptionseparator}{
+\\vspace {0.8cm}
+}
+\\newcommand{\\questionseparator}{
+\\vspace*{\\fill}
+}
+\\newcommand{\\eogseparator}{
+\\vspace*{\\fill}
+ \\newpage
+}
+\\newcommand{\\newcodecover}[1]{}
+%%
+%%
+%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
+%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
+%\\renewcommand{\\newcodecover}[1]{%
+
+%\\newpage
+%\\thispagestyle{empty}
+%\\begin{large}
+%\\begin{center}
+%        {UNIVERSITY_NAME} \\\\
+%        {DEPT_NAME}  \\\\
+%        \\vspace*{4.5cm}
+%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
+%        {\\bf {COURSE_CODE} }  \\\\
+%        {\\bf {EXAM_NAME} }  \\\\
+%        {\\bf {TERM} }  \\\\
+%        {\\bf {EXAM_DATE} }  \\\\
+%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
+%        \\vspace*{0.2cm}
+%\\end{center}
+%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
+%\\end{tcolorbox}
+%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%    \\begin{large}\\textbf{Sec}\\end{large}
+%\\end{tcolorbox}
+%\\end{tcbraster}
+%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
+%%     \\hspace*{-4pt}\\textbf{Instructor}
+%% \\end{tcolorbox}
+%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
+%%     \\textbf{Serial}
+%% \\end{tcolorbox}
+%% \\end{tcbraster}
+%\\end{tcbraster}
+%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
+%
+
+%\\vspace{2cm}
+
+%\\underline{\\bf Important Instructions:}
+ %
+%\\begin{enumerate}
+%    \\begin{normalsize}
+%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
+%        \\item  Use HB 2.5 pencils only.
+%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
+%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
+%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
+%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
+%        \\item  When bubbling, make sure that the bubbled space is fully covered.
+%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
+%    \\end{normalsize}
+%\\end{enumerate}
+%\\end{large}
+%
+ %\\vspace*{\\fill}
+%\\newpage
+
+%}
+%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
+%%
+%%
+%%
+%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
+%{#preamble}
+
+%{/preamble}
+%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
+%%
+%% document body
+\\begin{document}
+
+
+\\begin{enumerate}
+
+${templateQuestions}
+
+\\end{enumerate} % end of questions items
+
+%% ================================ RANDOMIZATION EXAMPLES ================================
+%% The following are examples showing different types of question randomization.
+%% Uncomment and modify these examples as needed for your exam.
+
+%% EXAMPLE 1: Completely Fixed Question (position and option order)
+%% Use %{#fixed} when you want a question to appear in the same position 
+%% in all versions with the same option order
+%
+% \\item %{#fixed}
+% %{#q}
+% This question will always appear in the same position in all exam versions.
+% The option order will also remain the same across all versions.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (will always be option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 2: Fixed Options with Random Position
+%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
+%% This keeps the option order the same but allows the question position to be randomized
+%
+% \\item %{#fixed-options:C}
+% %{#q}
+% This question can appear in different positions across versions,
+% but the option order will remain the same. The correct answer is option C.
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 1 (always option A)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 2 (always option B)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Correct answer (always option C)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 3 (always option D)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     Wrong answer option 4 (always option E)
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 3: True/False question (2 options)
+%% You can have 2-5 options or none for open-ended questions
+%
+% \\item
+% %{#q}
+% This is a true or false question - supports variable option counts
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     True
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     False
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 4: Open-ended question (no options)
+%% For essay questions or short-answer format
+%
+% \\item
+% %{#q}
+% This is an open-ended question where students write their own answer.
+% No options are provided, making it suitable for essay or short-answer format.
+% %{/q}
+
+%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
+
+\\end{document}`;
+
+    // Create hidden form for Overleaf submission
+    const form = document.createElement('form');
+    form.action = 'https://www.overleaf.com/docs';
+    form.method = 'post';
+    form.target = '_blank';
+    form.style.display = 'none';
+
+    // Add template content
+    const snippetInput = document.createElement('input');
+    snippetInput.type = 'hidden';
+    snippetInput.name = 'snip';
+    snippetInput.value = template;
+    form.appendChild(snippetInput);
+
+    // Add project name
+    const projectName = `${examData.setting.examname.replace(/\s+/g, '_')}_template`;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'hidden';
+    nameInput.name = 'snip_name';
+    nameInput.value = `${projectName}.tex`;
+    form.appendChild(nameInput);
+
+    // Submit form
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   };
 
   const downloadTemplate = () => {
@@ -752,12 +1115,13 @@ ${templateQuestions}
               
               <Button 
                 onClick={downloadTemplate}
-                variant="academic"
+                variant="outline"
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Download Template
               </Button>
+               
               
               <Button 
                 onClick={downloadMappingCSV}
@@ -775,6 +1139,38 @@ ${templateQuestions}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Save Session JSON
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4" />
+                Overleaf
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                onClick={openInOverleaf}
+                className="w-full text-white border-0"
+                style={{ backgroundColor: 'rgb(71, 161, 65)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(60, 140, 55)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
+              >
+                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
+                Full Exam
+              </Button>
+              
+              <Button 
+                onClick={openTemplateInOverleaf}
+                className="w-full text-white border-0"
+                style={{ backgroundColor: 'rgb(71, 161, 65)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(60, 140, 55)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
+              >
+                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
+                Template
               </Button>
             </CardContent>
           </Card>
