@@ -454,10 +454,14 @@ ${questionsWithSpacing}
         <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
           Create Professional MCQ Exams
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
           Generate randomized exam versions with automatic answer keys. 
           Built for university professors who value privacy and precision.
         </p>
+        
+        <div className="max-w-xl mx-auto">
+          <PrivacyNotice />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -487,14 +491,14 @@ ${questionsWithSpacing}
               )}
               
               {selectedFile && !error && !loading && (
-                <div className="flex items-center justify-between p-3 rounded-md border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+                <div className="flex items-center justify-between p-3 rounded-md border border-success/20 bg-success/10">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                    <FileText className="h-4 w-4 text-success" />
+                    <span className="text-sm font-medium text-success">
                       {selectedFile.name}
                     </span>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <ArrowRight className="h-4 w-4 text-success" />
                 </div>
               )}
             </CardContent>
@@ -519,9 +523,7 @@ ${questionsWithSpacing}
         </div>
       </div>
 
-      <div className="space-y-6">
-        <PrivacyNotice />
-        
+      <div className="space-y-6">        
         <Card>
           <CardHeader>
             <CardTitle>How It Works</CardTitle>
@@ -538,8 +540,8 @@ ${questionsWithSpacing}
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <ArrowRight className="h-6 w-6 text-primary" />
+                <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-3">
+                  <ArrowRight className="h-6 w-6 text-secondary" />
                 </div>
                 <h3 className="font-medium mb-2">2. Configure Settings</h3>
                 <p className="text-sm text-muted-foreground">
@@ -547,8 +549,8 @@ ${questionsWithSpacing}
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Download className="h-6 w-6 text-primary" />
+                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                  <Download className="h-6 w-6 text-accent-foreground" />
                 </div>
                 <h3 className="font-medium mb-2">3. Generate & Download</h3>
                 <p className="text-sm text-muted-foreground">

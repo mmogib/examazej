@@ -8,56 +8,57 @@
 
 @layer base {
   :root {
-    /* Academic color palette */
-    --background: 210 20% 98%;
-    --foreground: 225 25% 15%;
+    /* University color palette */
+    --background: 75 8% 97%;
+    --foreground: 0 0% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 225 25% 15%;
+    --card-foreground: 0 0% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 225 25% 15%;
+    --popover-foreground: 0 0% 20%;
 
-    /* Academic blue primary */
-    --primary: 220 100% 35%;
+    /* University Green primary */
+    --primary: 142 97% 25%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 220 60% 85%;
-    --primary-glow: 220 100% 60%;
+    --primary-light: 142 50% 85%;
+    --primary-glow: 142 97% 40%;
 
-    /* Professional secondary */
-    --secondary: 225 15% 92%;
-    --secondary-foreground: 225 25% 20%;
+    /* Teal secondary */
+    --secondary: 186 100% 30%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 225 10% 95%;
-    --muted-foreground: 225 15% 45%;
+    --muted: 75 8% 95%;
+    --muted-foreground: 203 6% 57%;
 
-    --accent: 35 100% 92%;
-    --accent-foreground: 35 100% 25%;
+    /* University Gold accent */
+    --accent: 51 62% 64%;
+    --accent-foreground: 0 0% 20%;
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
+    --success: 142 97% 25%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 95% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 225 15% 88%;
-    --input: 225 15% 88%;
-    --ring: 220 100% 35%;
+    --border: 75 8% 87%;
+    --input: 75 8% 87%;
+    --ring: 142 97% 25%;
 
     --radius: 0.75rem;
 
-    /* Academic gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-academic: linear-gradient(180deg, hsl(var(--background)), hsl(var(--secondary)));
-    --gradient-hero: linear-gradient(135deg, hsl(220 100% 35%), hsl(225 85% 45%));
+    /* University gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(142 97% 25%), hsl(186 100% 30%));
+    --gradient-academic: linear-gradient(180deg, hsl(var(--background)), hsl(75 8% 90%));
+    --gradient-hero: linear-gradient(135deg, hsl(142 97% 25%), hsl(186 100% 30%));
 
-    /* Professional shadows */
-    --shadow-elegant: 0 8px 32px -8px hsl(var(--primary) / 0.15);
+    /* Professional shadows with university colors */
+    --shadow-elegant: 0 8px 32px -8px hsl(142 97% 25% / 0.15);
     --shadow-card: 0 4px 16px -4px hsl(var(--foreground) / 0.08);
-    --shadow-glow: 0 0 32px hsl(var(--primary-glow) / 0.3);
+    --shadow-glow: 0 0 32px hsl(142 97% 40% / 0.3);
 
     /* Smooth transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -86,49 +87,49 @@
   }
 
   .dark {
-    --background: 225 25% 8%;
-    --foreground: 225 10% 95%;
+    --background: 0 0% 8%;
+    --foreground: 75 8% 95%;
 
-    --card: 225 25% 10%;
-    --card-foreground: 225 10% 95%;
+    --card: 0 0% 10%;
+    --card-foreground: 75 8% 95%;
 
-    --popover: 225 25% 10%;
-    --popover-foreground: 225 10% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 75 8% 95%;
 
-    --primary: 220 100% 60%;
-    --primary-foreground: 225 25% 8%;
-    --primary-light: 220 30% 25%;
-    --primary-glow: 220 100% 70%;
+    --primary: 142 97% 35%;
+    --primary-foreground: 0 0% 8%;
+    --primary-light: 142 30% 25%;
+    --primary-glow: 142 97% 50%;
 
-    --secondary: 225 15% 15%;
-    --secondary-foreground: 225 10% 90%;
+    --secondary: 186 100% 25%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 225 15% 12%;
-    --muted-foreground: 225 10% 60%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 203 6% 65%;
 
-    --accent: 35 80% 15%;
-    --accent-foreground: 35 100% 85%;
+    --accent: 51 62% 45%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 40%;
+    --success: 142 97% 35%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 95% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 225 15% 18%;
-    --input: 225 15% 18%;
-    --ring: 220 100% 60%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 142 97% 35%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-primary: linear-gradient(135deg, hsl(142 97% 35%), hsl(186 100% 35%));
     --gradient-academic: linear-gradient(180deg, hsl(var(--background)), hsl(var(--secondary)));
-    --gradient-hero: linear-gradient(135deg, hsl(220 100% 50%), hsl(225 85% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(142 97% 35%), hsl(186 100% 35%));
 
-    --shadow-elegant: 0 8px 32px -8px hsl(var(--primary) / 0.25);
+    --shadow-elegant: 0 8px 32px -8px hsl(142 97% 25% / 0.25);
     --shadow-card: 0 4px 16px -4px hsl(0 0% 0% / 0.15);
-    --shadow-glow: 0 0 32px hsl(var(--primary-glow) / 0.4);
+    --shadow-glow: 0 0 32px hsl(142 97% 40% / 0.4);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
