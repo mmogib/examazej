@@ -331,6 +331,48 @@ Explain the concept of photosynthesis and its importance in ecosystems.
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  Separate Page Questions
+                </CardTitle>
+                <CardDescription>Force questions to appear on their own page</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm mb-3">Use <code className="bg-muted px-1 rounded">%{`{#separate-page}`}</code> to place a question on its own page, useful for complex questions that need more space.</p>
+                <pre className="text-sm bg-muted p-3 rounded">
+{`\\item
+%{#separate-page}
+%{#q}
+This is a complex question that requires its own page with lots of space for diagrams, calculations, or detailed explanations.
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    Option A
+    %{/o}
+    \\item
+    %{#o}
+    Option B  
+    %{/o}
+    \\item
+    %{#o}
+    Option C
+    %{/o}
+  \\end{enumerate}`}
+                </pre>
+                <Alert className="mt-3">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Questions with the separate-page marker will be placed on their own page and won't share space with other questions. This is ideal for image-heavy questions or those requiring significant workspace.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-purple-500" />
                   Image Questions
                 </CardTitle>
