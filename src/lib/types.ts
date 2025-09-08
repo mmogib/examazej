@@ -30,6 +30,7 @@ export interface Question {
   fixed?: boolean; // If true, question order and options won't be shuffled
   fixedOptions?: boolean; // If true, only options won't be shuffled (position can still change)
   correctOptionLetter?: string; // The letter of the correct option (A, B, C, D, E)
+  keepOnSeparatePage: boolean; // If true, question will be placed on its own page
 }
 
 export interface ExamData {

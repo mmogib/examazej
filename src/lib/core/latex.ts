@@ -1,5 +1,33 @@
-import type { ExamSettings, ExamData, VersionMapping } from '../types';
+import type { ExamSettings, ExamData, VersionMapping, Question } from '../types';
 import { generateSettingsBlock } from './settings';
+
+// Calculate total question pages with support for separate page questions
+function calculateQuestionPages(questions: Question[]): number {
+  if (questions.length === 0) return 0;
+  
+  const maxQuestionsPerPage = 2;
+  
+  const { currentPage } = questions.reduce(
+    (acc, question) => {
+      if (question.keepOnSeparatePage) {
+        const pageIncrement = acc.questionsOnCurrentPage > 0 ? 2 : 1;
+        return {
+          currentPage: acc.currentPage + pageIncrement,
+          questionsOnCurrentPage: 0
+        };
+      } else {
+        const needNewPage = acc.questionsOnCurrentPage >= maxQuestionsPerPage;
+        return {
+          currentPage: acc.currentPage + (needNewPage ? 1 : 0),
+          questionsOnCurrentPage: needNewPage ? 1 : acc.questionsOnCurrentPage + 1
+        };
+      }
+    },
+    { currentPage: 1, questionsOnCurrentPage: 0 }
+  );
+  
+  return currentPage;
+}
 
 export function escapeLatex(text: string): string {
   return text
@@ -27,6 +55,9 @@ export function generateLatexDocument(
   // Generate settings block (commented) - ensure numberofvestions reflects actual versions count  
   const actualVersions = versions.length || settings.numberofvestions;
   const settingsBlock = generateSettingsBlock(settings, actualVersions);
+
+  // Calculate total pages for each section (master, versions all have same page count)
+  const totalPages = calculateQuestionPages(masterExam.questions);
 
   // Document preamble
   const documentPreamble = `\\documentclass[leqno,fleqn,12pt]{article}
@@ -195,28 +226,75 @@ ${masterExam.preamble || ''}
 \\newpage`;
 
   // Generate master questions with correct answers marked
-  const masterQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ MASTER }}}
+  const masterQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ MASTER }}}
 \\setcounter{page}{1}
 
  %% questions start here
 \\begin{large}
 \\begin{enumerate}
 
-${masterExam.questions.map((question, index) => {
+${(() => {
+  let questionsLatex = '';
+  let questionsOnCurrentPage = 0;
+  
+  masterExam.questions.forEach((question, index) => {
     const isLastQuestion = index === masterExam.questions.length - 1;
-    const separator = (index + 1) % 2 === 0 ? '\\eogseparator' : '\\questionseparator';
     
-    return `
+    // Handle separate page questions
+    if (question.keepOnSeparatePage) {
+      // If current page has questions, add separator before starting new page
+      if (questionsOnCurrentPage > 0) {
+        questionsLatex += '\\eogseparator\n';
+      }
+      // Add the question on its own page
+      questionsLatex += `
 \\item ${processText(question.text)}
 \\bodyoptionseparator
 \\setcounter{equation}{0}
 
 ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
-      `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === 0 ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
-    ).join('\n')}
-\\end{enumerate}` : ''}
-${isLastQuestion ? '\\eogseparator' : separator}`;
-  }).join('')}
+        `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === 0 ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
+      ).join('\n')}
+\\end{enumerate}` : ''}`;
+      
+      // Force new page after separate question (unless it's the last)
+      if (!isLastQuestion) {
+        questionsLatex += '\n\\eogseparator';
+      }
+      questionsOnCurrentPage = 0;
+    } else {
+      // Regular question handling
+      if (questionsOnCurrentPage >= 2) {
+        questionsLatex += '\\eogseparator\n';
+        questionsOnCurrentPage = 0;
+      }
+      
+      questionsLatex += `
+\\item ${processText(question.text)}
+\\bodyoptionseparator
+\\setcounter{equation}{0}
+
+${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
+        `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === 0 ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
+      ).join('\n')}
+\\end{enumerate}` : ''}`;
+      
+      questionsOnCurrentPage++;
+      
+      // Add separator after every 2 regular questions (except for the last question)
+      if (questionsOnCurrentPage === 2 && !isLastQuestion) {
+        questionsLatex += '\n\\eogseparator';
+        questionsOnCurrentPage = 0;
+      } else if (isLastQuestion) {
+        questionsLatex += '\n\\eogseparator';
+      } else {
+        questionsLatex += '\n\\questionseparator';
+      }
+    }
+  });
+  
+  return questionsLatex;
+})()}
 
 \\end{enumerate}
 \\end{large}`;
@@ -226,17 +304,27 @@ ${isLastQuestion ? '\\eogseparator' : separator}`;
     const versionCode = version.name.replace('version_', '').toUpperCase();
     
     // Generate questions for this version
-    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of 5 } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
+    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
 \\setcounter{page}{1}
  %% questions start here
 \\begin{large}
 \\begin{enumerate}
 
-${version.questions.map((question, index) => {
-      const isLastQuestion = index === version.questions.length - 1;
-      const separator = (index + 1) % 2 === 0 ? '\\eogseparator' : '\\questionseparator';
-      
-      return `
+${(() => {
+  let versionQuestionsLatex = '';
+  let questionsOnCurrentPage = 0;
+  
+  version.questions.forEach((question, index) => {
+    const isLastQuestion = index === version.questions.length - 1;
+    
+    // Handle separate page questions
+    if (question.keepOnSeparatePage) {
+      // If current page has questions, add separator before starting new page
+      if (questionsOnCurrentPage > 0) {
+        versionQuestionsLatex += '\\eogseparator\n';
+      }
+      // Add the question on its own page
+      versionQuestionsLatex += `
 \\item ${processText(question.text)}
 \\bodyoptionseparator
 \\setcounter{equation}{0}
@@ -244,9 +332,46 @@ ${version.questions.map((question, index) => {
 ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
         `\\item  ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}`
       ).join('\n')}
-\\end{enumerate}` : ''}
-${isLastQuestion ? '\\eogseparator' : separator}`;
-    }).join('')}
+\\end{enumerate}` : ''}`;
+      
+      // Force new page after separate question (unless it's the last)
+      if (!isLastQuestion) {
+        versionQuestionsLatex += '\n\\eogseparator';
+      }
+      questionsOnCurrentPage = 0;
+    } else {
+      // Regular question handling
+      if (questionsOnCurrentPage >= 2) {
+        versionQuestionsLatex += '\\eogseparator\n';
+        questionsOnCurrentPage = 0;
+      }
+      
+      versionQuestionsLatex += `
+\\item ${processText(question.text)}
+\\bodyoptionseparator
+\\setcounter{equation}{0}
+
+${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
+        `\\item  ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}`
+      ).join('\n')}
+\\end{enumerate}` : ''}`;
+      
+      questionsOnCurrentPage++;
+      
+      // Add separator after every 2 regular questions (except for the last question)
+      if (questionsOnCurrentPage === 2 && !isLastQuestion) {
+        versionQuestionsLatex += '\n\\eogseparator';
+        questionsOnCurrentPage = 0;
+      } else if (isLastQuestion) {
+        versionQuestionsLatex += '\n\\eogseparator';
+      } else {
+        versionQuestionsLatex += '\n\\questionseparator';
+      }
+    }
+  });
+  
+  return versionQuestionsLatex;
+})()}
 
 \\end{enumerate}
 \\end{large}`;
