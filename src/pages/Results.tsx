@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import overleafIcon from '@/assets/overleaf-icon.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1113,15 +1114,6 @@ ${templateQuestions}
               </Button>
               
               <Button 
-                onClick={openInOverleaf}
-                variant="default"
-                className="w-full"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open on Overleaf
-              </Button>
-              
-              <Button 
                 onClick={downloadTemplate}
                 variant="outline"
                 className="w-full"
@@ -1129,14 +1121,6 @@ ${templateQuestions}
                 <FileText className="h-4 w-4 mr-2" />
                 Download Template
               </Button>
-              
-              <Button 
-                onClick={openTemplateInOverleaf}
-                className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open Template on Overleaf
-               </Button>
                
               
               <Button 
@@ -1155,6 +1139,32 @@ ${templateQuestions}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Save Session JSON
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4" />
+                Overleaf
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                onClick={openInOverleaf}
+                className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+              >
+                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
+                Full Exam
+              </Button>
+              
+              <Button 
+                onClick={openTemplateInOverleaf}
+                className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+              >
+                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
+                Template
               </Button>
             </CardContent>
           </Card>
