@@ -56,11 +56,8 @@ export function generateLatexDocument(
   const actualVersions = versions.length || settings.numberofvestions;
   const settingsBlock = generateSettingsBlock(settings, actualVersions);
 
-  // Calculate total pages: 
-  // 1 master cover + 1 master version title + master questions + versions (each with cover + questions) + 1 answer key + 1 answer counts
-  const masterQuestionPages = calculateQuestionPages(masterExam.questions);
-  const versionQuestionPages = calculateQuestionPages(masterExam.questions); // Same questions, same layout
-  const totalPages = 2 + masterQuestionPages + (versions.length * (1 + versionQuestionPages)) + 2;
+  // Calculate total pages for each section (master, versions all have same page count)
+  const totalPages = calculateQuestionPages(masterExam.questions);
 
   // Document preamble
   const documentPreamble = `\\documentclass[leqno,fleqn,12pt]{article}
