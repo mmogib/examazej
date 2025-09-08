@@ -126,41 +126,42 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
     const numQuestions = examData.exam.questions.length;
     
-    // Generate template questions using actual exam data
-    const templateQuestions = examData.exam.questions.map((question, i) => {
-      const questionNumber = i + 1;
-      
-      // Generate the question tags based on question properties
-      let questionTags = '';
-      if (question.fixed) {
-        questionTags = '%{#fixed}';
-      } else if (question.fixedOptions && question.correctOptionLetter) {
-        questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
-      }
-      
-      const questionText = question.text || `Question ${questionNumber} text`;
-      const choices = question.choices[0] || [];
-      
-      // Only generate options if the question has choices (not open-ended)
-      const optionsText = choices.length > 0 ? 
-        choices.map((choice, index) => {
-          const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
-          return `    \\item
+    // Generate template questions using actual exam data with proper spacing
+    const templateQuestions = (() => {
+      const questions = examData.exam.questions.map((question, i) => {
+        const questionNumber = i + 1;
+        
+        // Generate the question tags based on question properties
+        let questionTags = '';
+        if (question.fixed) {
+          questionTags = '%{#fixed}';
+        } else if (question.fixedOptions && question.correctOptionLetter) {
+          questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
+        }
+        
+        const questionText = question.text || `Question ${questionNumber} text`;
+        const choices = question.choices[0] || [];
+        
+        // Only generate options if the question has choices (not open-ended)
+        const optionsText = choices.length > 0 ? 
+          choices.map((choice, index) => {
+            const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
+            return `    \\item
     %{#o}
     ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
     %{/o}`;
-        }).join('\n\n') : '';
-      
-      // Format question with or without options based on choice count
-      if (choices.length === 0) {
-        // Open-ended question (no options)
-        return `\\item ${questionTags}
+          }).join('\n\n') : '';
+        
+        // Format question with or without options based on choice count
+        if (choices.length === 0) {
+          // Open-ended question (no options)
+          return `\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}`;
-      } else {
-        // Multiple choice question
-        return `\\item ${questionTags}
+        } else {
+          // Multiple choice question
+          return `\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}
@@ -170,8 +171,53 @@ ${questionText}
 ${optionsText}
 
   \\end{enumerate}`;
-      }
-    }).join('\n\n');
+        }
+      });
+
+      // Apply spacing logic matching the master version
+      let questionsLatex = '';
+      let questionsOnCurrentPage = 0;
+      
+      questions.forEach((questionStr, index) => {
+        const question = examData.exam.questions[index];
+        const isLastQuestion = index === questions.length - 1;
+        
+        // Handle separate page questions
+        if (question.keepOnSeparatePage) {
+          // If current page has questions, add separator before starting new page
+          if (questionsOnCurrentPage > 0) {
+            questionsLatex += '\n\\eogseparator\n';
+          }
+          questionsLatex += questionStr;
+          // Force new page after separate question (unless it's the last)
+          if (!isLastQuestion) {
+            questionsLatex += '\n\\eogseparator';
+          }
+          questionsOnCurrentPage = 0;
+        } else {
+          // Regular question handling (2 per page)
+          if (questionsOnCurrentPage >= 2) {
+            questionsLatex += '\n\\eogseparator\n';
+            questionsOnCurrentPage = 0;
+          }
+          
+          questionsLatex += questionStr;
+          questionsOnCurrentPage++;
+          
+          // Add separator after every 2 regular questions (except for the last question)
+          if (questionsOnCurrentPage === 2 && !isLastQuestion) {
+            questionsLatex += '\n\\eogseparator';
+            questionsOnCurrentPage = 0;
+          } else if (isLastQuestion) {
+            questionsLatex += '\n\\eogseparator';
+          } else {
+            questionsLatex += '\n\\questionseparator';
+          }
+        }
+      });
+      
+      return questionsLatex;
+    })();
 
     // Use current exam settings for the template with actual generated values
     const templateSettings = {
@@ -449,41 +495,42 @@ ${templateQuestions}
 
     const numQuestions = examData.exam.questions.length;
     
-    // Generate template questions using actual exam data
-    const templateQuestions = examData.exam.questions.map((question, i) => {
-      const questionNumber = i + 1;
-      
-      // Generate the question tags based on question properties
-      let questionTags = '';
-      if (question.fixed) {
-        questionTags = '%{#fixed}';
-      } else if (question.fixedOptions && question.correctOptionLetter) {
-        questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
-      }
-      
-      const questionText = question.text || `Question ${questionNumber} text`;
-      const choices = question.choices[0] || [];
-      
-      // Only generate options if the question has choices (not open-ended)
-      const optionsText = choices.length > 0 ? 
-        choices.map((choice, index) => {
-          const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
-          return `    \\item
+    // Generate template questions using actual exam data with proper spacing
+    const templateQuestions = (() => {
+      const questions = examData.exam.questions.map((question, i) => {
+        const questionNumber = i + 1;
+        
+        // Generate the question tags based on question properties
+        let questionTags = '';
+        if (question.fixed) {
+          questionTags = '%{#fixed}';
+        } else if (question.fixedOptions && question.correctOptionLetter) {
+          questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
+        }
+        
+        const questionText = question.text || `Question ${questionNumber} text`;
+        const choices = question.choices[0] || [];
+        
+        // Only generate options if the question has choices (not open-ended)
+        const optionsText = choices.length > 0 ? 
+          choices.map((choice, index) => {
+            const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
+            return `    \\item
     %{#o}
     ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
     %{/o}`;
-        }).join('\n\n') : '';
-      
-      // Format question with or without options based on choice count
-      if (choices.length === 0) {
-        // Open-ended question (no options)
-        return `\\item ${questionTags}
+          }).join('\n\n') : '';
+        
+        // Format question with or without options based on choice count
+        if (choices.length === 0) {
+          // Open-ended question (no options)
+          return `\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}`;
-      } else {
-        // Multiple choice question
-        return `\\item ${questionTags}
+        } else {
+          // Multiple choice question
+          return `\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}
@@ -493,8 +540,53 @@ ${questionText}
 ${optionsText}
 
   \\end{enumerate}`;
-      }
-    }).join('\n\n');
+        }
+      });
+
+      // Apply spacing logic matching the master version
+      let questionsLatex = '';
+      let questionsOnCurrentPage = 0;
+      
+      questions.forEach((questionStr, index) => {
+        const question = examData.exam.questions[index];
+        const isLastQuestion = index === questions.length - 1;
+        
+        // Handle separate page questions
+        if (question.keepOnSeparatePage) {
+          // If current page has questions, add separator before starting new page
+          if (questionsOnCurrentPage > 0) {
+            questionsLatex += '\n\\eogseparator\n';
+          }
+          questionsLatex += questionStr;
+          // Force new page after separate question (unless it's the last)
+          if (!isLastQuestion) {
+            questionsLatex += '\n\\eogseparator';
+          }
+          questionsOnCurrentPage = 0;
+        } else {
+          // Regular question handling (2 per page)
+          if (questionsOnCurrentPage >= 2) {
+            questionsLatex += '\n\\eogseparator\n';
+            questionsOnCurrentPage = 0;
+          }
+          
+          questionsLatex += questionStr;
+          questionsOnCurrentPage++;
+          
+          // Add separator after every 2 regular questions (except for the last question)
+          if (questionsOnCurrentPage === 2 && !isLastQuestion) {
+            questionsLatex += '\n\\eogseparator';
+            questionsOnCurrentPage = 0;
+          } else if (isLastQuestion) {
+            questionsLatex += '\n\\eogseparator';
+          } else {
+            questionsLatex += '\n\\questionseparator';
+          }
+        }
+      });
+      
+      return questionsLatex;
+    })();
 
     // Use current exam settings for the template with actual generated values
     const templateSettings = {

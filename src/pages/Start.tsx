@@ -171,6 +171,37 @@ This is the body of question ${questionNumber}${(!includeImageQuestion && questi
       ? [imageQuestion, ...templateQuestions]
       : templateQuestions;
 
+    // Add proper spacing for 2 questions per page default
+    const questionsWithSpacing = (() => {
+      let questionsLatex = '';
+      let questionsOnCurrentPage = 0;
+      
+      allQuestions.forEach((question, index) => {
+        const isLastQuestion = index === allQuestions.length - 1;
+        
+        // Check if we need a new page (2 questions per page rule)
+        if (questionsOnCurrentPage >= 2) {
+          questionsLatex += '\n\\eogseparator\n';
+          questionsOnCurrentPage = 0;
+        }
+        
+        questionsLatex += question;
+        questionsOnCurrentPage++;
+        
+        // Add appropriate separator
+        if (questionsOnCurrentPage === 2 && !isLastQuestion) {
+          questionsLatex += '\n\\eogseparator';
+          questionsOnCurrentPage = 0;
+        } else if (isLastQuestion) {
+          questionsLatex += '\n\\eogseparator';
+        } else {
+          questionsLatex += '\n\\questionseparator';
+        }
+      });
+      
+      return questionsLatex;
+    })();
+
     const templateSettings = generateTemplateSettings(numQuestions);
     const settingsBlock = generateSettingsBlock(templateSettings);
 
@@ -285,7 +316,7 @@ This is the body of question ${questionNumber}${(!includeImageQuestion && questi
 
 \\begin{enumerate}
 
-${allQuestions.join('\n\n')}
+${questionsWithSpacing}
 
 \\end{enumerate} % end of questions items
 
