@@ -1153,7 +1153,10 @@ ${templateQuestions}
             <CardContent className="space-y-3">
               <Button 
                 onClick={openInOverleaf}
-                className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+                className="w-full text-white border-0"
+                style={{ backgroundColor: 'rgb(71, 161, 65)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(60, 140, 55)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
               >
                 <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
                 Full Exam
@@ -1161,7 +1164,10 @@ ${templateQuestions}
               
               <Button 
                 onClick={openTemplateInOverleaf}
-                className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+                className="w-full text-white border-0"
+                style={{ backgroundColor: 'rgb(71, 161, 65)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(60, 140, 55)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
               >
                 <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
                 Template
