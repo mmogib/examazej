@@ -297,6 +297,7 @@ This is the body of question ${questionNumber}${(!includeImageQuestion && questi
     const template = `${settingsBlock}
 \\documentclass{article}
 \\usepackage{graphicx}
+\\usepackage{amsmath}
 %% put your preamble between the two tags {#preamble} and {/preamble} below
 %% You can also redefine the following commans
 %% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
