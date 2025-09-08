@@ -120,7 +120,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
             currentOptions.map(text => ({ text })),
             currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
             null
-          ]
+          ],
+          keepOnSeparatePage: false
         };
         
         if (currentQuestionFixed === true) {
@@ -213,7 +214,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
             [],
             0,
             null
-          ]
+          ],
+          keepOnSeparatePage: false
         };
         
         if (currentQuestionFixed === true) {
@@ -296,7 +298,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptions.map(text => ({ text })),
         currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
         null
-      ]
+      ],
+      keepOnSeparatePage: false
     };
     
     if (currentQuestionFixed === true) {
