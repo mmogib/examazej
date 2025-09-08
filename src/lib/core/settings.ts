@@ -1,5 +1,38 @@
 import type { ExamSettings } from '../types';
 
+function getCurrentTerm(date = new Date()) {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1; // 1..12
+  const d = date.getDate();
+
+  let fallYear;   // anchor year of the Fall term
+  let suffix;
+
+  // Fall: Aug 15 → Dec 31
+  if ((m === 8 && d >= 15) || (m >= 9 && m <= 12)) {
+    fallYear = y;
+    suffix = 1;
+  }
+  // Fall continues: Jan 1 → Jan 31 (belongs to previous year's Fall)
+  else if (m === 1) {
+    fallYear = y - 1;
+    suffix = 1;
+  }
+  // Spring: Feb 1 → Jun 14
+  else if ((m >= 2 && m <= 5) || (m === 6 && d <= 14)) {
+    fallYear = y - 1;
+    suffix = 2;
+  }
+  // Summer: Jun 15 → Aug 14
+  else if ((m === 6 && d >= 15) || m === 7 || (m === 8 && d <= 14)) {
+    fallYear = y - 1;
+    suffix = 3;
+  }
+
+  const yy = String(fallYear % 100).padStart(2, "0");
+  return `${yy}${suffix}`;
+}
+
 export function getDefaultSettings(): Partial<ExamSettings> {
   // Get current date in the requested format
   const currentDate = new Date();
@@ -16,7 +49,7 @@ export function getDefaultSettings(): Partial<ExamSettings> {
     examdate: formattedDate,
     timeallowed: "120 Minutes",
     numberofvestions: 4,
-    term: "T241",
+    term: "Term " + getCurrentTerm(),
     examtype: "MAJOR",
     code_name: "CODE",
     code_numbering: "ALPHA",
@@ -74,7 +107,7 @@ export function generateTemplateSettings(numQuestions: number): ExamSettings {
     groups: numQuestions.toString(), // Full randomization for template
     examtype: defaults.examtype!,
     code_name: defaults.code_name!,
-    code_numbering: defaults.code_numbering!,
+    code_numbering: "NUMERIC", // Use numeric numbering for sample templates
     paper_size: defaults.paper_size!,
     instructions: defaults.instructions!
   };
