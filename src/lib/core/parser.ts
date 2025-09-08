@@ -75,6 +75,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   let currentOptions: string[] = [];
   let currentQuestionFixed: boolean | 'fixed-options' = false;
   let currentCorrectLetter: string | undefined;
+  let currentSeparatePage = false;
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
@@ -121,7 +122,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
             currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
             null
           ],
-          keepOnSeparatePage: false
+          keepOnSeparatePage: currentSeparatePage
         };
         
         if (currentQuestionFixed === true) {
@@ -137,6 +138,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptions = [];
         currentQuestionFixed = false;
         currentCorrectLetter = undefined;
+        currentSeparatePage = false;
         inOptionBlock = false;
         currentOptionText = '';
       }
@@ -168,6 +170,13 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentCorrectLetter = fixedOptionsMatch[1];
         continue;
       }
+    }
+    
+    // Handle separate-page marker
+    if (shouldProcess && trimmed === '%{#separate-page}') {
+      console.log('Found separate-page marker at line:', i + 1);
+      currentSeparatePage = true;
+      continue;
     }
     
     // Handle question start marker (process even outside enumerate blocks)
@@ -215,7 +224,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
             0,
             null
           ],
-          keepOnSeparatePage: false
+          keepOnSeparatePage: currentSeparatePage
         };
         
         if (currentQuestionFixed === true) {
@@ -231,6 +240,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptions = [];
         currentQuestionFixed = false;
         currentCorrectLetter = undefined;
+        currentSeparatePage = false;
       }
       continue;
     }
@@ -299,7 +309,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
         null
       ],
-      keepOnSeparatePage: false
+      keepOnSeparatePage: currentSeparatePage
     };
     
     if (currentQuestionFixed === true) {
