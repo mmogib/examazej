@@ -18,7 +18,7 @@ export function getDefaultSettings(): Partial<ExamSettings> {
     numberofvestions: 4,
     term: "T241",
     examtype: "MAJOR",
-    code_name: "VERSION",
+    code_name: "CODE",
     code_numbering: "ALPHA",
     paper_size: "A4",
     instructions: `\\begin{enumerate}
