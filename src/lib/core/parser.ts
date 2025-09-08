@@ -73,7 +73,8 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
-  let currentQuestionFixed: boolean | 'fixed-options' = false;
+  let currentQuestionFixed = false;
+  let currentQuestionFixedOptions = false;
   let currentCorrectLetter: string | undefined;
   let currentSeparatePage = false;
   let enumerateDepth = 0;
@@ -125,9 +126,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
           keepOnSeparatePage: currentSeparatePage
         };
         
-        if (currentQuestionFixed === true) {
+        if (currentQuestionFixed) {
           question.fixed = true;
-        } else if (currentQuestionFixed === 'fixed-options') {
+        }
+        if (currentQuestionFixedOptions) {
           question.fixedOptions = true;
           question.correctOptionLetter = currentCorrectLetter;
         }
@@ -137,6 +139,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
+        currentQuestionFixedOptions = false;
         currentCorrectLetter = undefined;
         currentSeparatePage = false;
         inOptionBlock = false;
@@ -166,7 +169,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       const fixedOptionsMatch = trimmed.match(/%\{#fixed-options:([A-E])\}/);
       if (fixedOptionsMatch) {
         console.log('Found fixed-options marker at line:', i + 1, 'correct answer:', fixedOptionsMatch[1]);
-        currentQuestionFixed = 'fixed-options';
+        currentQuestionFixedOptions = true;
         currentCorrectLetter = fixedOptionsMatch[1];
         continue;
       }
@@ -227,9 +230,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
           keepOnSeparatePage: currentSeparatePage
         };
         
-        if (currentQuestionFixed === true) {
+        if (currentQuestionFixed) {
           question.fixed = true;
-        } else if (currentQuestionFixed === 'fixed-options') {
+        }
+        if (currentQuestionFixedOptions) {
           question.fixedOptions = true;
           question.correctOptionLetter = currentCorrectLetter;
         }
@@ -239,6 +243,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
+        currentQuestionFixedOptions = false;
         currentCorrectLetter = undefined;
         currentSeparatePage = false;
       }
@@ -312,9 +317,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       keepOnSeparatePage: currentSeparatePage
     };
     
-    if (currentQuestionFixed === true) {
+    if (currentQuestionFixed) {
       question.fixed = true;
-    } else if (currentQuestionFixed === 'fixed-options') {
+    }
+    if (currentQuestionFixedOptions) {
       question.fixedOptions = true;
       question.correctOptionLetter = currentCorrectLetter;
     }
