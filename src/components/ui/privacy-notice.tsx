@@ -13,7 +13,7 @@ export function PrivacyNotice() {
       <CardContent className="space-y-3">
         <div className="flex items-start gap-3">
           <Lock className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-right flex-1">
+          <div className="text-sm flex-1">
             <p className="font-medium text-accent-foreground">100% Local Processing</p>
             <p className="text-accent-foreground/80">
               All exam generation happens in your browser. No data is uploaded to servers.
@@ -23,7 +23,7 @@ export function PrivacyNotice() {
         
         <div className="flex items-start gap-3">
           <Eye className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-right flex-1">
+          <div className="text-sm flex-1">
             <p className="font-medium text-accent-foreground">No Tracking</p>
             <p className="text-accent-foreground/80">
               No analytics, telemetry, or user behavior monitoring.
