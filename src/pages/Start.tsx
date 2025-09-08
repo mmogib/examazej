@@ -88,7 +88,12 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 %{#q}
     %% play with parameters of the minipage, vspace*, hspace* environments to control the positioning of your text and figures
     \\begin{minipage}[t][10cm][t]{0.5\\textwidth}
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi facilisis nulla semper justo convallis feugiat. Mauris ac orci ut nibh iaculis feugiat. Pellentesque nec molestie felis. Fusce condimentum risus quis nulla mollis, nec posuere augue rutrum. Sed semper orci a urna fermentum bibendum. Fusce tempor nunc in magna elementum convallis. Donec hendrerit consectetur orci a rutrum. Nullam nec nisi mattis, scelerisque dolor in, porta lectus. Cras non lectus turpis. Ut neque metus, accumsan at odio commodo, finibus faucibus felis. Proin ultricies erat sed nulla imperdiet, a molestie diam tincidunt. Donec tempus dui orci, sed eleifend purus dignissim sit amet. Fusce nibh arcu, sodales ac dignissim sed, finibus sit amet sapien.
+    Consider the definite integral:
+    $$\\int_{0}^{\\pi} \\sin(2x) \\, dx$$
+    
+    The graph shows $y = \\sin(2x)$ over the interval $[0, \\pi]$. Use the fundamental theorem of calculus to evaluate this integral, or analyze the geometric interpretation using the areas above and below the x-axis.
+    
+    Recall that $\\sin(2x)$ has period $\\pi$, and note the symmetry properties that may help simplify your calculation.
     \\end{minipage}
     \\begin{minipage}[t][5cm][t]{0.5\\textwidth}
     %% replace the image(example-image) with your own
@@ -101,27 +106,27 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
     \\item
     %{#o}
-    question 1, Item 1
+    $-2$
     %{/o}
 
     \\item
     %{#o}
-    question 1, Item 2
+    $0$
     %{/o}
 
     \\item
     %{#o}
-    question 1, Item 3
+    $2$
     %{/o}
 
     \\item
     %{#o}
-    question 1, Item 4
+    $\\pi$
     %{/o}
 
     \\item
     %{#o}
-    question 1, Item 5
+    $-\\pi$
     %{/o}
 
   \\end{enumerate}` : '';
@@ -132,6 +137,90 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       // Add %{#fixed} comment for the first non-image question as an example
       const fixedComment = (!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? `%{#fixed}
 ` : '';
+      
+      // Make question 2 (or 3 if image is included) a mathematical calculus question
+      const isMathQuestion = (!includeImageQuestion && questionNumber === 2) || (includeImageQuestion && questionNumber === 3);
+      
+      if (isMathQuestion) {
+        return `\\item
+%{#q}
+Find the derivative of the following function:
+$$f(x) = 3x^4 - 2x^3 + 5x^2 - 7x + 1$$
+%{/q}
+
+  \\begin{enumerate}
+
+    \\item
+    %{#o}
+    $f'(x) = 12x^3 - 6x^2 + 10x - 7$
+    %{/o}
+
+    \\item
+    %{#o}
+    $f'(x) = 12x^3 - 6x^2 + 5x - 7$
+    %{/o}
+
+    \\item
+    %{#o}
+    $f'(x) = 3x^3 - 2x^2 + 5x - 7$
+    %{/o}
+
+    \\item
+    %{#o}
+    $f'(x) = 12x^4 - 6x^3 + 10x^2 - 7x$
+    %{/o}
+
+    \\item
+    %{#o}
+    $f'(x) = 12x^3 - 6x^2 + 10x + 7$
+    %{/o}
+
+  \\end{enumerate}`;
+      }
+      
+      // Make the next question an algebra system of equations
+      const isAlgebraQuestion = (!includeImageQuestion && questionNumber === 3) || (includeImageQuestion && questionNumber === 4);
+      
+      if (isAlgebraQuestion) {
+        return `\\item
+%{#q}
+Solve the following system of linear equations:
+\\begin{align}
+2x + 3y &= 7 \\\\
+x - y &= 1
+\\end{align}
+%{/q}
+
+  \\begin{enumerate}
+
+    \\item
+    %{#o}
+    $x = 2, y = 1$
+    %{/o}
+
+    \\item
+    %{#o}
+    $x = 1, y = 2$
+    %{/o}
+
+    \\item
+    %{#o}
+    $x = 3, y = 0$
+    %{/o}
+
+    \\item
+    %{#o}
+    $x = 0, y = 3$
+    %{/o}
+
+    \\item
+    %{#o}
+    $x = 4, y = -1$
+    %{/o}
+
+  \\end{enumerate}`;
+      }
+      
       return `\\item
 ${fixedComment}%{#q}
 This is the body of question ${questionNumber}${(!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? ' (this question will appear in the same position across all versions)' : ''}
@@ -171,12 +260,44 @@ This is the body of question ${questionNumber}${(!includeImageQuestion && questi
       ? [imageQuestion, ...templateQuestions]
       : templateQuestions;
 
+    // Add proper spacing for 2 questions per page default
+    const questionsWithSpacing = (() => {
+      let questionsLatex = '';
+      let questionsOnCurrentPage = 0;
+      
+      allQuestions.forEach((question, index) => {
+        const isLastQuestion = index === allQuestions.length - 1;
+        
+        // Check if we need a new page (2 questions per page rule)
+        if (questionsOnCurrentPage >= 2) {
+          questionsLatex += '\n\\eogseparator\n';
+          questionsOnCurrentPage = 0;
+        }
+        
+        questionsLatex += question;
+        questionsOnCurrentPage++;
+        
+        // Add appropriate separator
+        if (questionsOnCurrentPage === 2 && !isLastQuestion) {
+          questionsLatex += '\n\\eogseparator';
+          questionsOnCurrentPage = 0;
+        } else if (isLastQuestion) {
+          questionsLatex += '\n\\eogseparator';
+        } else {
+          questionsLatex += '\n\\questionseparator';
+        }
+      });
+      
+      return questionsLatex;
+    })();
+
     const templateSettings = generateTemplateSettings(numQuestions);
     const settingsBlock = generateSettingsBlock(templateSettings);
 
     const template = `${settingsBlock}
 \\documentclass{article}
 \\usepackage{graphicx}
+\\usepackage{amsmath}
 %% put your preamble between the two tags {#preamble} and {/preamble} below
 %% You can also redefine the following commans
 %% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
@@ -285,7 +406,7 @@ This is the body of question ${questionNumber}${(!includeImageQuestion && questi
 
 \\begin{enumerate}
 
-${allQuestions.join('\n\n')}
+${questionsWithSpacing}
 
 \\end{enumerate} % end of questions items
 
@@ -332,51 +453,98 @@ ${allQuestions.join('\n\n')}
 % 
 %   \\end{enumerate}
 
-%% EXAMPLE 2: Fixed Options with Random Position
-%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
-%% This keeps the option order the same but allows the question position to be randomized
+%% EXAMPLE 2: Mathematical Question with Complex LaTeX Environments
+%% Shows how to use advanced LaTeX math environments in questions
 %
-% \\item %{#fixed-options:C}
+% \\item
 % %{#q}
-% This question can appear in different positions across versions,
-% but the option order will remain the same. The correct answer is option C.
+% Given the piecewise function:
+% $$f(x) = \\begin{cases} 
+% x^2 - 1 & \\text{if } x \\leq 0 \\\\
+% \\sqrt{x} + 1 & \\text{if } 0 < x < 4 \\\\
+% \\frac{1}{x-3} & \\text{if } x \\geq 4
+% \\end{cases}$$
+% Find $\\lim_{x \\to 0^+} f(x)$.
 % %{/q}
 % 
 %   \\begin{enumerate}
 % 
 %     \\item
 %     %{#o}
-%     Wrong answer option 1 (always option A)
+%     $1$
 %     %{/o}
 % 
 %     \\item
 %     %{#o}
-%     Wrong answer option 2 (always option B)
+%     $0$
 %     %{/o}
 % 
 %     \\item
 %     %{#o}
-%     Correct answer (always option C)
+%     $-1$
 %     %{/o}
 % 
 %     \\item
 %     %{#o}
-%     Wrong answer option 3 (always option D)
+%     Does not exist
 %     %{/o}
 % 
 %     \\item
 %     %{#o}
-%     Wrong answer option 4 (always option E)
+%     $\\infty$
 %     %{/o}
 % 
 %   \\end{enumerate}
 
-%% EXAMPLE 3: True/False question (2 options)
+%% EXAMPLE 3: Fixed Options with Random Position (Mathematical)
+%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
+%% This keeps the option order the same but allows the question position to be randomized
+%
+% \\item %{#fixed-options:C}
+% %{#q}
+% Evaluate the following matrix determinant:
+% $$\\begin{vmatrix}
+% 2 & -1 & 3 \\\\
+% 0 & 4 & 1 \\\\
+% 5 & 2 & -2
+% \\end{vmatrix}$$
+% %{/q}
+% 
+%   \\begin{enumerate}
+% 
+%     \\item
+%     %{#o}
+%     $-42$
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     $28$
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     $-78$ % Correct answer (always option C)
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     $56$
+%     %{/o}
+% 
+%     \\item
+%     %{#o}
+%     $0$
+%     %{/o}
+% 
+%   \\end{enumerate}
+
+%% EXAMPLE 4: True/False question (2 options)
 %% You can have 2-5 options or none for open-ended questions
 %
 % \\item
 % %{#q}
-% This is a true or false question - supports variable option counts
+% True or False: For any differentiable function $f(x)$, if $f'(c) = 0$ for some $c$ in the domain, then $f$ has a local extremum at $x = c$.
 % %{/q}
 % 
 %   \\begin{enumerate}
@@ -393,13 +561,13 @@ ${allQuestions.join('\n\n')}
 % 
 %   \\end{enumerate}
 
-%% EXAMPLE 4: Open-ended question (no options)
-%% For essay questions or short-answer format
+%% EXAMPLE 5: Open-ended Mathematical Question (no options)
+%% For problems requiring detailed solutions or proofs
 %
 % \\item
 % %{#q}
-% This is an open-ended question where students write their own answer.
-% No options are provided, making it suitable for essay or short-answer format.
+% Prove that $\\lim_{n \\to \\infty} \\frac{n^2 + 3n + 1}{2n^2 - n + 5} = \\frac{1}{2}$ using the definition of limits.
+% Show all steps in your proof and justify each limit law used.
 % %{/q}
 
 %% =========================== END OF RANDOMIZATION EXAMPLES ===========================
@@ -423,10 +591,14 @@ ${allQuestions.join('\n\n')}
         <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
           Create Professional MCQ Exams
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
           Generate randomized exam versions with automatic answer keys. 
           Built for university professors who value privacy and precision.
         </p>
+        
+        <div className="max-w-xl mx-auto">
+          <PrivacyNotice />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -456,14 +628,14 @@ ${allQuestions.join('\n\n')}
               )}
               
               {selectedFile && !error && !loading && (
-                <div className="flex items-center justify-between p-3 rounded-md border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+                <div className="flex items-center justify-between p-3 rounded-md border border-success/20 bg-success/10">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                    <FileText className="h-4 w-4 text-success" />
+                    <span className="text-sm font-medium text-success">
                       {selectedFile.name}
                     </span>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <ArrowRight className="h-4 w-4 text-success" />
                 </div>
               )}
             </CardContent>
@@ -488,9 +660,7 @@ ${allQuestions.join('\n\n')}
         </div>
       </div>
 
-      <div className="space-y-6">
-        <PrivacyNotice />
-        
+      <div className="space-y-6">        
         <Card>
           <CardHeader>
             <CardTitle>How It Works</CardTitle>
@@ -507,8 +677,8 @@ ${allQuestions.join('\n\n')}
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <ArrowRight className="h-6 w-6 text-primary" />
+                <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-3">
+                  <ArrowRight className="h-6 w-6 text-secondary" />
                 </div>
                 <h3 className="font-medium mb-2">2. Configure Settings</h3>
                 <p className="text-sm text-muted-foreground">
@@ -516,8 +686,8 @@ ${allQuestions.join('\n\n')}
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Download className="h-6 w-6 text-primary" />
+                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                  <Download className="h-6 w-6 text-accent-foreground" />
                 </div>
                 <h3 className="font-medium mb-2">3. Generate & Download</h3>
                 <p className="text-sm text-muted-foreground">

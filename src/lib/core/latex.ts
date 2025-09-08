@@ -253,7 +253,7 @@ ${(() => {
 \\setcounter{equation}{0}
 
 ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
-        `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === 0 ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
+        `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === question.choices[1] ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
       ).join('\n')}
 \\end{enumerate}` : ''}`;
       
@@ -275,7 +275,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
 \\setcounter{equation}{0}
 
 ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map((choice, choiceIndex) => 
-        `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === 0 ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
+        `\\item ${processText(choice?.text || `question ${index + 1}, Item ${choiceIndex + 1}`)}${choiceIndex === question.choices[1] ? '\\;\\;\\hrulefill {\\small (correct)}' : ''}`
       ).join('\n')}
 \\end{enumerate}` : ''}`;
       

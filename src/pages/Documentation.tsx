@@ -14,7 +14,8 @@ import {
   Shuffle,
   Lock,
   Edit3,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink
 } from 'lucide-react';
 
 interface DocumentationPageProps {
@@ -428,6 +429,105 @@ This is a complex question that requires its own page with lots of space for dia
 
             <Card>
               <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Edit3 className="h-5 w-5 text-indigo-500" />
+                  Mathematical Questions
+                </CardTitle>
+                <CardDescription>LaTeX math environments for calculus, algebra, and advanced mathematics</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm mb-3">Use LaTeX math environments for mathematical expressions. The template includes <code className="bg-muted px-1 rounded">\usepackage{`{amsmath}`}</code> for advanced math support.</p>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Calculus - Derivatives</h4>
+                  <pre className="text-sm bg-muted p-3 rounded overflow-x-auto">
+{`\\item
+%{#q}
+Find the derivative of $f(x) = 3x^2 + 2x - 1$:
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    $f'(x) = 6x + 2$
+    %{/o}
+    \\item
+    %{#o}
+    $f'(x) = 3x + 2$
+    %{/o}
+    \\item
+    %{#o}
+    $f'(x) = 6x^2 + 2x$
+    %{/o}
+  \\end{enumerate}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Algebra - Systems of Equations</h4>
+                  <pre className="text-sm bg-muted p-3 rounded overflow-x-auto">
+{`\\item
+%{#q}
+Solve the system: 
+\\begin{align}
+2x + y &= 7 \\\\
+x - y &= 2
+\\end{align}
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    $x = 3, y = 1$
+    %{/o}
+    \\item
+    %{#o}
+    $x = 2, y = 3$ 
+    %{/o}
+    \\item
+    %{#o}
+    $x = 1, y = 5$
+    %{/o}
+  \\end{enumerate}`}
+                  </pre>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Integration with Fractions</h4>
+                  <pre className="text-sm bg-muted p-3 rounded overflow-x-auto">
+{`\\item
+%{#q}
+Evaluate: $\\int \\frac{x^2 + 1}{x} dx$
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    $\\frac{x^2}{2} + \\ln|x| + C$
+    %{/o}
+    \\item
+    %{#o}
+    $x + \\frac{1}{x} + C$
+    %{/o}
+    \\item
+    %{#o}
+    $\\frac{x^3}{3} + x + C$
+    %{/o}
+  \\end{enumerate}`}
+                  </pre>
+                </div>
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Mathematical LaTeX is fully supported including fractions, integrals, matrices, align environments, and complex mathematical notation. The template automatically includes amsmath package.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>True/False & Variable Options</CardTitle>
                 <CardDescription>Support for 2-5 options per question</CardDescription>
               </CardHeader>
@@ -604,6 +704,48 @@ Which is largest?
                     1,2,A,2,CADBE,C<br/>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ExternalLink className="h-5 w-5 text-blue-500" />
+                  Overleaf Integration
+                </CardTitle>
+                <CardDescription>Direct compilation in the cloud</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm">
+                  The "Open in Overleaf" button provides instant access to your generated exam in Overleaf's online LaTeX editor.
+                </p>
+                
+                <div>
+                  <h4 className="font-medium mb-2">What Happens When You Click</h4>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• Creates a new Overleaf project with your exam content</li>
+                    <li>• Uploads the complete LaTeX document with all versions</li>
+                    <li>• Opens directly in your browser - no downloads needed</li>
+                    <li>• Ready to compile and generate PDF immediately</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Benefits</h4>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• No need to install LaTeX on your computer</li>
+                    <li>• Compile and preview instantly in the cloud</li>
+                    <li>• Share with colleagues for review or editing</li>
+                    <li>• Access your exam from any device</li>
+                  </ul>
+                </div>
+                
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    You'll need a free Overleaf account. The generated project is private to your account and can be compiled immediately without any additional setup.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
 

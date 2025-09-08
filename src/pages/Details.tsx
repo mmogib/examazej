@@ -321,23 +321,6 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paper_size">Paper Size</Label>
-                  <Select 
-                    value={settings.paper_size} 
-                    onValueChange={(value: 'A4' | 'Letter') => handleSettingChange('paper_size', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A4">A4</SelectItem>
-                      <SelectItem value="Letter">Letter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
