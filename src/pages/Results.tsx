@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2 } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink } from 'lucide-react';
 import { generateExamVersions, generateCorrectnessSummary } from '@/lib/core/versioning';
 import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
 import { generateSettingsBlock } from '@/lib/core/settings';
@@ -79,6 +79,26 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const openInOverleaf = () => {
+    if (!generationState) return;
+
+    const latexContent = generateLatexDocument(
+      generationState.settings,
+      examData.exam,
+      generationState.versions,
+      generationState.mappings,
+      allowTrustedTex
+    );
+
+    // Create Overleaf project URL with LaTeX content
+    const projectName = `${examData.setting.coursecode}_${examData.setting.examname.replace(/\s+/g, '_')}`;
+    const overleafUrl = 'https://www.overleaf.com/docs?' + 
+      'snip_uri=' + encodeURIComponent(`data:application/x-tex;base64,${btoa(unescape(encodeURIComponent(latexContent)))}`) +
+      '&snip_name=' + encodeURIComponent(`${projectName}.tex`);
+    
+    window.open(overleafUrl, '_blank');
   };
 
   const downloadTemplate = () => {
@@ -748,6 +768,15 @@ ${templateQuestions}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Download Full Exam
+              </Button>
+              
+              <Button 
+                onClick={openInOverleaf}
+                variant="default"
+                className="w-full"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open on Overleaf
               </Button>
               
               <Button 
