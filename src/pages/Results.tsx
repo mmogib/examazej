@@ -92,13 +92,32 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       allowTrustedTex
     );
 
-    // Create Overleaf project URL with LaTeX content
+    // Create hidden form for Overleaf submission
+    const form = document.createElement('form');
+    form.action = 'https://www.overleaf.com/docs';
+    form.method = 'post';
+    form.target = '_blank';
+    form.style.display = 'none';
+
+    // Add LaTeX content
+    const snippetInput = document.createElement('input');
+    snippetInput.type = 'hidden';
+    snippetInput.name = 'snip';
+    snippetInput.value = latexContent;
+    form.appendChild(snippetInput);
+
+    // Add project name
     const projectName = `${examData.setting.coursecode}_${examData.setting.examname.replace(/\s+/g, '_')}`;
-    const overleafUrl = 'https://www.overleaf.com/docs?' + 
-      'snip_uri=' + encodeURIComponent(`data:application/x-tex;base64,${btoa(unescape(encodeURIComponent(latexContent)))}`) +
-      '&snip_name=' + encodeURIComponent(`${projectName}.tex`);
-    
-    window.open(overleafUrl, '_blank');
+    const nameInput = document.createElement('input');
+    nameInput.type = 'hidden';
+    nameInput.name = 'snip_name';
+    nameInput.value = `${projectName}.tex`;
+    form.appendChild(nameInput);
+
+    // Submit form
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   };
 
   const downloadTemplate = () => {
