@@ -86,7 +86,7 @@ export function generateSettingsBlock(settings: ExamSettings, actualVersions?: n
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
 %		code_numbering=${settings.code_numbering}
-%		includeCoverPage=${settings.includeCoverPage}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
+%		includeCoverPage=${settings.includeCoverPage ? 'yes' : 'no'}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
 %{/setting}
 
 %{#instructions}
