@@ -226,7 +226,8 @@ ${masterExam.preamble || ''}
 \\newpage`;
 
   // Generate master questions with correct answers marked
-  const masterQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ MASTER }}}
+  const nameIdHeader = settings.includeCoverPage ? '' : '\\\\\\vspace{0.3cm}\\noindent Name: \\underline{\\hspace{6cm}} \\hfill Student ID: \\underline{\\hspace{4cm}}';
+  const masterQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ MASTER }}${nameIdHeader}}
 \\setcounter{page}{1}
 
  %% questions start here
@@ -304,7 +305,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
     const versionCode = version.name.replace('version_', '').toUpperCase();
     
     // Generate questions for this version
-    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
+    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}${nameIdHeader}}
 \\setcounter{page}{1}
  %% questions start here
 \\begin{large}
@@ -385,7 +386,7 @@ ${versionQuestionsSection}`;
   const answerKeyPage = `
 %% KEY ANSWER Page
 \\newpage
-\\renewcommand{\\thepage}{\\noindent ${processText(settings.coursecode)}, ${processText(settings.term)}, ${processText(settings.examname)} \\hfill {\\bf \\fbox{Answer KEY}}}
+\\renewcommand{\\thepage}{\\noindent ${processText(settings.coursecode)}, ${processText(settings.term)}, ${processText(settings.examname)} \\hfill {\\bf \\fbox{Answer KEY}}${nameIdHeader}}
 \\begin{normalsize}
 \\setcounter{page}{1}
 \\vspace {1cm}
@@ -435,7 +436,7 @@ ${versionQuestionsSection}`;
   const answerCountsPage = `
 %% This is the answer count page
 \\newpage
-\\renewcommand{\\thepage}{\\noindent ${processText(settings.coursecode)}, ${processText(settings.term)}, ${processText(settings.examname)} \\hfill {\\bf \\fbox{Answer Counts}}}
+\\renewcommand{\\thepage}{\\noindent ${processText(settings.coursecode)}, ${processText(settings.term)}, ${processText(settings.examname)} \\hfill {\\bf \\fbox{Answer Counts}}${nameIdHeader}}
 \\begin{normalsize}
 \\begin{center}
 \\vspace {1cm}
