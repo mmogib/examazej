@@ -283,12 +283,12 @@ This is the body of question ${questionNumber}${(!includeImageQuestion && questi
         
         // Add appropriate separator
         if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-          questionsLatex += '\n\\eogseparator';
+          questionsLatex += '\n\\eogseparator\n';
           questionsOnCurrentPage = 0;
         } else if (isLastQuestion) {
           questionsLatex += '\n\\eogseparator';
         } else {
-          questionsLatex += '\n\\questionseparator';
+          questionsLatex += '\n\\questionseparator\n';
         }
       });
       
