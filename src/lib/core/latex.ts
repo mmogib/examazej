@@ -89,7 +89,7 @@ export function generateLatexDocument(
 \\vspace*{\\fill}
  \\newpage
 }
-\\newcommand{\\newcodecover}[1]{
+\\newcommand{\\newcodecover}[1]{${settings.includeCoverPage ? `
 
 \\newpage
 \\thispagestyle{empty}
@@ -139,7 +139,7 @@ ${settings.instructions}
 
  \\vspace*{\\fill}
 \\newpage
-
+` : ''}
 }
 
 
