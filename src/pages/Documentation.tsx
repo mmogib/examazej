@@ -161,7 +161,7 @@ Option text goes here
 %examtype=Multiple Choice
 %code_name=A
 %code_numbering=ALPHA
-%includeCoverPage=true
+%includeCoverPage=yes
 %paper_size=A4
 %seed=exam2024
 %{/setting}`}
@@ -645,11 +645,11 @@ Which is largest?
                 <div className="bg-muted p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Setting Control:</h4>
                   <pre className="text-sm bg-background p-2 rounded border mb-2">
-{`%includeCoverPage=true   (default - includes student cover pages)
-%includeCoverPage=false  (no cover pages, adds name/ID header to each page)`}
+{`%includeCoverPage=yes   (default - includes student cover pages)
+%includeCoverPage=no   (no cover pages, adds name/ID header to each page)`}
                   </pre>
                   <p className="text-sm text-muted-foreground">
-                    When set to <code>false</code>, student name and ID fields are added to the page header instead of a separate cover page.
+                    When set to <code>no</code>, student name and ID fields are added to the page header instead of a separate cover page.
                   </p>
                 </div>
                 
@@ -665,7 +665,7 @@ Which is largest?
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    When <code>includeCoverPage=false</code>, each student version starts directly with questions and includes "Name:" and "ID:" fields in the page header for student identification.
+                    When <code>includeCoverPage=no</code>, each student version starts directly with questions and includes "Name:" and "ID:" fields in the page header for student identification.
                   </AlertDescription>
                 </Alert>
               </CardContent>
