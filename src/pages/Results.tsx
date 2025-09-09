@@ -230,8 +230,24 @@ ${optionsText}
     const settingsBlock = generateSettingsBlock(templateSettings);
 
     const template = `${settingsBlock}
-\\documentclass{article}
+\\documentclass[leqno,fleqn,12pt]{article}
+% exam paper size and margins
+\\usepackage[${templateSettings.paper_size.toLowerCase()}paper,top=2cm,bottom=1cm,left=1cm,right=1cm]{geometry}
+
+% math packages
+\\usepackage{mathtools}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{amsfonts}
+
+% graphics packages
 \\usepackage{graphicx}
+\\usepackage[final]{qrcode}
+\\usepackage[most]{tcolorbox}
+
+\\renewcommand{\\theequation}{\\alph{equation}}
+\\thicklines
+\\pagestyle{myheadings}
 %% put your preamble between the two tags {#preamble} and {/preamble} below
 %% You can also redefine the following commans
 %% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
@@ -599,8 +615,24 @@ ${optionsText}
     const settingsBlock = generateSettingsBlock(templateSettings);
 
     const template = `${settingsBlock}
-\\documentclass{article}
+\\documentclass[leqno,fleqn,12pt]{article}
+% exam paper size and margins
+\\usepackage[${templateSettings.paper_size.toLowerCase()}paper,top=2cm,bottom=1cm,left=1cm,right=1cm]{geometry}
+
+% math packages
+\\usepackage{mathtools}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{amsfonts}
+
+% graphics packages
 \\usepackage{graphicx}
+\\usepackage[final]{qrcode}
+\\usepackage[most]{tcolorbox}
+
+\\renewcommand{\\theequation}{\\alph{equation}}
+\\thicklines
+\\pagestyle{myheadings}
 %% put your preamble between the two tags {#preamble} and {/preamble} below
 %% You can also redefine the following commans
 %% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
