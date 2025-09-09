@@ -75,7 +75,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">2</Badge>
                   <div>
                     <h3 className="font-semibold">Configure Settings</h3>
-                    <p className="text-sm text-muted-foreground">Set exam details like course name, date, number of versions, and question grouping.</p>
+                    <p className="text-sm text-muted-foreground">Set exam details like course name, date, number of versions, question grouping, and formatting options like cover pages.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -161,6 +161,7 @@ Option text goes here
 %examtype=Multiple Choice
 %code_name=A
 %code_numbering=ALPHA
+%includeCoverPage=true
 %paper_size=A4
 %seed=exam2024
 %{/setting}`}
@@ -629,6 +630,38 @@ Which is largest?
 
             <Card>
               <CardHeader>
+                <CardTitle>Cover Page Options</CardTitle>
+                <CardDescription>Control cover page generation for different exam types</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm">
+                  The exam generator creates two types of cover pages:
+                </p>
+                <ul className="text-sm space-y-2 ml-4">
+                  <li>• <strong>Master Cover</strong> - Always included, contains exam metadata for instructors</li>
+                  <li>• <strong>Individual Version Covers</strong> - Optional student-facing pages with name/ID fields</li>
+                </ul>
+                
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">When to disable individual covers:</h4>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• Quizzes that don't need formal student information</li>
+                    <li>• Short assessments to save paper</li>
+                    <li>• When using separate answer sheets</li>
+                  </ul>
+                </div>
+                
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    With individual covers disabled, each version starts directly with questions. Students can write their names on the question pages.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Custom Preamble</CardTitle>
                 <CardDescription>Add custom LaTeX packages and styling</CardDescription>
               </CardHeader>
@@ -662,7 +695,8 @@ Which is largest?
                 <div>
                   <h4 className="font-medium mb-2">What's Included</h4>
                   <ul className="text-sm space-y-1 ml-4">
-                    <li>• <strong>Cover page</strong> with exam details and instructions</li>
+                    <li>• <strong>Master cover page</strong> with exam details and instructions</li>
+                    <li>• <strong>Individual cover pages</strong> for student info (optional - can be disabled for quizzes)</li>
                     <li>• <strong>Master version</strong> showing original question order</li>
                     <li>• <strong>All exam versions</strong> with randomized questions</li>
                     <li>• <strong>Answer keys</strong> for each version</li>
