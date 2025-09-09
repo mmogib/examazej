@@ -29,6 +29,9 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         
         if (cleanKey === 'numberofvestions') {
           (settings as any)[cleanKey] = parseInt(value) || 1;
+        } else if (cleanKey === 'includeCoverPage') {
+          // Convert string to boolean: missing or "yes" = true, "no" = false
+          (settings as any)[cleanKey] = value.toLowerCase() !== 'no';
         } else {
           (settings as any)[cleanKey] = value;
         }
@@ -38,6 +41,11 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Set default seed if not present
     if (!settings.seed) {
       settings.seed = 'exam2024';
+    }
+    
+    // Set default includeCoverPage if not present
+    if (settings.includeCoverPage === undefined) {
+      settings.includeCoverPage = true;
     }
     
     result.settings = settings;

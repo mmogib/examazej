@@ -65,7 +65,8 @@ export function getDefaultSettings(): Partial<ExamSettings> {
         \\item  When bubbling, make sure that the bubbled space is fully covered.
         \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
     \\end{normalsize}
-\\end{enumerate}`
+\\end{enumerate}`,
+    includeCoverPage: true
   };
 }
 
@@ -84,7 +85,8 @@ export function generateSettingsBlock(settings: ExamSettings, actualVersions?: n
 %		groups=${settings.groups}
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
-%		code_numbering=${settings.code_numbering}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
+%		code_numbering=${settings.code_numbering}
+%		includeCoverPage=${settings.includeCoverPage ? 'yes' : 'no'}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
 %{/setting}
 
 %{#instructions}
@@ -109,6 +111,7 @@ export function generateTemplateSettings(numQuestions: number): ExamSettings {
     code_name: defaults.code_name!,
     code_numbering: "NUMERIC", // Use numeric numbering for sample templates
     paper_size: defaults.paper_size!,
-    instructions: defaults.instructions!
+    instructions: defaults.instructions!,
+    includeCoverPage: defaults.includeCoverPage!
   };
 }

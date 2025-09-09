@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -63,7 +64,7 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
     validateSettings();
   }, [settings, groupPartition, versions, seed]);
 
-  const handleSettingChange = (key: keyof ExamSettings, value: string | number) => {
+  const handleSettingChange = (key: keyof ExamSettings, value: string | number | boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -200,6 +201,24 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                       <SelectItem value="QUIZ">Quiz</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="includeCoverPage">Include Cover Pages</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Add individual cover pages for each exam version with student information fields
+                    </p>
+                  </div>
+                  <Switch
+                    id="includeCoverPage"
+                    checked={settings.includeCoverPage}
+                    onCheckedChange={(checked) => handleSettingChange('includeCoverPage', checked)}
+                  />
                 </div>
               </div>
             </CardContent>

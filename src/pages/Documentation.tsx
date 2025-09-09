@@ -75,7 +75,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">2</Badge>
                   <div>
                     <h3 className="font-semibold">Configure Settings</h3>
-                    <p className="text-sm text-muted-foreground">Set exam details like course name, date, number of versions, and question grouping.</p>
+                    <p className="text-sm text-muted-foreground">Set exam details like course name, date, number of versions, question grouping, and formatting options like cover pages.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -161,6 +161,7 @@ Option text goes here
 %examtype=Multiple Choice
 %code_name=A
 %code_numbering=ALPHA
+%includeCoverPage=yes
 %paper_size=A4
 %seed=exam2024
 %{/setting}`}
@@ -629,6 +630,49 @@ Which is largest?
 
             <Card>
               <CardHeader>
+                <CardTitle>Cover Page Options</CardTitle>
+                <CardDescription>Control cover page generation for different exam types</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm">
+                  The exam generator creates two types of cover pages that serve different purposes:
+                </p>
+                <ul className="text-sm space-y-2 ml-4">
+                  <li>• <strong>Master Cover</strong> - Always included, contains exam metadata for instructors</li>
+                  <li>• <strong>Individual Version Covers</strong> - Optional student-facing pages with name/ID fields</li>
+                </ul>
+                
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Setting Control:</h4>
+                  <pre className="text-sm bg-background p-2 rounded border mb-2">
+{`%includeCoverPage=yes   (default - includes student cover pages)
+%includeCoverPage=no   (no cover pages, adds name/ID header to each page)`}
+                  </pre>
+                  <p className="text-sm text-muted-foreground">
+                    When set to <code>no</code>, student name and ID fields are added to the page header instead of a separate cover page.
+                  </p>
+                </div>
+                
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">When to disable individual covers:</h4>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• Short quizzes that don't need formal student information pages</li>
+                    <li>• Quick assessments to save paper and reduce printing costs</li>
+                    <li>• When using separate bubble answer sheets</li>
+                  </ul>
+                </div>
+                
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    When <code>includeCoverPage=no</code>, each student version starts directly with questions and includes "Name:" and "ID:" fields in the page header for student identification.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Custom Preamble</CardTitle>
                 <CardDescription>Add custom LaTeX packages and styling</CardDescription>
               </CardHeader>
@@ -662,7 +706,8 @@ Which is largest?
                 <div>
                   <h4 className="font-medium mb-2">What's Included</h4>
                   <ul className="text-sm space-y-1 ml-4">
-                    <li>• <strong>Cover page</strong> with exam details and instructions</li>
+                    <li>• <strong>Master cover page</strong> with exam details and instructions</li>
+                    <li>• <strong>Individual cover pages</strong> for student info (optional - can be disabled for quizzes)</li>
                     <li>• <strong>Master version</strong> showing original question order</li>
                     <li>• <strong>All exam versions</strong> with randomized questions</li>
                     <li>• <strong>Answer keys</strong> for each version</li>

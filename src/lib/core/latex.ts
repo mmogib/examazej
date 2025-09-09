@@ -89,7 +89,7 @@ export function generateLatexDocument(
 \\vspace*{\\fill}
  \\newpage
 }
-\\newcommand{\\newcodecover}[1]{
+\\newcommand{\\newcodecover}[1]{${settings.includeCoverPage ? `
 
 \\newpage
 \\thispagestyle{empty}
@@ -139,7 +139,7 @@ ${settings.instructions}
 
  \\vspace*{\\fill}
 \\newpage
-
+` : ''}
 }
 
 
@@ -304,7 +304,11 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
     const versionCode = version.name.replace('version_', '').toUpperCase();
     
     // Generate questions for this version
-    const versionQuestionsSection = `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}
+    const studentNameIdHeader = settings.includeCoverPage ? '' : ` \\hfill Name: \\underline{\\hspace{6cm}} \\hfill ID: \\underline{\\hspace{3cm}}`;
+    const headerFormat = settings.includeCoverPage 
+      ? `\\renewcommand{\\thepage}{\\noindent ${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${settings.code_name} ${versionCode} }}}`
+      : `\\renewcommand{\\thepage}{\\noindent {\\small{${processText(settings.term)}, ${processText(settings.coursecode)}, ${processText(settings.examname)}, Page {\\arabic{page}}, ${settings.code_name} ${versionCode} }}${studentNameIdHeader}}`;
+    const versionQuestionsSection = `${headerFormat}
 \\setcounter{page}{1}
  %% questions start here
 \\begin{large}
