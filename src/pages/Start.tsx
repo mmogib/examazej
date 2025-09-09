@@ -84,7 +84,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
   const generateTemplate = (numQuestions: number, includeImageQuestion = false) => {
     // Create image question if requested
-    const imageQuestion = includeImageQuestion ? `\\item
+    const imageQuestion = includeImageQuestion ? `% question 1
+\\item
 %{#q}
     %% play with parameters of the minipage, vspace*, hspace* environments to control the positioning of your text and figures
     \\begin{minipage}[t][10cm][t]{0.5\\textwidth}
@@ -142,7 +143,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       const isMathQuestion = (!includeImageQuestion && questionNumber === 2) || (includeImageQuestion && questionNumber === 3);
       
       if (isMathQuestion) {
-        return `\\item
+        return `% question ${questionNumber}
+\\item
 %{#q}
 Find the derivative of the following function:
 $$f(x) = 3x^4 - 2x^3 + 5x^2 - 7x + 1$$
@@ -182,7 +184,8 @@ $$f(x) = 3x^4 - 2x^3 + 5x^2 - 7x + 1$$
       const isAlgebraQuestion = (!includeImageQuestion && questionNumber === 3) || (includeImageQuestion && questionNumber === 4);
       
       if (isAlgebraQuestion) {
-        return `\\item
+        return `% question ${questionNumber}
+\\item
 %{#q}
 Solve the following system of linear equations:
 \\begin{align}
@@ -221,7 +224,8 @@ x - y &= 1
   \\end{enumerate}`;
       }
       
-      return `\\item
+      return `% question ${questionNumber}
+\\item
 ${fixedComment}%{#q}
 This is the body of question ${questionNumber}${(!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? ' (this question will appear in the same position across all versions)' : ''}
 %{/q}

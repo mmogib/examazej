@@ -248,6 +248,7 @@ ${(() => {
       }
       // Add the question on its own page
       questionsLatex += `
+% question ${index + 1}
 \\item ${processText(question.text)}
 \\bodyoptionseparator
 \\setcounter{equation}{0}
@@ -270,6 +271,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       }
       
       questionsLatex += `
+% question ${index + 1}
 \\item ${processText(question.text)}
 \\bodyoptionseparator
 \\setcounter{equation}{0}
@@ -321,6 +323,15 @@ ${(() => {
   version.questions.forEach((question, index) => {
     const isLastQuestion = index === version.questions.length - 1;
     
+    // Find the original master question number for this version question
+    const masterQuestionNumber = (() => {
+      const mapping = mappings.find(m => 
+        m.versionQNo === index + 1 && 
+        m.version === version.name.replace('version_', '').toUpperCase()
+      );
+      return mapping ? mapping.masterQNo : index + 1;
+    })();
+    
     // Handle separate page questions
     if (question.keepOnSeparatePage) {
       // If current page has questions, add separator before starting new page
@@ -329,6 +340,7 @@ ${(() => {
       }
       // Add the question on its own page
       versionQuestionsLatex += `
+% question ${index + 1} (question ${masterQuestionNumber} in master)
 \\item ${processText(question.text)}
 \\bodyoptionseparator
 \\setcounter{equation}{0}
@@ -351,6 +363,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       }
       
       versionQuestionsLatex += `
+% question ${index + 1} (question ${masterQuestionNumber} in master)
 \\item ${processText(question.text)}
 \\bodyoptionseparator
 \\setcounter{equation}{0}

@@ -155,13 +155,15 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
         // Format question with or without options based on choice count
         if (choices.length === 0) {
           // Open-ended question (no options)
-          return `\\item ${questionTags}
+          return `% question ${questionNumber}
+\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}`;
         } else {
-          // Multiple choice question
-          return `\\item ${questionTags}
+        // Multiple choice question
+        return `% question ${questionNumber}
+\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}
