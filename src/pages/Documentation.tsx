@@ -635,7 +635,7 @@ Which is largest?
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm">
-                  The exam generator creates two types of cover pages:
+                  The exam generator creates two types of cover pages that serve different purposes:
                 </p>
                 <ul className="text-sm space-y-2 ml-4">
                   <li>• <strong>Master Cover</strong> - Always included, contains exam metadata for instructors</li>
@@ -643,18 +643,29 @@ Which is largest?
                 </ul>
                 
                 <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Setting Control:</h4>
+                  <pre className="text-sm bg-background p-2 rounded border mb-2">
+{`%includeCoverPage=true   (default - includes student cover pages)
+%includeCoverPage=false  (no cover pages, adds name/ID header to each page)`}
+                  </pre>
+                  <p className="text-sm text-muted-foreground">
+                    When set to <code>false</code>, student name and ID fields are added to the page header instead of a separate cover page.
+                  </p>
+                </div>
+                
+                <div className="bg-muted p-4 rounded-lg">
                   <h4 className="font-medium mb-2">When to disable individual covers:</h4>
                   <ul className="text-sm space-y-1 ml-4">
-                    <li>• Quizzes that don't need formal student information</li>
-                    <li>• Short assessments to save paper</li>
-                    <li>• When using separate answer sheets</li>
+                    <li>• Short quizzes that don't need formal student information pages</li>
+                    <li>• Quick assessments to save paper and reduce printing costs</li>
+                    <li>• When using separate bubble answer sheets</li>
                   </ul>
                 </div>
                 
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    With individual covers disabled, each version starts directly with questions. Students can write their names on the question pages.
+                    When <code>includeCoverPage=false</code>, each student version starts directly with questions and includes "Name:" and "ID:" fields in the page header for student identification.
                   </AlertDescription>
                 </Alert>
               </CardContent>
