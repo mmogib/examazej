@@ -1,23 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Eye, ExternalLink } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import type { ExamData, ExamSettings } from '@/lib/types';
-
-// Declare MathJax for TypeScript
-declare global {
-  interface Window {
-    MathJax?: {
-      typesetPromise: (elements?: Element[]) => Promise<void>;
-      startup: {
-        promise: Promise<void>;
-      };
-    };
-  }
-}
 
 interface ExamPreviewDialogProps {
   versions: ExamData[];
@@ -28,45 +16,6 @@ interface ExamPreviewDialogProps {
 export function ExamPreviewDialog({ versions, settings, children }: ExamPreviewDialogProps) {
   const [selectedVersion, setSelectedVersion] = useState('0');
   const [open, setOpen] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Load MathJax when dialog opens
-  useEffect(() => {
-    if (open && !window.MathJax) {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
-      script.async = true;
-      
-      // Configure MathJax
-      const config = document.createElement('script');
-      config.textContent = `
-        window.MathJax = {
-          tex: {
-            inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-            displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']]
-          },
-          options: {
-            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-            processHtmlClass: 'mathjax'
-          }
-        };
-      `;
-      
-      document.head.appendChild(config);
-      document.head.appendChild(script);
-    }
-  }, [open]);
-
-  // Re-render math when content changes
-  useEffect(() => {
-    if (open && window.MathJax && contentRef.current) {
-      window.MathJax.startup.promise.then(() => {
-        if (window.MathJax && contentRef.current) {
-          window.MathJax.typesetPromise([contentRef.current]);
-        }
-      });
-    }
-  }, [selectedVersion, open]);
 
   const currentVersion = versions[parseInt(selectedVersion)] || versions[0];
 
@@ -82,8 +31,8 @@ export function ExamPreviewDialog({ versions, settings, children }: ExamPreviewD
           {question.fixedOptions && <Badge variant="secondary">Fixed Options</Badge>}
         </div>
         
-        <div className="mathjax mb-4 text-base leading-relaxed">
-          {questionNumber}. {question.text}
+        <div className="mb-4 text-base leading-relaxed">
+          <strong>{questionNumber}.</strong> {question.text}
         </div>
 
         {choices.length > 0 && (
@@ -93,7 +42,7 @@ export function ExamPreviewDialog({ versions, settings, children }: ExamPreviewD
               return (
                 <div key={choiceIndex} className="flex items-start gap-3">
                   <span className="font-semibold min-w-[20px]">{optionLetter}.</span>
-                  <span className="mathjax">{choice.text}</span>
+                  <span>{choice.text}</span>
                 </div>
               );
             })}
@@ -170,7 +119,7 @@ export function ExamPreviewDialog({ versions, settings, children }: ExamPreviewD
           )}
 
           {/* Questions */}
-          <ScrollArea className="max-h-[400px]" ref={contentRef}>
+          <ScrollArea className="max-h-[400px]">
             <div className="pr-4">
               <h4 className="font-semibold mb-4">Questions ({currentVersion?.questions?.length || 0})</h4>
               {currentVersion?.questions?.map((question, index) => 
