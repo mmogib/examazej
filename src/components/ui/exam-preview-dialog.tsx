@@ -5,7 +5,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Eye } from 'lucide-react';
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
 import type { ExamData, ExamSettings } from '@/lib/types';
+
+// Component to render LaTeX content
+function LaTeXRenderer({ content }: { content: string }) {
+  if (!content) return <span></span>;
+  
+  // Simple LaTeX detection and rendering
+  const parts = content.split(/(\$\$[^$]+\$\$|\$[^$]+\$|\\begin\{[^}]+\}.*?\\end\{[^}]+\})/);
+  
+  return (
+    <span>
+      {parts.map((part, index) => {
+        // Display math ($$...$$)
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          const math = part.slice(2, -2);
+          try {
+            return <BlockMath key={index} math={math} />;
+          } catch {
+            return <span key={index} className="text-red-500 bg-red-50 px-1 rounded">{part}</span>;
+          }
+        }
+        // Inline math ($...$)
+        else if (part.startsWith('$') && part.endsWith('$')) {
+          const math = part.slice(1, -1);
+          try {
+            return <InlineMath key={index} math={math} />;
+          } catch {
+            return <span key={index} className="text-red-500 bg-red-50 px-1 rounded">{part}</span>;
+          }
+        }
+        // Regular text
+        return <span key={index}>{part}</span>;
+      })}
+    </span>
+  );
+}
 
 interface ExamPreviewSheetProps {
   versions: ExamData[];
@@ -36,7 +73,7 @@ export function ExamPreviewSheet({ versions, settings, children }: ExamPreviewSh
         </div>
         
         <div className="mb-4 text-base leading-relaxed pl-11">
-          {question.text}
+          <LaTeXRenderer content={question.text} />
         </div>
 
         {choices.length > 0 && (
@@ -48,7 +85,9 @@ export function ExamPreviewSheet({ versions, settings, children }: ExamPreviewSh
                   <div className="w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-semibold">{optionLetter}</span>
                   </div>
-                  <span className="text-sm leading-relaxed">{choice.text}</span>
+                  <span className="text-sm leading-relaxed">
+                    <LaTeXRenderer content={choice.text} />
+                  </span>
                 </div>
               );
             })}
