@@ -181,12 +181,12 @@ Deno.serve(async (req) => {
       console.log('Created new user:', user?.id);
     }
 
-    // Generate session token
+    // Generate session token for the client
     const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'invite',
       email: email,
       options: {
-        redirectTo: req.headers.get('origin') || 'http://localhost:5173'
+        redirectTo: req.headers.get('origin') || req.headers.get('referer') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
       }
     });
 
@@ -201,10 +201,33 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Extract access and refresh tokens from the generated link
+    const actionLink = sessionData.properties.action_link;
+    const urlParams = new URL(actionLink).hash.substring(1);
+    const params = new URLSearchParams(urlParams);
+    
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (!accessToken || !refreshToken) {
+      console.error('Failed to extract tokens from action link');
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed - could not create session' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        redirectUrl: sessionData.properties.action_link,
+        session: {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          user: user
+        },
         message: 'Authentication successful' 
       }),
       { 

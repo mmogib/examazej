@@ -57,9 +57,22 @@ const Auth = () => {
 
       if (data.error) {
         setError(data.error);
-      } else if (data.redirectUrl) {
-        // Direct authentication success - redirect to the auth link
-        window.location.href = data.redirectUrl;
+      } else if (data.session) {
+        // Set the session directly in Supabase
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        if (sessionError) {
+          setError('Failed to establish session');
+        } else {
+          // Session will be handled by auth state listener, which will redirect
+          toast({
+            title: "Authentication successful!",
+            description: "Welcome back!",
+          });
+        }
       } else {
         setMessage(data.message);
         toast({
