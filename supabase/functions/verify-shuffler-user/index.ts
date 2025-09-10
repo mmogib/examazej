@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
       }
     });
     
-    // Try to get existing user first
+    // Get or create user
     console.log('Checking for existing user...');
     const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
     
@@ -280,13 +280,9 @@ Deno.serve(async (req) => {
       );
     }
     
-    const existingUser = existingUsers?.users?.find(u => u.email === email);
+    let user = existingUsers?.users?.find(u => u.email === email);
     
-    let user;
-    if (existingUser) {
-      console.log('Found existing user:', existingUser.id);
-      user = existingUser;
-    } else {
+    if (!user) {
       // Create new user
       console.log('Creating new user...');
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -307,40 +303,18 @@ Deno.serve(async (req) => {
       
       user = newUser.user;
       console.log('Created new user:', user?.id);
+    } else {
+      console.log('Found existing user:', user.id);
     }
 
-    // Generate session token for the client
-    console.log('Generating session for user...');
-    let sessionData, sessionError;
-    
-    if (existingUser) {
-      // For existing users, use magiclink type
-      console.log('Using magiclink for existing user');
-      const { data, error } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: email,
-        options: {
-          redirectTo: req.headers.get('origin') || req.headers.get('referer') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
-        }
-      });
-      sessionData = data;
-      sessionError = error;
-    } else {
-      // For new users, use invite type
-      console.log('Using invite for new user');
-      const { data, error } = await supabase.auth.admin.generateLink({
-        type: 'invite',
-        email: email,
-        options: {
-          redirectTo: req.headers.get('origin') || req.headers.get('referer') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
-        }
-      });
-      sessionData = data;
-      sessionError = error;
-    }
+    // Create session directly using admin
+    console.log('Creating session for user...');
+    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({ 
+      userId: user.id 
+    });
 
     if (sessionError) {
-      console.error('Failed to generate session:', sessionError);
+      console.error('Failed to create session:', sessionError);
       return new Response(
         JSON.stringify({ error: 'Failed to create session' }),
         { 
@@ -350,35 +324,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Session generated successfully');
-
-    // Extract access and refresh tokens from the generated link
-    const actionLink = sessionData.properties.action_link;
-    const urlParams = new URL(actionLink).hash.substring(1);
-    const params = new URLSearchParams(urlParams);
-    
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-
-    if (!accessToken || !refreshToken) {
-      console.error('Failed to extract tokens from action link');
-      return new Response(
-        JSON.stringify({ error: 'Authentication failed - could not create session' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('Authentication successful for user:', email);
+    console.log('Session created successfully for user:', email);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         session: {
-          access_token: accessToken,
-          refresh_token: refreshToken,
+          access_token: sessionData.access_token,
+          refresh_token: sessionData.refresh_token,
           user: user
         },
         message: 'Authentication successful' 
