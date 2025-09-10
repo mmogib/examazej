@@ -12,6 +12,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    
+    // Debug endpoint to check configuration
+    if (url.pathname.includes('debug')) {
+      const airtableApiKey = Deno.env.get('AIRTABLE_API_KEY');
+      const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
+      const airtableTableName = Deno.env.get('AIRTABLE_TABLE_NAME');
+      
+      return new Response(JSON.stringify({
+        debug: true,
+        config: {
+          hasApiKey: !!airtableApiKey,
+          apiKeyPrefix: airtableApiKey?.substring(0, 10) || 'MISSING',
+          baseId: airtableBaseId || 'MISSING',
+          tableName: airtableTableName || 'MISSING',
+          testUrl: `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName || 'MISSING')}?maxRecords=1`
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const { email } = await req.json();
     
     if (!email) {
