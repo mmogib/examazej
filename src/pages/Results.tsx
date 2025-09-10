@@ -155,13 +155,15 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
         // Format question with or without options based on choice count
         if (choices.length === 0) {
           // Open-ended question (no options)
-          return `\\item ${questionTags}
+          return `% question ${questionNumber}
+\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}`;
         } else {
-          // Multiple choice question
-          return `\\item ${questionTags}
+        // Multiple choice question
+        return `% question ${questionNumber}
+\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}
@@ -540,13 +542,15 @@ ${templateQuestions}
         // Format question with or without options based on choice count
         if (choices.length === 0) {
           // Open-ended question (no options)
-          return `\\item ${questionTags}
+          return `% question ${questionNumber}
+\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}`;
         } else {
           // Multiple choice question
-          return `\\item ${questionTags}
+          return `% question ${questionNumber}
+\\item ${questionTags}
 %{#q}
 ${questionText}
 %{/q}
@@ -576,7 +580,7 @@ ${optionsText}
           questionsLatex += questionStr;
           // Force new page after separate question (unless it's the last)
           if (!isLastQuestion) {
-            questionsLatex += '\n\\eogseparator';
+            questionsLatex += '\n\\eogseparator\n';
           }
           questionsOnCurrentPage = 0;
         } else {
@@ -591,12 +595,12 @@ ${optionsText}
           
           // Add separator after every 2 regular questions (except for the last question)
           if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-            questionsLatex += '\n\\eogseparator';
+            questionsLatex += '\n\\eogseparator\n';
             questionsOnCurrentPage = 0;
           } else if (isLastQuestion) {
             questionsLatex += '\n\\eogseparator';
           } else {
-            questionsLatex += '\n\\questionseparator';
+            questionsLatex += '\n\\questionseparator\n';
           }
         }
       });
