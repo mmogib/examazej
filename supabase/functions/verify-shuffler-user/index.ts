@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
     const airtableApiKey = Deno.env.get('AIRTABLE_API_KEY');
     const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
     
-    // Use the original table ID instead of "Users"
-    const airtableTableName = 'mUy5CL8K_UsQV3k'; // Using the table ID from your original config
+    // Use the correct table name from the API docs
+    const airtableTableName = 'users'; // From the API docs URL: table:users
 
     console.log('=== AIRTABLE CONNECTION CHECK ===');
     console.log('Airtable config check:', {
