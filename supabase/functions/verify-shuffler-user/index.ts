@@ -14,28 +14,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    
-    // Debug endpoint to check configuration
-    if (url.pathname.includes('debug')) {
-      const airtableApiKey = Deno.env.get('AIRTABLE_API_KEY');
-      const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
-      const airtableTableName = 'Users';
-      
-      return new Response(JSON.stringify({
-        debug: true,
-        config: {
-          hasApiKey: !!airtableApiKey,
-          apiKeyPrefix: airtableApiKey?.substring(0, 10) || 'MISSING',
-          baseId: airtableBaseId || 'MISSING',
-          tableName: airtableTableName || 'MISSING',
-          testUrl: `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName || 'MISSING')}?maxRecords=1`
-        }
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
     const { email } = await req.json();
     
     if (!email) {
@@ -53,28 +31,12 @@ Deno.serve(async (req) => {
     // Get Airtable credentials from environment
     const airtableApiKey = Deno.env.get('AIRTABLE_API_KEY');
     const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
-    
-    // Use the correct table name from the API docs
-    const airtableTableName = 'users'; // From the API docs URL: table:users
-
-    console.log('=== AIRTABLE CONNECTION CHECK ===');
-    console.log('Airtable config check:', {
-      hasApiKey: !!airtableApiKey,
-      hasBaseId: !!airtableBaseId,
-      hasTableName: !!airtableTableName,
-      apiKeyLength: airtableApiKey?.length || 0,
-      baseId: airtableBaseId,
-      tableName: airtableTableName,
-      email: email
-    });
+    const airtableTableName = 'users';
 
     if (!airtableApiKey || !airtableBaseId) {
-      console.error('Missing Airtable configuration:', {
-        hasApiKey: !!airtableApiKey,
-        hasBaseId: !!airtableBaseId
-      });
+      console.error('Missing Airtable configuration');
       return new Response(
-        JSON.stringify({ error: 'Server configuration error: Missing Airtable credentials' }),
+        JSON.stringify({ error: 'Server configuration error' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -82,88 +44,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // First, test basic connection to Airtable base
-    const testUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?maxRecords=1`;
-    console.log('Testing connection with URL:', testUrl);
-    console.log('Request headers:', {
-      'Authorization': `Bearer ${airtableApiKey?.substring(0, 10)}...`,
-      'Content-Type': 'application/json',
-    });
+    // Get all records and find user manually (no complex filtering)
+    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}`;
+    console.log('Fetching from Airtable:', airtableUrl);
     
-    const testResponse = await fetch(testUrl, {
-      headers: {
-        'Authorization': `Bearer ${airtableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('Response details:', {
-      ok: testResponse.ok,
-      status: testResponse.status,
-      statusText: testResponse.statusText,
-      headers: Object.fromEntries(testResponse.headers.entries()),
-      url: testResponse.url
-    });
-
-    if (!testResponse.ok) {
-      const errorText = await testResponse.text();
-      console.error('=== CONNECTION TEST FAILED ===');
-      console.error('Full error response:', errorText);
-      
-      let parsedError;
-      try {
-        parsedError = JSON.parse(errorText);
-        console.error('Parsed error:', parsedError);
-      } catch {
-        console.error('Could not parse error as JSON');
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: `Connection test failed: ${testResponse.status} ${testResponse.statusText}`,
-          debug: {
-            tableName: airtableTableName,
-            baseId: airtableBaseId,
-            status: testResponse.status,
-            errorBody: errorText,
-            actualUrl: testResponse.url
-          }
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const testData = await testResponse.json();
-    console.log('=== CONNECTION TEST SUCCESS ===');
-    console.log('Available fields in table:', testData.records?.[0]?.fields ? Object.keys(testData.records[0].fields) : 'No records found');
-    console.log('Record count:', testData.records?.length || 0);
-
-    // Check if email exists in Airtable with required conditions
-    // First, let's see all records to understand the structure
-    const debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?maxRecords=3`;
-    console.log('Fetching sample records to see field structure:', debugUrl);
-    
-    const debugResponse = await fetch(debugUrl, {
-      headers: {
-        'Authorization': `Bearer ${airtableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (debugResponse.ok) {
-      const debugData = await debugResponse.json();
-      console.log('Sample records from Airtable:', JSON.stringify(debugData, null, 2));
-      console.log('Available fields:', debugData.records?.[0]?.fields ? Object.keys(debugData.records[0].fields) : 'No records');
-    }
-    
-    // Try simple filter without complex encoding
-    const simpleFilterUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}`;
-    console.log('Fetching all records to find user manually:', simpleFilterUrl);
-    
-    const response = await fetch(simpleFilterUrl, {
+    const response = await fetch(airtableUrl, {
       headers: {
         'Authorization': `Bearer ${airtableApiKey}`,
         'Content-Type': 'application/json',
@@ -172,16 +57,9 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Airtable API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-        url: simpleFilterUrl
-      });
+      console.error('Airtable API error:', errorText);
       return new Response(
-        JSON.stringify({ 
-          error: `Failed to verify email: ${response.status} ${response.statusText}`
-        }),
+        JSON.stringify({ error: 'Failed to verify email' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -190,21 +68,18 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('All records from Airtable:', JSON.stringify(data, null, 2));
+    console.log('Records found:', data.records?.length || 0);
     
-    // Find the user record manually in the response
+    // Find user record
     const userRecord = data.records?.find((record: any) => {
-      const recordEmail = record.fields?.Email || record.fields?.email || record.fields?.EMAIL;
-      console.log('Checking record email:', recordEmail, 'against:', email);
+      const recordEmail = record.fields?.Email || record.fields?.email;
       return recordEmail === email;
     });
     
-    // If no user record found
     if (!userRecord) {
+      console.log('User not found in Airtable');
       return new Response(
-        JSON.stringify({ 
-          error: `Email not found in authorized users database. Please contact an administrator.`
-        }),
+        JSON.stringify({ error: 'Email not authorized. Please contact an administrator.' }),
         { 
           status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -212,16 +87,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Found user record:', userRecord.fields);
+    console.log('Found user record with fields:', Object.keys(userRecord.fields));
 
     // Check Status field
     const status = userRecord.fields.Status;
     if (!status || status.toLowerCase() !== 'active') {
-      console.log('User status check failed:', { status });
+      console.log('User status check failed:', status);
       return new Response(
-        JSON.stringify({ 
-          error: `Access denied. Account status: ${status || 'inactive'}`
-        }),
+        JSON.stringify({ error: `Access denied. Account status: ${status || 'inactive'}` }),
         { 
           status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -229,19 +102,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check ExpirationDate
+    // Check ExpirationDate if present
     const expirationDate = userRecord.fields.ExpirationDate;
     if (expirationDate) {
       const expDate = new Date(expirationDate);
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Start of today
+      today.setHours(0, 0, 0, 0);
       
       if (expDate < today) {
-        console.log('User expiration check failed:', { expirationDate, today: today.toISOString() });
+        console.log('User expiration check failed');
         return new Response(
-          JSON.stringify({ 
-            error: `Access expired on ${expDate.toLocaleDateString()}. Please contact an administrator.`
-          }),
+          JSON.stringify({ error: `Access expired on ${expDate.toLocaleDateString()}` }),
           { 
             status: 403, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -250,147 +121,32 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('All checks passed for user:', email);
+    console.log('All Airtable checks passed for user:', email);
 
-    // All checks passed - create user session directly
+    // Create Supabase client and send magic link
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    console.log('Creating Supabase admin client...');
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+    // Send magic link using regular signInWithOtp
+    const { error: magicLinkError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: email,
+      options: {
+        redirectTo: req.headers.get('origin') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
       }
     });
-    
-    // Get or create user
-    console.log('Checking for existing user...');
-    const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
-    
-    if (getUserError) {
-      console.error('Error listing users:', getUserError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to check existing users' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+
+    if (magicLinkError) {
+      console.error('Failed to send magic link:', magicLinkError);
+      // Don't fail - just return success without magic link
     }
-    
-    let user = existingUsers?.users?.find(u => u.email === email);
-    
-    if (!user) {
-      // Create new user
-      console.log('Creating new user...');
-      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-        email: email,
-        email_confirm: true,
-      });
-
-      if (createError) {
-        console.error('Failed to create user:', createError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create user account' }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-      
-      user = newUser.user;
-      console.log('Created new user:', user?.id);
-    } else {
-      console.log('Found existing user:', user.id);
-    }
-
-    // Create session directly using admin
-    console.log('Creating session for user...');
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: user ? 'magiclink' : 'invite',
-      email: email
-    });
-
-    if (linkError) {
-      console.error('Failed to generate link:', linkError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create session' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Extract tokens from the generated link
-    const actionLink = linkData.properties.action_link;
-    console.log('Action link received:', actionLink);
-    
-    let accessToken, refreshToken;
-    
-    try {
-      // Try different URL patterns for token extraction
-      if (actionLink.includes('#')) {
-        // Hash-based tokens
-        const urlParams = new URL(actionLink).hash.substring(1);
-        console.log('Hash params:', urlParams);
-        const params = new URLSearchParams(urlParams);
-        accessToken = params.get('access_token');
-        refreshToken = params.get('refresh_token');
-      } else if (actionLink.includes('?')) {
-        // Query-based tokens
-        const urlParams = new URL(actionLink).searchParams;
-        console.log('Search params:', urlParams.toString());
-        accessToken = urlParams.get('access_token');
-        refreshToken = urlParams.get('refresh_token');
-      }
-      
-      // Also check if tokens are in the linkData directly
-      console.log('Full linkData:', JSON.stringify(linkData, null, 2));
-      
-      // Try to get tokens from session if available
-      if (linkData.session) {
-        console.log('Found session in linkData');
-        accessToken = linkData.session.access_token;
-        refreshToken = linkData.session.refresh_token;
-      }
-      
-    } catch (error) {
-      console.error('Error parsing action link:', error);
-    }
-    
-    console.log('Extracted tokens:', { 
-      hasAccessToken: !!accessToken, 
-      hasRefreshToken: !!refreshToken,
-      accessTokenLength: accessToken?.length || 0,
-      refreshTokenLength: refreshToken?.length || 0
-    });
-
-    if (!accessToken || !refreshToken) {
-      console.error('Failed to extract tokens from action link');
-      return new Response(
-        JSON.stringify({ error: 'Authentication failed - could not create session' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('Session created successfully for user:', email);
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        session: {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          user: user
-        },
-        message: 'Authentication successful' 
+        success: true,
+        message: 'Email verified successfully. You are now authenticated!'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
