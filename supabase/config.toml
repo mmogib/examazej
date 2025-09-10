@@ -1,1 +1,4 @@
 project_id = "zenobxrzmxuhpxevdpai"
+
+[functions.verify-email]
+verify_jwt = false
