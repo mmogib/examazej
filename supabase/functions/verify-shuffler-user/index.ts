@@ -311,13 +311,33 @@ Deno.serve(async (req) => {
 
     // Generate session token for the client
     console.log('Generating session for user...');
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'invite',
-      email: email,
-      options: {
-        redirectTo: req.headers.get('origin') || req.headers.get('referer') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
-      }
-    });
+    let sessionData, sessionError;
+    
+    if (existingUser) {
+      // For existing users, use magiclink type
+      console.log('Using magiclink for existing user');
+      const { data, error } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: email,
+        options: {
+          redirectTo: req.headers.get('origin') || req.headers.get('referer') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
+        }
+      });
+      sessionData = data;
+      sessionError = error;
+    } else {
+      // For new users, use invite type
+      console.log('Using invite for new user');
+      const { data, error } = await supabase.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+          redirectTo: req.headers.get('origin') || req.headers.get('referer') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
+        }
+      });
+      sessionData = data;
+      sessionError = error;
+    }
 
     if (sessionError) {
       console.error('Failed to generate session:', sessionError);
