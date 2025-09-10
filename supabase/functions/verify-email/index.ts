@@ -54,62 +54,38 @@ Deno.serve(async (req) => {
     }
 
     // Check if email exists in Airtable with required conditions
-    // Try common field names for email
-    const emailFields = ['Email', 'email', 'Email Address', 'email_address'];
-    let airtableUrl;
-    let userRecord = null;
-    let foundField = '';
+    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula={Email}="${email}"`;
     
-    // Try each possible email field name
-    for (const fieldName of emailFields) {
-      airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula={${fieldName}}="${email}"`;
-      
-      console.log(`Trying field "${fieldName}" with URL:`, airtableUrl);
-      
-      const response = await fetch(airtableUrl, {
-        headers: {
-          'Authorization': `Bearer ${airtableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+    console.log('Making Airtable request to:', airtableUrl);
+    
+    const response = await fetch(airtableUrl, {
+      headers: {
+        'Authorization': `Bearer ${airtableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`Response for field "${fieldName}":`, {
-          recordCount: data.records?.length || 0,
-          records: data.records?.map(r => Object.keys(r.fields))
-        });
-        
-        if (data.records && data.records.length > 0) {
-          userRecord = data.records[0];
-          foundField = fieldName;
-          break;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Airtable API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url: airtableUrl
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to verify email: ${response.status} ${response.statusText}`
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      } else {
-        const errorText = await response.text();
-        console.log(`Field "${fieldName}" attempt failed:`, {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
-        
-        // If it's a 422 error, the field doesn't exist, try next one
-        if (response.status === 422) {
-          continue;
-        }
-        
-        // For other errors (like 403), log and continue to try other fields
-        if (response.status === 403) {
-          console.error(`403 error for field "${fieldName}":`, {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText,
-            url: airtableUrl
-          });
-          continue;
-        }
-      }
+      );
     }
+
+    const data = await response.json();
+    const userRecord = data.records && data.records.length > 0 ? data.records[0] : null;
     
     // If no user record found
     if (!userRecord) {
@@ -127,7 +103,7 @@ Deno.serve(async (req) => {
     console.log('Found user record:', userRecord.fields);
 
     // Check Status field
-    const status = userRecord.fields.Status || userRecord.fields.status;
+    const status = userRecord.fields.Status;
     if (!status || status.toLowerCase() !== 'active') {
       console.log('User status check failed:', { status });
       return new Response(
@@ -142,7 +118,7 @@ Deno.serve(async (req) => {
     }
 
     // Check ExpirationDate
-    const expirationDate = userRecord.fields.ExpirationDate || userRecord.fields.expirationDate || userRecord.fields['Expiration Date'];
+    const expirationDate = userRecord.fields.ExpirationDate;
     if (expirationDate) {
       const expDate = new Date(expirationDate);
       const today = new Date();
