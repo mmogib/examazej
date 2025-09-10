@@ -31,11 +31,15 @@ Deno.serve(async (req) => {
     const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
     const airtableTableName = Deno.env.get('AIRTABLE_TABLE_NAME');
 
+    console.log('=== AIRTABLE CONNECTION CHECK ===');
     console.log('Airtable config check:', {
       hasApiKey: !!airtableApiKey,
       hasBaseId: !!airtableBaseId,
       hasTableName: !!airtableTableName,
-      apiKeyLength: airtableApiKey?.length || 0
+      apiKeyLength: airtableApiKey?.length || 0,
+      baseId: airtableBaseId,
+      tableName: airtableTableName,
+      email: email
     });
 
     if (!airtableApiKey || !airtableBaseId || !airtableTableName) {
@@ -52,6 +56,47 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // First, test basic connection to Airtable base
+    const testUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?maxRecords=1`;
+    console.log('Testing connection with URL:', testUrl);
+    
+    const testResponse = await fetch(testUrl, {
+      headers: {
+        'Authorization': `Bearer ${airtableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('=== CONNECTION TEST FAILED ===');
+      console.error('Test response:', {
+        status: testResponse.status,
+        statusText: testResponse.statusText,
+        body: errorText,
+        url: testUrl
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: `Connection test failed: ${testResponse.status} ${testResponse.statusText}. Please check your AIRTABLE_TABLE_NAME (use table name, not ID) and API permissions.`,
+          debug: {
+            tableName: airtableTableName,
+            baseId: airtableBaseId,
+            status: testResponse.status
+          }
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const testData = await testResponse.json();
+    console.log('=== CONNECTION TEST SUCCESS ===');
+    console.log('Available fields in table:', testData.records?.[0]?.fields ? Object.keys(testData.records[0].fields) : 'No records found');
+    console.log('Record count:', testData.records?.length || 0);
 
     // Check if email exists in Airtable with required conditions
     const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula={Email}="${email}"`;
