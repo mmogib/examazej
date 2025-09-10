@@ -290,7 +290,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       } else if (isLastQuestion) {
         questionsLatex += '\n\\eogseparator';
       } else {
-        questionsLatex += '\n\\questionseparator\n';
+        questionsLatex += '\n\\questionseparator';
       }
     }
   });
@@ -382,7 +382,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       } else if (isLastQuestion) {
         versionQuestionsLatex += '\n\\eogseparator';
       } else {
-        versionQuestionsLatex += '\n\\questionseparator\n';
+        versionQuestionsLatex += '\n\\questionseparator';
       }
     }
   });
