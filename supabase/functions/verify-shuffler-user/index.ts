@@ -326,6 +326,7 @@ Deno.serve(async (req) => {
     }
 
     // Extract tokens from the generated link
+    const actionLink = linkData.properties.action_link;
     console.log('Action link received:', actionLink);
     
     let accessToken, refreshToken;
