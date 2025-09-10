@@ -309,14 +309,34 @@ Deno.serve(async (req) => {
 
     // Create session directly using admin
     console.log('Creating session for user...');
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({ 
-      userId: user.id 
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: user ? 'magiclink' : 'invite',
+      email: email
     });
 
-    if (sessionError) {
-      console.error('Failed to create session:', sessionError);
+    if (linkError) {
+      console.error('Failed to generate link:', linkError);
       return new Response(
         JSON.stringify({ error: 'Failed to create session' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Extract tokens from the generated link
+    const actionLink = linkData.properties.action_link;
+    const urlParams = new URL(actionLink).hash.substring(1);
+    const params = new URLSearchParams(urlParams);
+    
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (!accessToken || !refreshToken) {
+      console.error('Failed to extract tokens from action link');
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed - could not create session' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -330,8 +350,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         session: {
-          access_token: sessionData.access_token,
-          refresh_token: sessionData.refresh_token,
+          access_token: accessToken,
+          refresh_token: refreshToken,
           user: user
         },
         message: 'Authentication successful' 
