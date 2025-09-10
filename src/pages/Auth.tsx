@@ -57,11 +57,14 @@ const Auth = () => {
 
       if (data.error) {
         setError(data.error);
+      } else if (data.redirectUrl) {
+        // Direct authentication success - redirect to the auth link
+        window.location.href = data.redirectUrl;
       } else {
         setMessage(data.message);
         toast({
-          title: "Magic link sent!",
-          description: "Check your email for the login link.",
+          title: "Authentication successful!",
+          description: "Redirecting...",
         });
       }
     } catch (err: any) {
@@ -78,7 +81,7 @@ const Auth = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Access Your Account</CardTitle>
           <CardDescription>
-            Enter your email address to receive a magic link
+            Enter your email address to sign in
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,12 +119,12 @@ const Auth = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending Magic Link...
+                  Verifying...
                 </>
               ) : (
                 <>
                   <Mail className="mr-2 h-4 w-4" />
-                  Send Magic Link
+                  Sign In
                 </>
               )}
             </Button>

@@ -53,11 +53,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if email exists in Airtable
+    // Check if email exists in Airtable with required conditions
     // Try common field names for email
     const emailFields = ['Email', 'email', 'Email Address', 'email_address'];
     let airtableUrl;
-    let emailExists = false;
+    let userRecord = null;
     let foundField = '';
     
     // Try each possible email field name
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
         });
         
         if (data.records && data.records.length > 0) {
-          emailExists = true;
+          userRecord = data.records[0];
           foundField = fieldName;
           break;
         }
@@ -111,12 +111,113 @@ Deno.serve(async (req) => {
       }
     }
     
-    // If none of the field attempts worked, return error with debugging info
-    if (!emailExists && !foundField) {
+    // If no user record found
+    if (!userRecord) {
       return new Response(
         JSON.stringify({ 
-          error: `Could not verify email. Please check:\n1. Table name is correct (not table ID)\n2. Email field exists\n3. API key has read permissions\n\nTried fields: ${emailFields.join(', ')}\nTable: ${airtableTableName}\nBase: ${airtableBaseId}`
+          error: `Email not found in authorized users database. Please contact an administrator.`
         }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Found user record:', userRecord.fields);
+
+    // Check Status field
+    const status = userRecord.fields.Status || userRecord.fields.status;
+    if (!status || status.toLowerCase() !== 'active') {
+      console.log('User status check failed:', { status });
+      return new Response(
+        JSON.stringify({ 
+          error: `Access denied. Account status: ${status || 'inactive'}`
+        }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Check ExpirationDate
+    const expirationDate = userRecord.fields.ExpirationDate || userRecord.fields.expirationDate || userRecord.fields['Expiration Date'];
+    if (expirationDate) {
+      const expDate = new Date(expirationDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Start of today
+      
+      if (expDate < today) {
+        console.log('User expiration check failed:', { expirationDate, today: today.toISOString() });
+        return new Response(
+          JSON.stringify({ 
+            error: `Access expired on ${expDate.toLocaleDateString()}. Please contact an administrator.`
+          }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
+    console.log('All checks passed for user:', email);
+
+    // All checks passed - create user session directly
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+    
+    // Try to get existing user first
+    const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
+    
+    let user;
+    if (existingUser) {
+      console.log('Found existing user:', existingUser.id);
+      user = existingUser;
+    } else {
+      // Create new user
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: email,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        console.error('Failed to create user:', createError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user account' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      user = newUser.user;
+      console.log('Created new user:', user?.id);
+    }
+
+    // Generate session token
+    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: email,
+      options: {
+        redirectTo: req.headers.get('origin') || 'http://localhost:5173'
+      }
+    });
+
+    if (sessionError) {
+      console.error('Failed to generate session:', sessionError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to create session' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -124,48 +225,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Email verification result:', { emailExists, foundField });
-
-    if (emailExists) {
-      // Email exists in Airtable, send magic link
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          emailRedirectTo: `${req.headers.get('origin') || 'http://localhost:5173'}/`,
-        },
-      });
-
-      if (error) {
-        console.error('Supabase auth error:', error);
-        return new Response(
-          JSON.stringify({ error: 'Failed to send magic link' }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        redirectUrl: sessionData.properties.action_link,
+        message: 'Authentication successful' 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-
-      return new Response(
-        JSON.stringify({ success: true, message: 'Magic link sent to your email' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ error: 'Email not authorized. Please contact an administrator.' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    );
 
   } catch (error) {
     console.error('Error in verify-email function:', error);
