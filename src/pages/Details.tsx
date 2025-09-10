@@ -8,9 +8,10 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Settings, Users, Hash, Shuffle, FileText } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Settings, Users, Hash, Shuffle, FileText, RefreshCw } from 'lucide-react';
 import type { ExamJSON, ExamSettings } from '@/lib/types';
 import { InstructionsDialog } from '@/components/ui/instructions-dialog';
+import { generateDynamicSeed, isDefaultSeed } from '@/lib/utils/seed-generator';
 
 interface DetailsPageProps {
   examData: ExamJSON;
@@ -25,7 +26,19 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
     examData.setting.groups || `${examData.exam.questions.length}`
   );
   const [versions, setVersions] = useState<number>(examData.setting.numberofvestions || 8);
-  const [seed, setSeed] = useState<string>(examData.setting.seed || 'exam2024');
+  const [seed, setSeed] = useState<string>(() => {
+    const currentSeed = examData.setting.seed || 'exam2024';
+    // Generate fresh seed if current is default/empty
+    if (isDefaultSeed(currentSeed)) {
+      return generateDynamicSeed({
+        coursecode: examData.setting.coursecode,
+        examname: examData.setting.examname,
+        term: examData.setting.term,
+        examdate: examData.setting.examdate
+      });
+    }
+    return currentSeed;
+  });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const validateSettings = () => {
@@ -327,7 +340,23 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="seed">Randomization Seed</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="seed">Randomization Seed</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSeed(generateDynamicSeed({
+                      coursecode: settings.coursecode,
+                      examname: settings.examname,
+                      term: settings.term,
+                      examdate: settings.examdate
+                    }))}
+                    className="h-6 w-6 p-0"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                </div>
                 <Input
                   id="seed"
                   value={seed}
@@ -336,7 +365,7 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   className="font-mono"
                 />
                 <p className="text-sm text-muted-foreground">
-                  Same seed produces identical randomization across generations
+                  Same seed produces identical randomization across generations. Click refresh for a new dynamic seed.
                 </p>
               </div>
 

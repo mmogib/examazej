@@ -1,6 +1,7 @@
 // LaTeX template parser for the Exam Generator
 
 import { ParsedLatexTemplate, ExamSettings, Question } from '../types';
+import { generateDynamicSeed } from '../utils/seed-generator';
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   console.log('==== STARTING LATEX PARSING ====');
@@ -38,9 +39,14 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
     }
     
-    // Set default seed if not present
+    // Set dynamic seed if not present
     if (!settings.seed) {
-      settings.seed = 'exam2024';
+      settings.seed = generateDynamicSeed({
+        coursecode: settings.coursecode,
+        examname: settings.examname,
+        term: settings.term,
+        examdate: settings.examdate
+      });
     }
     
     // Set default includeCoverPage if not present

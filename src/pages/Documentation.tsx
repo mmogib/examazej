@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   BookOpen, 
   FileText, 
@@ -15,51 +18,347 @@ import {
   Lock,
   Edit3,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  RefreshCw,
+  Zap,
+  Target,
+  Clock
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentationPageProps {
   onBack: () => void;
 }
 
 export function DocumentationPage({ onBack }: DocumentationPageProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Search functionality with comprehensive tracking
+  const searchSections = (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      return {
+        'getting-started': { count: 0, hasMatches: false },
+        'template-format': { count: 0, hasMatches: false },
+        'question-types': { count: 0, hasMatches: false },
+        'advanced': { count: 0, hasMatches: false },
+        'export': { count: 0, hasMatches: false },
+        'troubleshooting': { count: 0, hasMatches: false }
+      };
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+    
+    const sections = {
+      'getting-started': {
+        content: [
+          "Quick Start Guide getting started create upload template configure settings generate download",
+          "What This App Does", "Creates multiple randomized versions", "Shuffles question order",
+          "Generates professional LaTeX documents", "Includes answer keys"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'template-format': {
+        content: [
+          "LaTeX Template Format markers question option settings", "Essential Markers",
+          "Question Markers", "Option Markers", "Settings Block", "Complete Question Example",
+          "university department term coursecode examname examdate timeallowed numberofvestions groups",
+          "examtype code_name code_numbering includeCoverPage paper_size seed"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'question-types': {
+        content: [
+          "Regular Questions randomized shuffle fixed options open-ended separate page image mathematical",
+          "Fixed Questions same position option order", "Fixed-Options Questions randomized position fixed option order",
+          "Open-Ended Questions essay short-answer written responses", "Separate Page Questions complex space diagrams calculations",
+          "Image Questions graphics advanced LaTeX formatting", "Mathematical Questions LaTeX math calculus algebra amsmath derivatives integration",
+          "True False Variable Options 2-5 options"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'advanced': {
+        content: [
+          "Question Grouping groups balanced mix randomization", "Smart Seed Generation dynamic seeds automatic randomization refresh",
+          "Cover Page Options master individual student cover pages includeCoverPage", "Custom Preamble LaTeX packages styling amsmath graphicx tikz"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'export': {
+        content: [
+          "LaTeX Document Output generated files master cover answer keys", "Version Mapping CSV track question distribution",
+          "Best Practices Recommendations printing exam distribution", "Overleaf Integration", "Printing Tips"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'troubleshooting': {
+        content: [
+          "Common Issues template format missing markers LaTeX errors", "No questions found in the template",
+          "Question has empty text", "Cannot have more than 5 options", "Group partition doesn't match question count",
+          "Best Practices", "Getting Help"
+        ],
+        count: 0,
+        hasMatches: false
+      }
+    };
+
+    // Count matches in each section
+    Object.keys(sections).forEach(sectionKey => {
+      const section = sections[sectionKey as keyof typeof sections];
+      section.content.forEach(text => {
+        if (text.toLowerCase().includes(searchLower)) {
+          section.count++;
+          section.hasMatches = true;
+        }
+      });
+    });
+
+    return sections;
+  };
+
+  const searchResults = searchSections(searchTerm);
+  const totalMatches = Object.values(searchResults).reduce((sum, section) => sum + section.count, 0);
+  const sectionsWithMatches = Object.entries(searchResults).filter(([_, section]) => section.hasMatches);
+
+  // Filter content based on search term
+  const shouldShowContent = (content: string) => {
+    if (!searchTerm.trim()) return true;
+    return content.toLowerCase().includes(searchTerm.toLowerCase());
+  };
+
+  // Highlight matching text
+  const highlightText = (text: string) => {
+    if (!searchTerm.trim()) return text;
+    
+    const searchRegex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = text.split(searchRegex);
+    
+    return parts.map((part, index) => 
+      searchRegex.test(part) ? 
+        <mark key={index} className="bg-yellow-200 dark:bg-yellow-900 rounded px-1">{part}</mark> : 
+        part
+    );
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(text);
+      toast({
+        title: "Copied!",
+        description: `${label} copied to clipboard`,
+      });
+      setTimeout(() => setCopiedText(null), 2000);
+    } catch (err) {
+      toast({
+        title: "Copy failed",
+        description: "Please copy manually",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const CodeBlock = ({ code, label }: { code: string; label: string }) => (
+    <div className="relative group">
+      <pre className="text-sm bg-muted/50 p-4 rounded-lg overflow-x-auto border">
+        {code}
+      </pre>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={() => copyToClipboard(code, label)}
+      >
+        {copiedText === code ? (
+          <Check className="h-4 w-4 text-green-500" />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <div className="container mx-auto py-8 px-4 max-w-6xl animate-fade-in">
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button onClick={onBack} variant="outline" size="sm" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          <Button onClick={onBack} variant="outline" size="sm" className="hover-scale self-start">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Documentation</h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-primary">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-heading font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Documentation
+              </h1>
+              <p className="text-muted-foreground">
+                Master the Exam Generator in minutes
+              </p>
+            </div>
           </div>
         </div>
-        <p className="text-lg text-muted-foreground">
-          Complete guide to creating and managing exams with the Exam Generator
-        </p>
+        
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-l-4 border-l-primary">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Quick Setup</p>
+                  <p className="text-xs text-muted-foreground">3 steps to your first exam</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-sm font-medium">Smart Randomization</p>
+                  <p className="text-xs text-muted-foreground">Dynamic seed generation</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-sm font-medium">Ready to Print</p>
+                  <p className="text-xs text-muted-foreground">Professional LaTeX output</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search documentation..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          
+          {/* Search Results Summary */}
+          {searchTerm.trim() && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
+              {totalMatches > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                    Found {totalMatches} result{totalMatches !== 1 ? 's' : ''} across {sectionsWithMatches.length} section{sectionsWithMatches.length !== 1 ? 's' : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {sectionsWithMatches.map(([sectionKey, section]) => (
+                      <Badge key={sectionKey} variant="secondary" className="text-xs">
+                        {sectionKey.replace('-', ' ')} ({section.count})
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No results found for "{searchTerm}"
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="getting-started" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-          <TabsTrigger value="template-format">Template Format</TabsTrigger>
-          <TabsTrigger value="question-types">Question Types</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          <TabsTrigger value="export">Export & Output</TabsTrigger>
-          <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+          <TabsTrigger value="getting-started" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Getting Started
+              {searchResults['getting-started'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['getting-started'].count}
+                </Badge>
+              )}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="template-format" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Template Format
+              {searchResults['template-format'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['template-format'].count}
+                </Badge>
+              )}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="question-types" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Question Types
+              {searchResults['question-types'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['question-types'].count}
+                </Badge>
+              )}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Advanced
+              {searchResults['advanced'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['advanced'].count}
+                </Badge>
+              )}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="export" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Export & Output
+              {searchResults['export'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['export'].count}
+                </Badge>
+              )}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="troubleshooting" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Troubleshooting
+              {searchResults['troubleshooting'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['troubleshooting'].count}
+                </Badge>
+              )}
+            </div>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="getting-started" className="space-y-6">
+          {shouldShowContent("Quick Start Guide getting started create upload template configure settings generate download") && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-500" />
-                Quick Start Guide
+                {highlightText("Quick Start Guide")}
               </CardTitle>
               <CardDescription>
-                Get up and running in 3 simple steps
+                {highlightText("Get up and running in 3 simple steps")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -67,22 +366,22 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                 <div className="flex gap-4">
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">1</Badge>
                   <div>
-                    <h3 className="font-semibold">Create or Upload Template</h3>
-                    <p className="text-sm text-muted-foreground">Download our sample template (with optional image question sample) and customize it with your questions, or upload an existing LaTeX file.</p>
+                    <h3 className="font-semibold">{highlightText("Create or Upload Template")}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText("Download our sample template (with optional image question sample) and customize it with your questions, or upload an existing LaTeX file.")}</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">2</Badge>
                   <div>
-                    <h3 className="font-semibold">Configure Settings</h3>
-                    <p className="text-sm text-muted-foreground">Set exam details like course name, date, number of versions, question grouping, and formatting options like cover pages.</p>
+                    <h3 className="font-semibold">{highlightText("Configure Settings")}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText("Set exam details like course name, date, number of versions, question grouping, and formatting options like cover pages.")}</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">3</Badge>
                   <div>
-                    <h3 className="font-semibold">Generate & Download</h3>
-                    <p className="text-sm text-muted-foreground">Generate randomized exam versions and download the complete LaTeX document with answer keys.</p>
+                    <h3 className="font-semibold">{highlightText("Generate & Download")}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText("Generate randomized exam versions and download the complete LaTeX document with answer keys.")}</p>
                   </div>
                 </div>
               </div>
@@ -90,31 +389,33 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
               <Separator />
 
               <div>
-                <h3 className="font-semibold mb-3">What This App Does</h3>
+                <h3 className="font-semibold mb-3">{highlightText("What This App Does")}</h3>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start gap-2">
                     <Shuffle className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Creates multiple randomized versions of your exam</span>
+                    <span>{highlightText("Creates multiple randomized versions of your exam")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Edit3 className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Shuffles question order and option order automatically</span>
+                    <span>{highlightText("Shuffles question order and option order automatically")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <FileText className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Generates professional LaTeX documents ready for printing</span>
+                    <span>{highlightText("Generates professional LaTeX documents ready for printing")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Includes answer keys for each version</span>
+                    <span>{highlightText("Includes answer keys for each version")}</span>
                   </li>
                 </ul>
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="template-format" className="space-y-6">
+          {shouldShowContent("LaTeX Template Format markers question option settings") && (
           <Card>
             <CardHeader>
               <CardTitle>LaTeX Template Format</CardTitle>
@@ -124,31 +425,65 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold mb-3">Essential Markers</h3>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  Essential Markers
+                  <Badge variant="secondary">Quick Reference</Badge>
+                </h3>
                 <div className="space-y-4">
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Question Markers</h4>
-                    <pre className="text-sm bg-background p-2 rounded border">
-{`%{#q}
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                      <div className="bg-primary/10 p-3 rounded-lg flex-1">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Question Markers
+                          <ChevronDown className="h-4 w-4" />
+                        </h4>
+                        <p className="text-sm text-muted-foreground">Wrap your question text</p>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <CodeBlock 
+                        code={`%{#q}
 Your question text goes here
 %{/q}`}
-                    </pre>
-                  </div>
+                        label="Question markers"
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
                   
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Option Markers</h4>
-                    <pre className="text-sm bg-background p-2 rounded border">
-{`\\item
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                      <div className="bg-green-500/10 p-3 rounded-lg flex-1">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Option Markers
+                          <ChevronDown className="h-4 w-4" />
+                        </h4>
+                        <p className="text-sm text-muted-foreground">Multiple choice options</p>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <CodeBlock 
+                        code={`\\item
 %{#o}
 Option text goes here
 %{/o}`}
-                    </pre>
-                  </div>
+                        label="Option markers"
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
 
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Settings Block</h4>
-                    <pre className="text-sm bg-background p-2 rounded border">
-{`%{#setting}
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                      <div className="bg-blue-500/10 p-3 rounded-lg flex-1">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Settings Block
+                          <ChevronDown className="h-4 w-4" />
+                        </h4>
+                        <p className="text-sm text-muted-foreground">Configure your exam</p>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <CodeBlock 
+                        code={`%{#setting}
 %university=Your University Name
 %department=Department Name
 %term=Fall 2024
@@ -163,19 +498,31 @@ Option text goes here
 %code_numbering=ALPHA
 %includeCoverPage=yes
 %paper_size=A4
-%seed=exam2024
+%seed=fall2024_midterm_auto
 %{/setting}`}
-                    </pre>
-                  </div>
+                        label="Settings block"
+                      />
+                      <Alert className="mt-3">
+                        <RefreshCw className="h-4 w-4" />
+                        <AlertDescription>
+                          Leave <code>seed</code> empty or use default values to enable automatic dynamic seed generation.
+                        </AlertDescription>
+                      </Alert>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </div>
 
               <Separator />
 
-              <div>
-                <h3 className="font-semibold mb-3">Complete Question Example</h3>
-                <pre className="text-sm bg-muted p-4 rounded-lg overflow-x-auto">
-{`\\item
+              <div className="mt-6">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  Complete Question Example
+                  <Badge variant="outline">Live Example</Badge>
+                </h3>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border">
+                  <CodeBlock 
+                    code={`\\item
 %{#q}
 What is the capital of France?
 %{/q}
@@ -203,14 +550,18 @@ What is the capital of France?
     %{/o}
 
   \\end{enumerate}`}
-                </pre>
+                    label="Complete question example"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="question-types" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("Regular Questions randomized shuffle fixed options open-ended separate page image mathematical") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -248,7 +599,9 @@ Which planet is closest to the Sun?
                 </pre>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Fixed Questions same position option order") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -275,7 +628,9 @@ What is your student ID number?
                 </pre>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Fixed-Options Questions randomized position fixed option order") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -310,7 +665,10 @@ Which letter represents the correct answer?
                 </pre>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Open-Ended Questions essay short-answer written responses") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -369,9 +727,12 @@ This is a complex question that requires its own page with lots of space for dia
                   </AlertDescription>
                 </Alert>
               </CardContent>
-
             </Card>
+            </>
+            )}
 
+            {shouldShowContent("Separate Page Questions complex space diagrams calculations") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -427,7 +788,11 @@ This is a complex question that requires its own page with lots of space for dia
                 </Alert>
               </CardContent>
             </Card>
+            </>
+            )}
 
+            {shouldShowContent("Mathematical Questions LaTeX math calculus algebra amsmath derivatives integration") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -526,7 +891,11 @@ Evaluate: $\\int \\frac{x^2 + 1}{x} dx$
                 </Alert>
               </CardContent>
             </Card>
+            </>
+            )}
 
+            {shouldShowContent("True False Variable Options 2-5 options") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle>True/False & Variable Options</CardTitle>
@@ -582,11 +951,14 @@ Which is largest?
                 </div>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="advanced" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("Question Grouping groups balanced mix randomization") && (
             <Card>
               <CardHeader>
                 <CardTitle>Question Grouping</CardTitle>
@@ -609,25 +981,67 @@ Which is largest?
                 </Alert>
               </CardContent>
             </Card>
+            )}
 
-            <Card>
+            {shouldShowContent("Smart Seed Generation dynamic seeds automatic randomization refresh") && (
+            <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle>Reproducible Randomization</CardTitle>
-                <CardDescription>Use seeds to generate consistent results</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-blue-500" />
+                  Smart Seed Generation
+                </CardTitle>
+                <CardDescription>Dynamic seeds for fresh randomization every time</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm">
-                  The seed value ensures that running the generator multiple times with the same settings produces identical results.
-                </p>
-                <div className="bg-muted p-3 rounded">
-                  <code className="text-sm">%seed=exam2024fall</code>
+                <Alert className="border-blue-200 bg-blue-50">
+                  <RefreshCw className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>New!</strong> Seeds are now generated automatically using exam details and timestamps for unique randomization.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="space-y-3">
+                  <h4 className="font-medium">Automatic Seed Generation</h4>
+                  <p className="text-sm text-muted-foreground">
+                    When creating new templates or leaving the seed field empty, the system automatically generates dynamic seeds based on:
+                  </p>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• Course code and exam name</li>
+                    <li>• Current date and time</li>
+                    <li>• Term information</li>
+                  </ul>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Change the seed to get different randomizations, or keep it the same for consistent results.
-                </p>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    Manual Refresh 
+                    <Badge variant="outline" className="text-xs">Interactive</Badge>
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Use the refresh button (🔄) next to the seed field to generate a new dynamic seed at any time.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Custom Seeds</h4>
+                  <p className="text-sm text-muted-foreground">
+                    You can still set custom seeds for reproducible results:
+                  </p>
+                  <CodeBlock 
+                    code="%seed=fall2024_midterm_v2" 
+                    label="Custom seed example"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Same seed always produces identical randomization across generations.
+                  </p>
+                </div>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Cover Page Options master individual student cover pages includeCoverPage") && (
             <Card>
               <CardHeader>
                 <CardTitle>Cover Page Options</CardTitle>
@@ -670,7 +1084,9 @@ Which is largest?
                 </Alert>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Custom Preamble LaTeX packages styling amsmath graphicx tikz") && (
             <Card>
               <CardHeader>
                 <CardTitle>Custom Preamble</CardTitle>
@@ -689,11 +1105,13 @@ Which is largest?
                 </pre>
               </CardContent>
             </Card>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="export" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("LaTeX Document Output generated files master cover answer keys") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -731,7 +1149,9 @@ Which is largest?
                 </Alert>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Version Mapping CSV track question distribution") && (
             <Card>
               <CardHeader>
                 <CardTitle>Version Mapping CSV</CardTitle>
@@ -751,7 +1171,10 @@ Which is largest?
                 </div>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Best Practices Recommendations printing exam distribution") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -820,11 +1243,15 @@ Which is largest?
                 </ul>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="troubleshooting" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("Common Issues template format missing markers LaTeX errors") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -905,6 +1332,8 @@ Which is largest?
                 </ul>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </TabsContent>
       </Tabs>
