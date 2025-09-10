@@ -40,6 +40,12 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Filter content based on search term
+  const shouldShowContent = (content: string) => {
+    if (!searchTerm.trim()) return true;
+    return content.toLowerCase().includes(searchTerm.toLowerCase());
+  };
+
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -173,6 +179,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
         </TabsList>
 
         <TabsContent value="getting-started" className="space-y-6">
+          {shouldShowContent("Quick Start Guide getting started create upload template configure settings generate download") && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -233,9 +240,11 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="template-format" className="space-y-6">
+          {shouldShowContent("LaTeX Template Format markers question option settings") && (
           <Card>
             <CardHeader>
               <CardTitle>LaTeX Template Format</CardTitle>
@@ -376,10 +385,12 @@ What is the capital of France?
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="question-types" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("Regular Questions randomized shuffle fixed options open-ended separate page image mathematical") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -417,7 +428,9 @@ Which planet is closest to the Sun?
                 </pre>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Fixed Questions same position option order") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -444,7 +457,9 @@ What is your student ID number?
                 </pre>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Fixed-Options Questions randomized position fixed option order") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -479,7 +494,10 @@ Which letter represents the correct answer?
                 </pre>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Open-Ended Questions essay short-answer written responses") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -538,9 +556,12 @@ This is a complex question that requires its own page with lots of space for dia
                   </AlertDescription>
                 </Alert>
               </CardContent>
-
             </Card>
+            </>
+            )}
 
+            {shouldShowContent("Separate Page Questions complex space diagrams calculations") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -596,7 +617,11 @@ This is a complex question that requires its own page with lots of space for dia
                 </Alert>
               </CardContent>
             </Card>
+            </>
+            )}
 
+            {shouldShowContent("Mathematical Questions LaTeX math calculus algebra amsmath derivatives integration") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -695,7 +720,11 @@ Evaluate: $\\int \\frac{x^2 + 1}{x} dx$
                 </Alert>
               </CardContent>
             </Card>
+            </>
+            )}
 
+            {shouldShowContent("True False Variable Options 2-5 options") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle>True/False & Variable Options</CardTitle>
@@ -751,11 +780,14 @@ Which is largest?
                 </div>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="advanced" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("Question Grouping groups balanced mix randomization") && (
             <Card>
               <CardHeader>
                 <CardTitle>Question Grouping</CardTitle>
@@ -778,7 +810,9 @@ Which is largest?
                 </Alert>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Smart Seed Generation dynamic seeds automatic randomization refresh") && (
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -834,7 +868,9 @@ Which is largest?
                 </div>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Cover Page Options master individual student cover pages includeCoverPage") && (
             <Card>
               <CardHeader>
                 <CardTitle>Cover Page Options</CardTitle>
@@ -877,7 +913,9 @@ Which is largest?
                 </Alert>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Custom Preamble LaTeX packages styling amsmath graphicx tikz") && (
             <Card>
               <CardHeader>
                 <CardTitle>Custom Preamble</CardTitle>
@@ -896,11 +934,13 @@ Which is largest?
                 </pre>
               </CardContent>
             </Card>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="export" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("LaTeX Document Output generated files master cover answer keys") && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -938,7 +978,9 @@ Which is largest?
                 </Alert>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Version Mapping CSV track question distribution") && (
             <Card>
               <CardHeader>
                 <CardTitle>Version Mapping CSV</CardTitle>
@@ -958,7 +1000,10 @@ Which is largest?
                 </div>
               </CardContent>
             </Card>
+            )}
 
+            {shouldShowContent("Best Practices Recommendations printing exam distribution") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1027,11 +1072,15 @@ Which is largest?
                 </ul>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="troubleshooting" className="space-y-6">
           <div className="grid gap-6">
+            {shouldShowContent("Common Issues template format missing markers LaTeX errors") && (
+            <>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1112,6 +1161,8 @@ Which is largest?
                 </ul>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </TabsContent>
       </Tabs>
