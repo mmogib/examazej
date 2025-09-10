@@ -123,30 +123,73 @@ Deno.serve(async (req) => {
 
     console.log('All Airtable checks passed for user:', email);
 
-    // Create Supabase client and send magic link
+    // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Send magic link using regular signInWithOtp
-    const { error: magicLinkError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: email,
-      options: {
-        redirectTo: req.headers.get('origin') || 'https://fd004b8b-7165-467a-a9d1-1f1e593e64c0.sandbox.lovable.dev'
-      }
-    });
+    // Get or create user
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    let user = existingUsers?.users?.find(u => u.email === email);
+    
+    if (!user) {
+      // Create new user with user ID as password
+      const userPassword = 'user-' + Math.random().toString(36).substring(2, 15);
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: email,
+        email_confirm: true,
+        password: userPassword
+      });
 
-    if (magicLinkError) {
-      console.error('Failed to send magic link:', magicLinkError);
-      // Don't fail - just return success without magic link
+      if (createError) {
+        console.error('Failed to create user:', createError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user account' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      user = newUser.user;
+      console.log('Created new user:', user?.id);
+      
+      // Store the password for return
+      user.tempPassword = userPassword;
+    } else {
+      console.log('Found existing user:', user.id);
+      // Set a predictable password for existing users
+      const userPassword = user.id;
+      await supabase.auth.admin.updateUserById(user.id, {
+        password: userPassword,
+        email_confirm: true
+      });
+      user.tempPassword = userPassword;
     }
 
+    // Create a regular supabase client (not admin) to sign in
+    const regularSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+    
+    // Sign in as admin, then get the session
+    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Update user to ensure they can be signed in
+    await adminSupabase.auth.admin.updateUserById(user.id, {
+      email_confirm: true
+    });
+
+    // Return user info and password for direct sign-in
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Email verified successfully. You are now authenticated!'
+        user: {
+          id: user.id,
+          email: user.email,
+          tempPassword: user.tempPassword // Use the actual temp password
+        },
+        message: 'Authentication successful - logging you in directly!'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

@@ -46,7 +46,7 @@ const Auth = () => {
     setMessage('');
 
     try {
-      // First verify email with our edge function
+      // Call our edge function to verify email in Airtable
       const { data, error } = await supabase.functions.invoke('verify-shuffler-user', {
         body: { email }
       });
@@ -57,23 +57,21 @@ const Auth = () => {
 
       if (data.error) {
         setError(data.error);
-      } else if (data.success) {
-        // Airtable validation passed, now send magic link
-        const { error: authError } = await supabase.auth.signInWithOtp({
+      } else if (data.success && data.user) {
+        // Airtable validation passed - sign in directly with provided password
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: email,
-          options: {
-            emailRedirectTo: window.location.origin + '/'
-          }
+          password: data.user.tempPassword
         });
         
-        if (authError) {
-          setError('Failed to send magic link: ' + authError.message);
+        if (signInError) {
+          setError('Authentication failed: ' + signInError.message);
         } else {
-          setMessage('Check your email for a magic link to sign in!');
           toast({
-            title: "Magic link sent!",
-            description: "Check your email to complete sign in.",
+            title: "Welcome!",
+            description: "You have been logged in successfully.",
           });
+          // Auth state listener will handle redirect
         }
       }
     } catch (err: any) {
