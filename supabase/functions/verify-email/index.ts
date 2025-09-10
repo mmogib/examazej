@@ -60,6 +60,10 @@ Deno.serve(async (req) => {
     // First, test basic connection to Airtable base
     const testUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?maxRecords=1`;
     console.log('Testing connection with URL:', testUrl);
+    console.log('Request headers:', {
+      'Authorization': `Bearer ${airtableApiKey?.substring(0, 10)}...`,
+      'Content-Type': 'application/json',
+    });
     
     const testResponse = await fetch(testUrl, {
       headers: {
@@ -68,22 +72,36 @@ Deno.serve(async (req) => {
       },
     });
 
+    console.log('Response details:', {
+      ok: testResponse.ok,
+      status: testResponse.status,
+      statusText: testResponse.statusText,
+      headers: Object.fromEntries(testResponse.headers.entries()),
+      url: testResponse.url
+    });
+
     if (!testResponse.ok) {
       const errorText = await testResponse.text();
       console.error('=== CONNECTION TEST FAILED ===');
-      console.error('Test response:', {
-        status: testResponse.status,
-        statusText: testResponse.statusText,
-        body: errorText,
-        url: testUrl
-      });
+      console.error('Full error response:', errorText);
+      
+      let parsedError;
+      try {
+        parsedError = JSON.parse(errorText);
+        console.error('Parsed error:', parsedError);
+      } catch {
+        console.error('Could not parse error as JSON');
+      }
+      
       return new Response(
         JSON.stringify({ 
-          error: `Connection test failed: ${testResponse.status} ${testResponse.statusText}. Please check your AIRTABLE_TABLE_NAME (use table name, not ID) and API permissions.`,
+          error: `Connection test failed: ${testResponse.status} ${testResponse.statusText}`,
           debug: {
             tableName: airtableTableName,
             baseId: airtableBaseId,
-            status: testResponse.status
+            status: testResponse.status,
+            errorBody: errorText,
+            actualUrl: testResponse.url
           }
         }),
         { 
