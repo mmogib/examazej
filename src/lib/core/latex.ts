@@ -260,7 +260,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       
       // Force new page after separate question (unless it's the last)
       if (!isLastQuestion) {
-        questionsLatex += '\n\\eogseparator';
+        questionsLatex += '\n\\eogseparator\n';
       }
       questionsOnCurrentPage = 0;
     } else {
@@ -285,12 +285,12 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       
       // Add separator after every 2 regular questions (except for the last question)
       if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-        questionsLatex += '\n\\eogseparator';
+        questionsLatex += '\n\\eogseparator\n';
         questionsOnCurrentPage = 0;
       } else if (isLastQuestion) {
         questionsLatex += '\n\\eogseparator';
       } else {
-        questionsLatex += '\n\\questionseparator';
+        questionsLatex += '\n\\questionseparator\n';
       }
     }
   });
@@ -352,7 +352,7 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       
       // Force new page after separate question (unless it's the last)
       if (!isLastQuestion) {
-        versionQuestionsLatex += '\n\\eogseparator';
+        versionQuestionsLatex += '\n\\eogseparator\n';
       }
       questionsOnCurrentPage = 0;
     } else {
@@ -377,12 +377,12 @@ ${question.choices[0].length > 0 ? `\\begin{enumerate}${question.choices[0].map(
       
       // Add separator after every 2 regular questions (except for the last question)
       if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-        versionQuestionsLatex += '\n\\eogseparator';
+        versionQuestionsLatex += '\n\\eogseparator\n';
         questionsOnCurrentPage = 0;
       } else if (isLastQuestion) {
         versionQuestionsLatex += '\n\\eogseparator';
       } else {
-        versionQuestionsLatex += '\n\\questionseparator';
+        versionQuestionsLatex += '\n\\questionseparator\n';
       }
     }
   });
