@@ -15,7 +15,7 @@ const Landing = () => {
             <h1 className="text-2xl font-bold text-foreground">ExamShuffler</h1>
           </div>
           <Link to="/auth">
-            <Button variant="outline" size="lg">
+            <Button variant="secondary" size="lg">
               Sign In
             </Button>
           </Link>
