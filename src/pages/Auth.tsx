@@ -47,7 +47,7 @@ const Auth = () => {
 
     try {
       // Call our edge function to verify email and send magic link
-      const { data, error } = await supabase.functions.invoke('verify-email', {
+      const { data, error } = await supabase.functions.invoke('verify-shuffler-user', {
         body: { email }
       });
 
