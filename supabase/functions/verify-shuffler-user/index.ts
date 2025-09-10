@@ -140,9 +140,11 @@ Deno.serve(async (req) => {
     console.log('Record count:', testData.records?.length || 0);
 
     // Check if email exists in Airtable with required conditions
-    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula={Email}="${email}"`;
+    const filterFormula = `{Email}="${email}"`;
+    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula=${encodeURIComponent(filterFormula)}`;
     
     console.log('Making Airtable request to:', airtableUrl);
+    console.log('Filter formula:', filterFormula);
     
     const response = await fetch(airtableUrl, {
       headers: {
