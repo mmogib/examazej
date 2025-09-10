@@ -54,28 +54,68 @@ Deno.serve(async (req) => {
     }
 
     // Check if email exists in Airtable
-    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula={Email}="${email}"`;
+    // Try common field names for email
+    const emailFields = ['Email', 'email', 'Email Address', 'email_address'];
+    let airtableUrl;
+    let emailExists = false;
+    let foundField = '';
     
-    console.log('Making Airtable request to:', airtableUrl);
-    
-    const response = await fetch(airtableUrl, {
-      headers: {
-        'Authorization': `Bearer ${airtableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Airtable API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-        url: airtableUrl
+    // Try each possible email field name
+    for (const fieldName of emailFields) {
+      airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula={${fieldName}}="${email}"`;
+      
+      console.log(`Trying field "${fieldName}" with URL:`, airtableUrl);
+      
+      const response = await fetch(airtableUrl, {
+        headers: {
+          'Authorization': `Bearer ${airtableApiKey}`,
+          'Content-Type': 'application/json',
+        },
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Response for field "${fieldName}":`, {
+          recordCount: data.records?.length || 0,
+          records: data.records?.map(r => Object.keys(r.fields))
+        });
+        
+        if (data.records && data.records.length > 0) {
+          emailExists = true;
+          foundField = fieldName;
+          break;
+        }
+      } else {
+        const errorText = await response.text();
+        console.log(`Field "${fieldName}" attempt failed:`, {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        // If it's a 422 error, the field doesn't exist, try next one
+        if (response.status === 422) {
+          continue;
+        }
+        
+        // For other errors (like 403), log and continue to try other fields
+        if (response.status === 403) {
+          console.error(`403 error for field "${fieldName}":`, {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText,
+            url: airtableUrl
+          });
+          continue;
+        }
+      }
+    }
+    
+    // If none of the field attempts worked, return error with debugging info
+    if (!emailExists && !foundField) {
       return new Response(
         JSON.stringify({ 
-          error: `Failed to verify email: ${response.status} ${response.statusText}` 
+          error: `Could not verify email. Please check:\n1. Table name is correct (not table ID)\n2. Email field exists\n3. API key has read permissions\n\nTried fields: ${emailFields.join(', ')}\nTable: ${airtableTableName}\nBase: ${airtableBaseId}`
         }),
         { 
           status: 500, 
@@ -84,10 +124,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const data = await response.json();
-    const emailExists = data.records && data.records.length > 0;
-
-    console.log('Email verification result:', emailExists);
+    console.log('Email verification result:', { emailExists, foundField });
 
     if (emailExists) {
       // Email exists in Airtable, send magic link
