@@ -326,12 +326,47 @@ Deno.serve(async (req) => {
     }
 
     // Extract tokens from the generated link
-    const actionLink = linkData.properties.action_link;
-    const urlParams = new URL(actionLink).hash.substring(1);
-    const params = new URLSearchParams(urlParams);
+    console.log('Action link received:', actionLink);
     
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
+    let accessToken, refreshToken;
+    
+    try {
+      // Try different URL patterns for token extraction
+      if (actionLink.includes('#')) {
+        // Hash-based tokens
+        const urlParams = new URL(actionLink).hash.substring(1);
+        console.log('Hash params:', urlParams);
+        const params = new URLSearchParams(urlParams);
+        accessToken = params.get('access_token');
+        refreshToken = params.get('refresh_token');
+      } else if (actionLink.includes('?')) {
+        // Query-based tokens
+        const urlParams = new URL(actionLink).searchParams;
+        console.log('Search params:', urlParams.toString());
+        accessToken = urlParams.get('access_token');
+        refreshToken = urlParams.get('refresh_token');
+      }
+      
+      // Also check if tokens are in the linkData directly
+      console.log('Full linkData:', JSON.stringify(linkData, null, 2));
+      
+      // Try to get tokens from session if available
+      if (linkData.session) {
+        console.log('Found session in linkData');
+        accessToken = linkData.session.access_token;
+        refreshToken = linkData.session.refresh_token;
+      }
+      
+    } catch (error) {
+      console.error('Error parsing action link:', error);
+    }
+    
+    console.log('Extracted tokens:', { 
+      hasAccessToken: !!accessToken, 
+      hasRefreshToken: !!refreshToken,
+      accessTokenLength: accessToken?.length || 0,
+      refreshTokenLength: refreshToken?.length || 0
+    });
 
     if (!accessToken || !refreshToken) {
       console.error('Failed to extract tokens from action link');
