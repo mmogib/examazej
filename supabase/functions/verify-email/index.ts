@@ -31,10 +31,21 @@ Deno.serve(async (req) => {
     const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
     const airtableTableName = Deno.env.get('AIRTABLE_TABLE_NAME');
 
+    console.log('Airtable config check:', {
+      hasApiKey: !!airtableApiKey,
+      hasBaseId: !!airtableBaseId,
+      hasTableName: !!airtableTableName,
+      apiKeyLength: airtableApiKey?.length || 0
+    });
+
     if (!airtableApiKey || !airtableBaseId || !airtableTableName) {
-      console.error('Missing Airtable configuration');
+      console.error('Missing Airtable configuration:', {
+        hasApiKey: !!airtableApiKey,
+        hasBaseId: !!airtableBaseId,
+        hasTableName: !!airtableTableName
+      });
       return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
+        JSON.stringify({ error: 'Server configuration error: Missing Airtable credentials' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -45,6 +56,8 @@ Deno.serve(async (req) => {
     // Check if email exists in Airtable
     const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula={Email}="${email}"`;
     
+    console.log('Making Airtable request to:', airtableUrl);
+    
     const response = await fetch(airtableUrl, {
       headers: {
         'Authorization': `Bearer ${airtableApiKey}`,
@@ -53,9 +66,17 @@ Deno.serve(async (req) => {
     });
 
     if (!response.ok) {
-      console.error('Airtable API error:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Airtable API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url: airtableUrl
+      });
       return new Response(
-        JSON.stringify({ error: 'Failed to verify email' }),
+        JSON.stringify({ 
+          error: `Failed to verify email: ${response.status} ${response.statusText}` 
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
