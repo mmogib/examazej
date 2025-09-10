@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink, Eye } from 'lucide-react';
+import { ExamPreviewDialog } from '@/components/ui/exam-preview-dialog';
 import { generateExamVersions, generateCorrectnessSummary } from '@/lib/core/versioning';
 import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
 import { generateSettingsBlock } from '@/lib/core/settings';
@@ -600,7 +601,7 @@ ${optionsText}
           } else if (isLastQuestion) {
             questionsLatex += '\n\\eogseparator';
           } else {
-            questionsLatex += '\n\\questionseparator\n';
+            questionsLatex += '\n\\questionseparator';
           }
         }
       });
@@ -1232,6 +1233,16 @@ ${templateQuestions}
               <CardTitle className="text-base">Downloads</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <ExamPreviewDialog 
+                versions={generationState?.versions || []}
+                settings={generationState?.settings || examData.setting}
+              >
+                <Button variant="outline" className="w-full">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview Exam
+                </Button>
+              </ExamPreviewDialog>
+              
               <Button 
                 onClick={downloadLatex}
                 variant="hero"
