@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     // Get Airtable credentials from environment
     const airtableApiKey = Deno.env.get('AIRTABLE_API_KEY');
     const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
-    const airtableTableName = Deno.env.get('AIRTABLE_TABLE_NAME');
+    const airtableTableName = 'Users'; // Hard coded as requested
 
     console.log('=== AIRTABLE CONNECTION CHECK ===');
     console.log('Airtable config check:', {
@@ -64,11 +64,10 @@ Deno.serve(async (req) => {
       email: email
     });
 
-    if (!airtableApiKey || !airtableBaseId || !airtableTableName) {
+    if (!airtableApiKey || !airtableBaseId) {
       console.error('Missing Airtable configuration:', {
         hasApiKey: !!airtableApiKey,
-        hasBaseId: !!airtableBaseId,
-        hasTableName: !!airtableTableName
+        hasBaseId: !!airtableBaseId
       });
       return new Response(
         JSON.stringify({ error: 'Server configuration error: Missing Airtable credentials' }),
