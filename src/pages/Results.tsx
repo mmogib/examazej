@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink, Eye } from 'lucide-react';
-import { ExamPreviewDialog } from '@/components/ui/exam-preview-dialog';
+import { ExamPreviewSheet } from '@/components/ui/exam-preview-dialog';
 import { generateExamVersions, generateCorrectnessSummary } from '@/lib/core/versioning';
 import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
 import { generateSettingsBlock } from '@/lib/core/settings';
@@ -1233,7 +1233,7 @@ ${templateQuestions}
               <CardTitle className="text-base">Downloads</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <ExamPreviewDialog 
+              <ExamPreviewSheet 
                 versions={generationState?.versions || []}
                 settings={generationState?.settings || examData.setting}
               >
@@ -1241,7 +1241,7 @@ ${templateQuestions}
                   <Eye className="h-4 w-4 mr-2" />
                   Preview Exam
                 </Button>
-              </ExamPreviewDialog>
+              </ExamPreviewSheet>
               
               <Button 
                 onClick={downloadLatex}
