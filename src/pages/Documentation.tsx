@@ -40,10 +40,115 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Search functionality with comprehensive tracking
+  const searchSections = (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      return {
+        'getting-started': { count: 0, hasMatches: false },
+        'template-format': { count: 0, hasMatches: false },
+        'question-types': { count: 0, hasMatches: false },
+        'advanced': { count: 0, hasMatches: false },
+        'export': { count: 0, hasMatches: false },
+        'troubleshooting': { count: 0, hasMatches: false }
+      };
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+    
+    const sections = {
+      'getting-started': {
+        content: [
+          "Quick Start Guide getting started create upload template configure settings generate download",
+          "What This App Does", "Creates multiple randomized versions", "Shuffles question order",
+          "Generates professional LaTeX documents", "Includes answer keys"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'template-format': {
+        content: [
+          "LaTeX Template Format markers question option settings", "Essential Markers",
+          "Question Markers", "Option Markers", "Settings Block", "Complete Question Example",
+          "university department term coursecode examname examdate timeallowed numberofvestions groups",
+          "examtype code_name code_numbering includeCoverPage paper_size seed"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'question-types': {
+        content: [
+          "Regular Questions randomized shuffle fixed options open-ended separate page image mathematical",
+          "Fixed Questions same position option order", "Fixed-Options Questions randomized position fixed option order",
+          "Open-Ended Questions essay short-answer written responses", "Separate Page Questions complex space diagrams calculations",
+          "Image Questions graphics advanced LaTeX formatting", "Mathematical Questions LaTeX math calculus algebra amsmath derivatives integration",
+          "True False Variable Options 2-5 options"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'advanced': {
+        content: [
+          "Question Grouping groups balanced mix randomization", "Smart Seed Generation dynamic seeds automatic randomization refresh",
+          "Cover Page Options master individual student cover pages includeCoverPage", "Custom Preamble LaTeX packages styling amsmath graphicx tikz"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'export': {
+        content: [
+          "LaTeX Document Output generated files master cover answer keys", "Version Mapping CSV track question distribution",
+          "Best Practices Recommendations printing exam distribution", "Overleaf Integration", "Printing Tips"
+        ],
+        count: 0,
+        hasMatches: false
+      },
+      'troubleshooting': {
+        content: [
+          "Common Issues template format missing markers LaTeX errors", "No questions found in the template",
+          "Question has empty text", "Cannot have more than 5 options", "Group partition doesn't match question count",
+          "Best Practices", "Getting Help"
+        ],
+        count: 0,
+        hasMatches: false
+      }
+    };
+
+    // Count matches in each section
+    Object.keys(sections).forEach(sectionKey => {
+      const section = sections[sectionKey as keyof typeof sections];
+      section.content.forEach(text => {
+        if (text.toLowerCase().includes(searchLower)) {
+          section.count++;
+          section.hasMatches = true;
+        }
+      });
+    });
+
+    return sections;
+  };
+
+  const searchResults = searchSections(searchTerm);
+  const totalMatches = Object.values(searchResults).reduce((sum, section) => sum + section.count, 0);
+  const sectionsWithMatches = Object.entries(searchResults).filter(([_, section]) => section.hasMatches);
+
   // Filter content based on search term
   const shouldShowContent = (content: string) => {
     if (!searchTerm.trim()) return true;
     return content.toLowerCase().includes(searchTerm.toLowerCase());
+  };
+
+  // Highlight matching text
+  const highlightText = (text: string) => {
+    if (!searchTerm.trim()) return text;
+    
+    const searchRegex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = text.split(searchRegex);
+    
+    return parts.map((part, index) => 
+      searchRegex.test(part) ? 
+        <mark key={index} className="bg-yellow-200 dark:bg-yellow-900 rounded px-1">{part}</mark> : 
+        part
+    );
   };
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -153,28 +258,94 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
+          
+          {/* Search Results Summary */}
+          {searchTerm.trim() && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
+              {totalMatches > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                    Found {totalMatches} result{totalMatches !== 1 ? 's' : ''} across {sectionsWithMatches.length} section{sectionsWithMatches.length !== 1 ? 's' : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {sectionsWithMatches.map(([sectionKey, section]) => (
+                      <Badge key={sectionKey} variant="secondary" className="text-xs">
+                        {sectionKey.replace('-', ' ')} ({section.count})
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No results found for "{searchTerm}"
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <Tabs defaultValue="getting-started" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
-          <TabsTrigger value="getting-started" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Getting Started
+          <TabsTrigger value="getting-started" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Getting Started
+              {searchResults['getting-started'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['getting-started'].count}
+                </Badge>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="template-format" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Template Format
+          <TabsTrigger value="template-format" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Template Format
+              {searchResults['template-format'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['template-format'].count}
+                </Badge>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="question-types" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Question Types
+          <TabsTrigger value="question-types" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Question Types
+              {searchResults['question-types'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['question-types'].count}
+                </Badge>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="advanced" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Advanced
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Advanced
+              {searchResults['advanced'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['advanced'].count}
+                </Badge>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="export" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Export & Output
+          <TabsTrigger value="export" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Export & Output
+              {searchResults['export'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['export'].count}
+                </Badge>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="troubleshooting" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Troubleshooting
+          <TabsTrigger value="troubleshooting" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white relative">
+            <div className="flex items-center gap-2">
+              Troubleshooting
+              {searchResults['troubleshooting'].hasMatches && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 text-xs rounded-full bg-yellow-500 text-white">
+                  {searchResults['troubleshooting'].count}
+                </Badge>
+              )}
+            </div>
           </TabsTrigger>
         </TabsList>
 
@@ -184,10 +355,10 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-500" />
-                Quick Start Guide
+                {highlightText("Quick Start Guide")}
               </CardTitle>
               <CardDescription>
-                Get up and running in 3 simple steps
+                {highlightText("Get up and running in 3 simple steps")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -195,22 +366,22 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                 <div className="flex gap-4">
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">1</Badge>
                   <div>
-                    <h3 className="font-semibold">Create or Upload Template</h3>
-                    <p className="text-sm text-muted-foreground">Download our sample template (with optional image question sample) and customize it with your questions, or upload an existing LaTeX file.</p>
+                    <h3 className="font-semibold">{highlightText("Create or Upload Template")}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText("Download our sample template (with optional image question sample) and customize it with your questions, or upload an existing LaTeX file.")}</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">2</Badge>
                   <div>
-                    <h3 className="font-semibold">Configure Settings</h3>
-                    <p className="text-sm text-muted-foreground">Set exam details like course name, date, number of versions, question grouping, and formatting options like cover pages.</p>
+                    <h3 className="font-semibold">{highlightText("Configure Settings")}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText("Set exam details like course name, date, number of versions, question grouping, and formatting options like cover pages.")}</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">3</Badge>
                   <div>
-                    <h3 className="font-semibold">Generate & Download</h3>
-                    <p className="text-sm text-muted-foreground">Generate randomized exam versions and download the complete LaTeX document with answer keys.</p>
+                    <h3 className="font-semibold">{highlightText("Generate & Download")}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText("Generate randomized exam versions and download the complete LaTeX document with answer keys.")}</p>
                   </div>
                 </div>
               </div>
@@ -218,23 +389,23 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
               <Separator />
 
               <div>
-                <h3 className="font-semibold mb-3">What This App Does</h3>
+                <h3 className="font-semibold mb-3">{highlightText("What This App Does")}</h3>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start gap-2">
                     <Shuffle className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Creates multiple randomized versions of your exam</span>
+                    <span>{highlightText("Creates multiple randomized versions of your exam")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Edit3 className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Shuffles question order and option order automatically</span>
+                    <span>{highlightText("Shuffles question order and option order automatically")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <FileText className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Generates professional LaTeX documents ready for printing</span>
+                    <span>{highlightText("Generates professional LaTeX documents ready for printing")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-primary mt-0.5" />
-                    <span>Includes answer keys for each version</span>
+                    <span>{highlightText("Includes answer keys for each version")}</span>
                   </li>
                 </ul>
               </div>
