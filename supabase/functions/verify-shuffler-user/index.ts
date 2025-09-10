@@ -140,13 +140,28 @@ Deno.serve(async (req) => {
     console.log('Record count:', testData.records?.length || 0);
 
     // Check if email exists in Airtable with required conditions
-    const filterFormula = `{Email}="${email}"`;
-    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?filterByFormula=${encodeURIComponent(filterFormula)}`;
+    // First, let's see all records to understand the structure
+    const debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}?maxRecords=3`;
+    console.log('Fetching sample records to see field structure:', debugUrl);
     
-    console.log('Making Airtable request to:', airtableUrl);
-    console.log('Filter formula:', filterFormula);
+    const debugResponse = await fetch(debugUrl, {
+      headers: {
+        'Authorization': `Bearer ${airtableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
     
-    const response = await fetch(airtableUrl, {
+    if (debugResponse.ok) {
+      const debugData = await debugResponse.json();
+      console.log('Sample records from Airtable:', JSON.stringify(debugData, null, 2));
+      console.log('Available fields:', debugData.records?.[0]?.fields ? Object.keys(debugData.records[0].fields) : 'No records');
+    }
+    
+    // Try simple filter without complex encoding
+    const simpleFilterUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}`;
+    console.log('Fetching all records to find user manually:', simpleFilterUrl);
+    
+    const response = await fetch(simpleFilterUrl, {
       headers: {
         'Authorization': `Bearer ${airtableApiKey}`,
         'Content-Type': 'application/json',
@@ -159,7 +174,7 @@ Deno.serve(async (req) => {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
-        url: airtableUrl
+        url: simpleFilterUrl
       });
       return new Response(
         JSON.stringify({ 
@@ -173,7 +188,14 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    const userRecord = data.records && data.records.length > 0 ? data.records[0] : null;
+    console.log('All records from Airtable:', JSON.stringify(data, null, 2));
+    
+    // Find the user record manually in the response
+    const userRecord = data.records?.find((record: any) => {
+      const recordEmail = record.fields?.Email || record.fields?.email || record.fields?.EMAIL;
+      console.log('Checking record email:', recordEmail, 'against:', email);
+      return recordEmail === email;
+    });
     
     // If no user record found
     if (!userRecord) {
