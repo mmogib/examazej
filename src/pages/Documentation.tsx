@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   BookOpen, 
   FileText, 
@@ -15,40 +18,158 @@ import {
   Lock,
   Edit3,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  RefreshCw,
+  Zap,
+  Target,
+  Clock
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentationPageProps {
   onBack: () => void;
 }
 
 export function DocumentationPage({ onBack }: DocumentationPageProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(text);
+      toast({
+        title: "Copied!",
+        description: `${label} copied to clipboard`,
+      });
+      setTimeout(() => setCopiedText(null), 2000);
+    } catch (err) {
+      toast({
+        title: "Copy failed",
+        description: "Please copy manually",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const CodeBlock = ({ code, label }: { code: string; label: string }) => (
+    <div className="relative group">
+      <pre className="text-sm bg-muted/50 p-4 rounded-lg overflow-x-auto border">
+        {code}
+      </pre>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={() => copyToClipboard(code, label)}
+      >
+        {copiedText === code ? (
+          <Check className="h-4 w-4 text-green-500" />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <div className="container mx-auto py-8 px-4 max-w-6xl animate-fade-in">
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button onClick={onBack} variant="outline" size="sm" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          <Button onClick={onBack} variant="outline" size="sm" className="hover-scale self-start">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Documentation</h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-primary">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-heading font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Documentation
+              </h1>
+              <p className="text-muted-foreground">
+                Master the Exam Generator in minutes
+              </p>
+            </div>
           </div>
         </div>
-        <p className="text-lg text-muted-foreground">
-          Complete guide to creating and managing exams with the Exam Generator
-        </p>
+        
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-l-4 border-l-primary">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Quick Setup</p>
+                  <p className="text-xs text-muted-foreground">3 steps to your first exam</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-sm font-medium">Smart Randomization</p>
+                  <p className="text-xs text-muted-foreground">Dynamic seed generation</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-sm font-medium">Ready to Print</p>
+                  <p className="text-xs text-muted-foreground">Professional LaTeX output</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search documentation..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
 
       <Tabs defaultValue="getting-started" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-          <TabsTrigger value="template-format">Template Format</TabsTrigger>
-          <TabsTrigger value="question-types">Question Types</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          <TabsTrigger value="export">Export & Output</TabsTrigger>
-          <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+          <TabsTrigger value="getting-started" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+            Getting Started
+          </TabsTrigger>
+          <TabsTrigger value="template-format" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+            Template Format
+          </TabsTrigger>
+          <TabsTrigger value="question-types" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+            Question Types
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+            Advanced
+          </TabsTrigger>
+          <TabsTrigger value="export" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+            Export & Output
+          </TabsTrigger>
+          <TabsTrigger value="troubleshooting" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+            Troubleshooting
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="getting-started" className="space-y-6">
@@ -124,31 +245,65 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold mb-3">Essential Markers</h3>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  Essential Markers
+                  <Badge variant="secondary">Quick Reference</Badge>
+                </h3>
                 <div className="space-y-4">
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Question Markers</h4>
-                    <pre className="text-sm bg-background p-2 rounded border">
-{`%{#q}
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                      <div className="bg-primary/10 p-3 rounded-lg flex-1">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Question Markers
+                          <ChevronDown className="h-4 w-4" />
+                        </h4>
+                        <p className="text-sm text-muted-foreground">Wrap your question text</p>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <CodeBlock 
+                        code={`%{#q}
 Your question text goes here
 %{/q}`}
-                    </pre>
-                  </div>
+                        label="Question markers"
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
                   
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Option Markers</h4>
-                    <pre className="text-sm bg-background p-2 rounded border">
-{`\\item
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                      <div className="bg-green-500/10 p-3 rounded-lg flex-1">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Option Markers
+                          <ChevronDown className="h-4 w-4" />
+                        </h4>
+                        <p className="text-sm text-muted-foreground">Multiple choice options</p>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <CodeBlock 
+                        code={`\\item
 %{#o}
 Option text goes here
 %{/o}`}
-                    </pre>
-                  </div>
+                        label="Option markers"
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
 
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Settings Block</h4>
-                    <pre className="text-sm bg-background p-2 rounded border">
-{`%{#setting}
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+                      <div className="bg-blue-500/10 p-3 rounded-lg flex-1">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Settings Block
+                          <ChevronDown className="h-4 w-4" />
+                        </h4>
+                        <p className="text-sm text-muted-foreground">Configure your exam</p>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <CodeBlock 
+                        code={`%{#setting}
 %university=Your University Name
 %department=Department Name
 %term=Fall 2024
@@ -163,19 +318,31 @@ Option text goes here
 %code_numbering=ALPHA
 %includeCoverPage=yes
 %paper_size=A4
-%seed=exam2024
+%seed=fall2024_midterm_auto
 %{/setting}`}
-                    </pre>
-                  </div>
+                        label="Settings block"
+                      />
+                      <Alert className="mt-3">
+                        <RefreshCw className="h-4 w-4" />
+                        <AlertDescription>
+                          Leave <code>seed</code> empty or use default values to enable automatic dynamic seed generation.
+                        </AlertDescription>
+                      </Alert>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </div>
 
               <Separator />
 
-              <div>
-                <h3 className="font-semibold mb-3">Complete Question Example</h3>
-                <pre className="text-sm bg-muted p-4 rounded-lg overflow-x-auto">
-{`\\item
+              <div className="mt-6">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  Complete Question Example
+                  <Badge variant="outline">Live Example</Badge>
+                </h3>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border">
+                  <CodeBlock 
+                    code={`\\item
 %{#q}
 What is the capital of France?
 %{/q}
@@ -203,7 +370,9 @@ What is the capital of France?
     %{/o}
 
   \\end{enumerate}`}
-                </pre>
+                    label="Complete question example"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -610,21 +779,59 @@ Which is largest?
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle>Reproducible Randomization</CardTitle>
-                <CardDescription>Use seeds to generate consistent results</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-blue-500" />
+                  Smart Seed Generation
+                </CardTitle>
+                <CardDescription>Dynamic seeds for fresh randomization every time</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm">
-                  The seed value ensures that running the generator multiple times with the same settings produces identical results.
-                </p>
-                <div className="bg-muted p-3 rounded">
-                  <code className="text-sm">%seed=exam2024fall</code>
+                <Alert className="border-blue-200 bg-blue-50">
+                  <RefreshCw className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>New!</strong> Seeds are now generated automatically using exam details and timestamps for unique randomization.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="space-y-3">
+                  <h4 className="font-medium">Automatic Seed Generation</h4>
+                  <p className="text-sm text-muted-foreground">
+                    When creating new templates or leaving the seed field empty, the system automatically generates dynamic seeds based on:
+                  </p>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• Course code and exam name</li>
+                    <li>• Current date and time</li>
+                    <li>• Term information</li>
+                  </ul>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Change the seed to get different randomizations, or keep it the same for consistent results.
-                </p>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    Manual Refresh 
+                    <Badge variant="outline" className="text-xs">Interactive</Badge>
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Use the refresh button (🔄) next to the seed field to generate a new dynamic seed at any time.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Custom Seeds</h4>
+                  <p className="text-sm text-muted-foreground">
+                    You can still set custom seeds for reproducible results:
+                  </p>
+                  <CodeBlock 
+                    code="%seed=fall2024_midterm_v2" 
+                    label="Custom seed example"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Same seed always produces identical randomization across generations.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
