@@ -73,6 +73,10 @@ const Auth = () => {
         if (signInError) {
           setError('Authentication failed: ' + signInError.message);
         } else {
+          // Store user data in localStorage for header display
+          localStorage.setItem('userFullName', data.user.fullName || '');
+          localStorage.setItem('userEmail', data.user.email || '');
+          
           toast({
             title: `Welcome${data.user.fullName ? `, ${data.user.fullName}` : ''}!`,
             description: `Logged in as ${data.user.email}`,

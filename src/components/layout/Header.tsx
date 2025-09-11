@@ -1,6 +1,8 @@
 import { Shield, FileText, Home, BookOpen, LogOut, User } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useState, useEffect } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface HeaderProps {
@@ -13,6 +15,21 @@ interface HeaderProps {
 }
 
 export function Header({ onStartOver, onShowDocs, showStartOver = false, currentStep, user, onSignOut }: HeaderProps) {
+  const [userFullName, setUserFullName] = useState<string>('');
+
+  useEffect(() => {
+    // Get stored full name from localStorage
+    const storedFullName = localStorage.getItem('userFullName') || '';
+    setUserFullName(storedFullName);
+    
+    // Clear localStorage on user change (including sign out)
+    if (!user) {
+      localStorage.removeItem('userFullName');
+      localStorage.removeItem('userEmail');
+      setUserFullName('');
+    }
+  }, [user]);
+
   return (
     <header className="border-b bg-card shadow-card">
       <div className="container mx-auto px-4 py-4">
@@ -52,14 +69,23 @@ export function Header({ onStartOver, onShowDocs, showStartOver = false, current
 
             {user && (
               <div className="flex items-center gap-2">
-                <Card className="px-3 py-2 bg-muted border-muted">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <User className="h-4 w-4" />
-                    <span className="text-xs font-medium truncate max-w-32">
-                      {user.email}
-                    </span>
-                  </div>
-                </Card>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card className="px-3 py-2 bg-muted border-muted cursor-default">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <User className="h-4 w-4" />
+                          <span className="text-xs font-medium truncate max-w-32">
+                            {userFullName || user.email}
+                          </span>
+                        </div>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{user.email}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 
                 <Button
                   onClick={onSignOut}
