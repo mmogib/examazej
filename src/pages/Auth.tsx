@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [showCode, setShowCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -39,16 +40,16 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!code) return;
 
     setLoading(true);
     setError('');
     setMessage('');
 
     try {
-      // Call our edge function to verify email in Airtable
+      // Call our edge function to verify code in Airtable
       const { data, error } = await supabase.functions.invoke('verify-shuffler-user', {
-        body: { email }
+        body: { code }
       });
 
       if (error) {
@@ -56,11 +57,16 @@ const Auth = () => {
       }
 
       if (data.error) {
-        setError(data.error);
+        // Check if it's a code verification error
+        if (data.error.includes('not authorized') || data.error.includes('not found')) {
+          setError('Please verify that you entered the correct code. If this issue persists, contact admin (mshahrani@kfupm.edu.sa).');
+        } else {
+          setError(data.error);
+        }
       } else if (data.success && data.user) {
         // Airtable validation passed - sign in directly with provided password
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: email,
+          email: data.user.email,
           password: data.user.tempPassword
         });
         
@@ -86,23 +92,35 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-academic flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Access Your Account</CardTitle>
+          <CardTitle className="text-2xl font-bold">Enter Access Code</CardTitle>
           <CardDescription>
-            Enter your email address to sign in
+            Enter your access code to sign in
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type={showCode ? "text" : "password"}
+                placeholder="Enter your access code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full"
+                className="w-full pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShowCode(!showCode)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                disabled={loading}
+              >
+                {showCode ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
             </div>
 
             {error && (
@@ -121,7 +139,7 @@ const Auth = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !email}
+              disabled={loading || !code}
             >
               {loading ? (
                 <>
@@ -138,7 +156,7 @@ const Auth = () => {
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Only authorized email addresses can access this application.</p>
+            <p>Only authorized access codes can access this application.</p>
           </div>
         </CardContent>
       </Card>

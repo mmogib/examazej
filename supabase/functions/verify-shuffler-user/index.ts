@@ -14,11 +14,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { code } = await req.json();
     
-    if (!email) {
+    if (!code) {
       return new Response(
-        JSON.stringify({ error: 'Email is required' }),
+        JSON.stringify({ error: 'Access code is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Verifying email:', email);
+    console.log('Verifying access code:', code);
 
     // Get Airtable credentials from environment
     const airtableApiKey = Deno.env.get('AIRTABLE_API_KEY');
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       const errorText = await response.text();
       console.error('Airtable API error:', errorText);
       return new Response(
-        JSON.stringify({ error: 'Failed to verify email' }),
+        JSON.stringify({ error: 'Failed to verify access code' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -70,16 +70,16 @@ Deno.serve(async (req) => {
     const data = await response.json();
     console.log('Records found:', data.records?.length || 0);
     
-    // Find user record
+    // Find user record by Code field
     const userRecord = data.records?.find((record: any) => {
-      const recordEmail = record.fields?.Email || record.fields?.email;
-      return recordEmail === email;
+      const recordCode = record.fields?.Code || record.fields?.code;
+      return recordCode === code;
     });
     
     if (!userRecord) {
-      console.log('User not found in Airtable');
+      console.log('Access code not found in Airtable');
       return new Response(
-        JSON.stringify({ error: 'Email not authorized. Please contact an administrator.' }),
+        JSON.stringify({ error: 'Access code not authorized. Please contact an administrator.' }),
         { 
           status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -121,7 +121,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('All Airtable checks passed for user:', email);
+    console.log('All Airtable checks passed for code:', code);
+
+    // Get email from user record for Supabase user creation
+    const email = userRecord.fields?.Email || userRecord.fields?.email;
+    if (!email) {
+      console.error('No email field found in user record');
+      return new Response(
+        JSON.stringify({ error: 'User record missing email information' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
