@@ -1,0 +1,4 @@
+project_id = "zenobxrzmxuhpxevdpai"
+
+[functions.verify-shuffler-user]
+verify_jwt = false
