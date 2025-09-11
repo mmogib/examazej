@@ -1,7 +1,4 @@
 project_id = "zenobxrzmxuhpxevdpai"
 
-[functions.verify-email]
-verify_jwt = false
-
 [functions.verify-shuffler-user]
 verify_jwt = false

@@ -123,8 +123,9 @@ Deno.serve(async (req) => {
 
     console.log('All Airtable checks passed for code:', code);
 
-    // Get email from user record for Supabase user creation
+    // Get email and full name from user record for Supabase user creation
     const email = userRecord.fields?.Email || userRecord.fields?.email;
+    const fullName = userRecord.fields?.FullName || userRecord.fields?.['Full Name'];
     if (!email) {
       console.error('No email field found in user record');
       return new Response(
@@ -200,6 +201,7 @@ Deno.serve(async (req) => {
         user: {
           id: user.id,
           email: user.email,
+          fullName: fullName,
           tempPassword: user.tempPassword // Use the actual temp password
         },
         message: 'Authentication successful - logging you in directly!'

@@ -74,15 +74,15 @@ const Auth = () => {
           setError('Authentication failed: ' + signInError.message);
         } else {
           toast({
-            title: "Welcome!",
-            description: "You have been logged in successfully.",
+            title: `Welcome${data.user.fullName ? `, ${data.user.fullName}` : ''}!`,
+            description: `Logged in as ${data.user.email}`,
           });
           // Auth state listener will handle redirect
         }
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      setError('Something went wrong. Please try again.');
+      setError('Please verify that you entered the correct code. If this issue persists, contact admin (mshahrani@kfupm.edu.sa).');
     } finally {
       setLoading(false);
     }
