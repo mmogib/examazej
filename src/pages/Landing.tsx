@@ -3,10 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Shuffle, Users, Clock, Shield, CheckCircle, ArrowRight, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 const Landing = () => {
-  return (
-    <div className="relative min-h-screen bg-gradient-academic">
+  return <div className="relative min-h-screen bg-gradient-academic">
       {/* Decorative background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-gradient-primary opacity-20 blur-3xl" />
@@ -23,11 +21,7 @@ const Landing = () => {
             <h1 className="text-xl font-semibold tracking-tight group-hover:opacity-90">ExamShuffler</h1>
           </Link>
           <Link to="/auth">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="group h-10 gap-2 rounded-xl border border-border/60 bg-card/60 px-4 text-foreground/90 shadow-card ring-1 ring-transparent transition hover:ring-primary/30 hover:shadow-elegant"
-            >
+            <Button variant="secondary" size="lg" className="group h-10 gap-2 rounded-xl border border-border/60 bg-card/60 text-foreground/90 shadow-card ring-1 ring-transparent transition hover:ring-primary/30 hover:shadow-elegant py-[16px] px-[32px] text-lg">
               <LogIn className="h-4 w-4 opacity-80 transition-transform group-hover:translate-x-0.5" />
               <span>Sign In</span>
             </Button>
@@ -142,8 +136,6 @@ const Landing = () => {
           <p>&copy; 2024 ExamShuffler. Professional Academic Tool.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Landing;
