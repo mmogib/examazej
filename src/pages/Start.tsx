@@ -664,7 +664,7 @@ ${questionsWithSpacing}
         </div>
       </div>
 
-      <div className="space-y-6">        
+      <div className="space-y-6 mt-8">        
         <Card>
           <CardHeader>
             <CardTitle>How It Works</CardTitle>
