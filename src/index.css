@@ -181,3 +181,20 @@
     transition: var(--transition-bounce);
   }
 }
+
+@layer utilities {
+  /* Subtle dotted grid background that adapts to theme */
+  .bg-dot-grid {
+    background-image: radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(circle at 50% 40%, black, transparent 70%);
+  }
+
+  /* Simple glass effect helper */
+  .glass-card {
+    background: hsl(var(--card) / 0.6);
+    border: 1px solid hsl(var(--border) / 0.6);
+    -webkit-backdrop-filter: saturate(140%) blur(10px);
+    backdrop-filter: saturate(140%) blur(10px);
+  }
+}
