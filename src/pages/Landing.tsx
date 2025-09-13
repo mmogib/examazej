@@ -21,7 +21,7 @@ const Landing = () => {
             <h1 className="text-xl font-semibold tracking-tight group-hover:opacity-90">ExamShuffler</h1>
           </Link>
           <Link to="/auth">
-            <Button variant="secondary" size="lg" className="group h-10 gap-2 rounded-xl border border-border/60 bg-card/60 text-foreground/90 shadow-card ring-1 ring-transparent transition hover:ring-primary/30 hover:shadow-elegant py-[16px] px-[32px] text-lg">
+            <Button variant="secondary" size="lg" className="group h-10 gap-2 rounded-xl border border-border/60 bg-card/60 text-foreground/90 shadow-card ring-1 ring-transparent transition hover:bg-primary hover:text-primary-foreground hover:ring-primary/30 hover:shadow-elegant py-[16px] px-[32px] text-lg">
               <LogIn className="h-4 w-4 opacity-80 transition-transform group-hover:translate-x-0.5" />
               <span>Sign In</span>
             </Button>
