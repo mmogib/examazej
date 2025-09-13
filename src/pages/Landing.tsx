@@ -38,7 +38,7 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="relative">
         <div className="container px-4 py-24 text-center">
-          <Badge variant="secondary" className="mb-5">Academic Tool</Badge>
+          <Badge variant="secondary" className="mb-5 text-lg px-6 py-2">Academic Tool</Badge>
           <h1 className="mx-auto max-w-4xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-6xl">
             Fair, Secure, Modern Exam Shuffling
           </h1>
