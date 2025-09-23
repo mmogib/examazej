@@ -197,4 +197,18 @@
     -webkit-backdrop-filter: saturate(140%) blur(10px);
     backdrop-filter: saturate(140%) blur(10px);
   }
+
+  /* Page transition accessibility - respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .page-transition {
+      transition: none !important;
+      transform: none !important;
+    }
+  }
+
+  /* Smooth page transitions */
+  .page-transition {
+    transition: var(--transition-smooth);
+    will-change: opacity, transform;
+  }
 }
