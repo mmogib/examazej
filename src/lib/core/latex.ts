@@ -1,6 +1,91 @@
 import type { ExamSettings, ExamData, VersionMapping, Question } from '../types';
 import { generateSettingsBlock } from './settings';
 
+type BarChartOptions = {
+  title?: string;
+  caption?: string;
+  xlabel?: string;
+  ylabel?: string;
+  color?: string;
+  barWidth?: string;
+  width?: string;
+  height?: string;
+};
+
+function generateLatexBarChart(
+  answerCounts: Array<Record<string, number>>,
+  options: BarChartOptions = {}
+) {
+  // Extract default values with ability to override
+  const {
+    title = "Answer Option Frequency Across Versions",
+    caption = "Frequency of Each Answer Option (Excluding MASTER)",
+    xlabel = "Option",
+    ylabel = "Frequency",
+    color = "cyan!60!blue",
+    barWidth = "18pt",
+    width = "10cm",
+    height = "7cm"
+  } = options;
+  
+  // Aggregate counts across all versions
+  const aggregatedCounts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+  
+  answerCounts.forEach(counts => {
+    Object.keys(aggregatedCounts).forEach(key => {
+      aggregatedCounts[key] += counts[key] || 0;
+    });
+  });
+  
+  // Get the keys and values from the aggregated counts
+  const keys = Object.keys(aggregatedCounts);
+  const values = Object.values(aggregatedCounts);
+  
+  // Calculate ymax (add some padding above the highest value)
+  const maxValue = Math.max(...values);
+  const ymax = Math.ceil(maxValue * 1.1); // 10% padding, rounded up
+  
+  // Generate symbolic x coordinates
+  const symbolicCoords = keys.join(',');
+  
+  // Generate coordinate pairs for the plot
+  const coordinates = keys.map(key => `(${key},${aggregatedCounts[key]})`).join(' ');
+  
+  // Generate the complete LaTeX code
+  const latexCode = `\\begin{figure}[h!]
+  \\centering
+  \\begin{tikzpicture}
+    \\begin{axis}[
+      ybar,
+      bar width=${barWidth},
+      ymin=0, ymax=${ymax},
+      grid=major,
+      axis on top,
+      symbolic x coords={${symbolicCoords}},
+      xtick=data,
+      xlabel={${xlabel}},
+      ylabel={${ylabel}},
+      nodes near coords,
+      nodes near coords align={vertical},
+      enlarge x limits=0.2,
+      width=${width}, height=${height},
+      title={${title}},
+      tick label style={font=\\small},
+      label style={font=\\small},
+      title style={font=\\bfseries\\large},
+      x tick label style={font=\\bfseries}
+    ]
+      % You can change the color here
+      \\addplot+[ybar,fill=${color}] coordinates {${coordinates}};
+    \\end{axis}
+  \\end{tikzpicture}
+  \\caption{${caption}}
+\\end{figure}`;
+
+  return latexCode;
+}
+
+
 // Calculate total question pages with support for separate page questions
 function calculateQuestionPages(questions: Question[]): number {
   if (questions.length === 0) return 0;
@@ -74,6 +159,8 @@ export function generateLatexDocument(
 \\usepackage{graphicx}
 \\usepackage[final]{qrcode}
 \\usepackage[most]{tcolorbox}
+\\usepackage{pgfplots}
+\\pgfplotsset{compat=1.17}
 
 \\renewcommand{\\theequation}{\\alph{equation}}
 \\thicklines
@@ -472,6 +559,8 @@ Answer Counts \\\\
   \\\\ \\hline
 
   \\end{tabular}
+
+  ${generateLatexBarChart(answerCounts)}
 
 \\end{center}
 \\end{normalsize}
