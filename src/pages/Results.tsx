@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink, Eye } from 'lucide-react';
 import { ExamPreviewSheet } from '@/components/ui/exam-preview-dialog';
-import { generateExamVersions, generateCorrectnessSummary } from '@/lib/core/versioning';
+import { generateExamVersions, generateCorrectnessSummary, generateQuestionOptionMapping } from '@/lib/core/versioning';
 import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
 import { generateSettingsBlock } from '@/lib/core/settings';
 import type { ExamJSON, ExamData, VersionMapping, GenerationState } from '@/lib/types';
@@ -25,7 +25,6 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [allowTrustedTex, setAllowTrustedTex] = useState(true);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     // Generate exam versions
     const { versions, mappings } = generateExamVersions(
@@ -82,6 +81,26 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  const downloadOptionsMappingCSV = () => {
+        
+        if (!generationState) return;
+
+        const mappingTable = generateQuestionOptionMapping(generationState, examData.exam);
+        
+        // Convert 2D array to CSV
+        const csvContent = mappingTable.map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${examData.setting.coursecode}_options_mapping.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
 
   const openInOverleaf = () => {
     if (!generationState) return;
@@ -1239,7 +1258,7 @@ ${templateQuestions}
               >
                 <Button variant="outline" className="w-full">
                   <Eye className="h-4 w-4 mr-2" />
-                  Preview Exam
+                  Preview
                 </Button>
               </ExamPreviewSheet>
               
@@ -1249,7 +1268,7 @@ ${templateQuestions}
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Download Full Exam
+                Complete Exam
               </Button>
               
               <Button 
@@ -1258,7 +1277,7 @@ ${templateQuestions}
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Download Template
+                Template
               </Button>
                
               
@@ -1268,16 +1287,25 @@ ${templateQuestions}
                 className="w-full"
               >
                 <TableIcon className="h-4 w-4 mr-2" />
-                Download Mapping CSV
+                Question Map
               </Button>
               
+              <Button 
+                onClick={downloadOptionsMappingCSV}
+                variant="outline"
+                className="w-full"
+              >
+                <TableIcon className="h-4 w-4 mr-2" />
+                Options Matrix
+              </Button>
+
               <Button 
                 onClick={downloadSessionJSON}
                 variant="outline"
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Save Session JSON
+                Export JSON
               </Button>
             </CardContent>
           </Card>
@@ -1298,7 +1326,7 @@ ${templateQuestions}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
               >
                 <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
-                Full Exam
+                Complete Exam
               </Button>
               
               <Button 

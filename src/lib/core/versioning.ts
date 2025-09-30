@@ -1,6 +1,92 @@
 import { DeterministicRNG } from './rng';
 import type { Question, ExamData, VersionMapping, ExamSettings } from '../types';
 
+/**
+ * Generates a 2D array mapping questions and options from master to all versions
+ * @param {GenerationState} state - The generation state containing all exam data
+ * @param {ExamData} master - The master exam data
+ * @returns {string[][]} 2D array where each row represents a question-option mapping
+ */
+export function generateQuestionOptionMapping(state, master) {
+  const { versions, mappings } = state;
+  const numVersions = versions.length;
+  
+  // Create header row using actual version names
+  const header = ['Q', 'Option', 'Master_Correct'];
+  for (let i = 0; i < numVersions; i++) {
+    const versionName = versions[i].name;
+    header.push(`${versionName}_Q`, `${versionName}_Opt`);
+  }
+  
+  const rows = [header];
+  
+  // Process each question in master
+  master.questions.forEach((masterQuestion, masterIdx) => {
+    const masterQNo = masterIdx + 1;
+    const numOptions = masterQuestion.choices[0]?.length || 0;
+    const correctIndex = masterQuestion.choices[1]; // Index of correct answer in master
+    
+    // If question has no options, create a single row for the question
+    if (numOptions === 0) {
+      const row = [masterQNo.toString(), '', ''];
+      
+      // Find mapping for this question in each version
+      for (let versionIdx = 0; versionIdx < numVersions; versionIdx++) {
+        const versionName = versions[versionIdx].name;
+        const versionNumber = versionName.split('_')[1] || versionName;
+        
+        const mapping = mappings.find(m => 
+          m.masterQNo === masterQNo && 
+          m.version === versionNumber
+        );
+        
+        if (mapping) {
+          row.push(mapping.versionQNo.toString(), '');
+        } else {
+          row.push('', '');
+        }
+      }
+      
+      rows.push(row);
+    } else {
+      // Create a row for each option
+      for (let optIdx = 0; optIdx < numOptions; optIdx++) {
+        const optionLetter = String.fromCharCode(65 + optIdx); // A, B, C, D, E, etc.
+        const isCorrectInMaster = optIdx === correctIndex ? 'YES' : '';
+        const row = [masterQNo.toString(), optionLetter, isCorrectInMaster];
+        
+        // Find mapping for this question in each version
+        for (let versionIdx = 0; versionIdx < numVersions; versionIdx++) {
+          const versionName = versions[versionIdx].name;
+          const versionNumber = versionName.split('_')[1] || versionName;
+          
+          const mapping = mappings.find(m => 
+            m.masterQNo === masterQNo && 
+            m.version === versionNumber
+          );
+          
+          if (mapping) {
+            row.push(mapping.versionQNo.toString());
+            
+            // Map the option using the perm string
+            if (mapping.perm && mapping.perm.length > optIdx) {
+              row.push(mapping.perm[optIdx]);
+            } else {
+              row.push('');
+            }
+          } else {
+            row.push('', '');
+          }
+        }
+        
+        rows.push(row);
+      }
+    }
+  });
+  
+  return rows;
+}
+
 export function generateVersionLabel(index: number, numbering: 'ALPHA' | 'NUMERIC' | 'ROMAN'): string {
   switch (numbering) {
     case 'ALPHA':
