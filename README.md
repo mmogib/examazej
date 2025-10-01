@@ -1,73 +1,193 @@
-# Welcome to your Lovable project
+# Exam Shuffler - Academic Assessment Tool
 
-## Project info
+A professional exam generation tool that creates multiple randomized versions of exams from LaTeX templates. Perfect for educators and academic institutions seeking to maintain exam integrity through intelligent question and answer randomization.
 
-**URL**: https://lovable.dev/projects/fd004b8b-7165-467a-a9d1-1f1e593e64c0
+![Exam Shuffler](https://img.shields.io/badge/Status-Production-green) ![LaTeX](https://img.shields.io/badge/LaTeX-Supported-blue) ![React](https://img.shields.io/badge/React-18.3-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 
-## How can I edit this code?
+## 🎯 Key Features
 
-There are several ways of editing your application.
+- **Smart Randomization**: Generate unlimited exam versions with shuffled questions and options
+- **LaTeX Integration**: Professional typesetting with full LaTeX support including mathematical notation
+- **Answer Keys**: Automatic generation of answer keys for each version
+- **Question Groups**: Organize questions into balanced groups for structured randomization
+- **Multiple Question Types**: Support for regular, fixed, fixed-options, open-ended, separate-page, and image questions
+- **Cover Pages**: Optional individual or master cover pages
+- **Version Tracking**: CSV mapping of question distribution across versions
+- **Airtable Integration**: Secure user authentication and access control
+- **Overleaf Compatible**: Direct import to Overleaf for compilation
 
-**Use Lovable**
+## 🚀 Quick Start
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fd004b8b-7165-467a-a9d1-1f1e593e64c0) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ and npm
+- Supabase account (for backend)
+- Airtable account (for user management)
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to project directory
+cd exam-shuffler
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Visit `http://localhost:8080` to access the application.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## ⚙️ Configuration
 
-**Use GitHub Codespaces**
+### Required Environment Variables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Create a `.env` file in the root directory:
 
-## What technologies are used for this project?
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+```
 
-This project is built with:
+### Supabase Secrets
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The following secrets must be configured in your Supabase project:
 
-## How can I deploy this project?
+- `AIRTABLE_API_KEY` - Your Airtable API key
+- `AIRTABLE_BASE_ID` - Your Airtable base ID
+- `AIRTABLE_TABLE_NAME` - Name of the users table (default: "users")
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
 
-Simply open [Lovable](https://lovable.dev/projects/fd004b8b-7165-467a-a9d1-1f1e593e64c0) and click on Share -> Publish.
+### Airtable Setup
 
-## Can I connect a custom domain to my Lovable project?
+Your Airtable base should have a "users" table with the following fields:
+- `Code` - Unique access code for each user
+- `Email` - User's email address
+- `FullName` - User's full name
+- `Status` - User status (should be "active" for access)
+- `ExpirationDate` - Optional expiration date
 
-Yes, you can!
+## 📖 How to Use
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. **Sign In**: Use your access code to authenticate
+2. **Upload Template**: Upload a LaTeX template file with specially formatted questions
+3. **Configure Settings**: Set exam details (course name, date, number of versions, etc.)
+4. **Generate Exams**: Click generate to create randomized versions
+5. **Download**: Get a complete LaTeX document with all versions and answer keys
+6. **Compile**: Open in Overleaf or compile locally with LaTeX
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Template Format
+
+Questions should be marked with special tags:
+
+```latex
+%% Question: Regular
+What is 2 + 2?
+%% Option:
+Three
+%% Option: *
+Four
+%% Option:
+Five
+%% End Question
+```
+
+See the in-app documentation for complete template format details.
+
+## 🛠️ Technology Stack
+
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: shadcn/ui, Tailwind CSS, Radix UI
+- **Backend**: Supabase (Auth, Edge Functions)
+- **User Management**: Airtable API
+- **Document Processing**: Custom LaTeX parser
+- **Routing**: React Router v6
+
+## 📁 Project Structure
+
+```
+exam-shuffler/
+├── src/
+│   ├── components/        # Reusable UI components
+│   ├── pages/            # Page components (Landing, Auth, Start, etc.)
+│   ├── lib/              # Core logic (parser, LaTeX, RNG)
+│   ├── hooks/            # Custom React hooks
+│   └── integrations/     # Supabase client
+├── supabase/
+│   ├── functions/        # Edge functions (user verification)
+│   └── config.toml       # Supabase configuration
+└── public/               # Static assets
+```
+
+## 🔐 Security Features
+
+- Airtable-based access control
+- User status and expiration validation
+- Supabase authentication
+- Service-role key protection in edge functions
+- CORS-enabled API endpoints
+
+## 🚀 Deployment
+
+### Via Lovable
+
+1. Open [Lovable Project](https://lovable.dev/projects/fd004b8b-7165-467a-a9d1-1f1e593e64c0)
+2. Click Share → Publish
+3. Configure custom domain if needed
+
+### Manual Deployment
+
+```sh
+# Build production bundle
+npm run build
+
+# Preview production build
+npm run preview
+
+# Deploy dist/ folder to your hosting service
+```
+
+## 🤝 Contributing
+
+This project is actively maintained. For questions or suggestions:
+1. Open an issue in the repository
+2. Contact the development team
+3. Submit a pull request with improvements
+
+## 📝 Development Workflow
+
+### Local Development
+
+```sh
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
+```
+
+### With Lovable
+
+- Changes made in Lovable automatically sync to GitHub
+- Changes pushed to GitHub automatically sync to Lovable
+- Use Lovable's visual editor for rapid UI development
+- Use your IDE for complex logic and refactoring
+
+## 📄 License
+
+This project is proprietary software for academic use.
+
+## 🆘 Support
+
+For technical support or questions:
+- Review the in-app Documentation page
+- Check the troubleshooting section
+- Contact your administrator
+
+---
+
+**Built with ❤️ for educators worldwide**
