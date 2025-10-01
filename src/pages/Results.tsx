@@ -1,19 +1,54 @@
-import { useState, useEffect } from 'react';
-import overleafIcon from '@/assets/overleaf-icon.png';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Download, ArrowLeft, FileText, Table as TableIcon, BarChart3, Settings2, ExternalLink, Eye } from 'lucide-react';
-import { ExamPreviewSheet } from '@/components/ui/exam-preview-dialog';
-import { generateExamVersions, generateCorrectnessSummary, generateQuestionOptionMapping } from '@/lib/core/versioning';
-import { generateLatexDocument, generateMappingCSV } from '@/lib/core/latex';
-import { generateSettingsBlock } from '@/lib/core/settings';
-import type { ExamJSON, ExamData, VersionMapping, GenerationState } from '@/lib/types';
+import { useState, useEffect } from "react";
+import overleafIcon from "@/assets/overleaf-icon.png";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Download,
+  ArrowLeft,
+  FileText,
+  Table as TableIcon,
+  BarChart3,
+  Settings2,
+  ExternalLink,
+  Eye,
+} from "lucide-react";
+import { ExamPreviewSheet } from "@/components/ui/exam-preview-dialog";
+import {
+  generateExamVersions,
+  generateCorrectnessSummary,
+  generateQuestionOptionMapping,
+} from "@/lib/core/versioning";
+import {
+  generateLatexDocument,
+  generateMappingCSV,
+  generateLatexTemplate,
+} from "@/lib/core/latex";
+import { generateSettingsBlock } from "@/lib/core/settings";
+import type {
+  ExamJSON,
+  ExamData,
+  VersionMapping,
+  GenerationState,
+} from "@/lib/types";
 
 interface ResultsPageProps {
   examData: ExamJSON;
@@ -22,7 +57,8 @@ interface ResultsPageProps {
 }
 
 export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
-  const [generationState, setGenerationState] = useState<GenerationState | null>(null);
+  const [generationState, setGenerationState] =
+    useState<GenerationState | null>(null);
   const [allowTrustedTex, setAllowTrustedTex] = useState(true);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -38,13 +74,71 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       questions: examData.exam.questions,
       versions,
       mappings,
-      seed
+      seed,
     };
 
     setGenerationState(state);
     setLoading(false);
   }, [examData, seed]);
 
+  // Helper function to generate base filename
+  const getBaseFilename = () =>
+    `${examData.setting.coursecode}_${examData.setting.examname.replace(
+      /\s+/g,
+      "_"
+    )}`;
+
+  // Generic file download helper
+  const downloadFile = (
+    content: string,
+    filename: string,
+    mimeType: string = "text/plain"
+  ) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Helper function to submit content to Overleaf
+  const submitToOverleaf = (content: string, filename: string) => {
+    const form = document.createElement("form");
+    form.action = "https://www.overleaf.com/docs";
+    form.method = "post";
+    form.target = "_blank";
+    form.style.display = "none";
+
+    const snippetInput = document.createElement("input");
+    snippetInput.type = "hidden";
+    snippetInput.name = "snip";
+    snippetInput.value = content;
+    form.appendChild(snippetInput);
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "hidden";
+    nameInput.name = "snip_name";
+    nameInput.value = filename;
+    form.appendChild(nameInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
+
+  // Overleaf button style configuration
+  const overleafButtonProps = {
+    className: "w-full text-white border-0",
+    style: { backgroundColor: "rgb(71, 161, 65)" } as React.CSSProperties,
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) =>
+      (e.currentTarget.style.backgroundColor = "rgb(60, 140, 55)"),
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) =>
+      (e.currentTarget.style.backgroundColor = "rgb(71, 161, 65)"),
+  };
   const downloadLatex = () => {
     if (!generationState) return;
 
@@ -56,847 +150,31 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       allowTrustedTex
     );
 
-    const blob = new Blob([latexContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${examData.setting.coursecode}_${examData.setting.examname.replace(/\s+/g, '_')}.tex`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadFile(latexContent, `${getBaseFilename()}.tex`);
   };
 
   const downloadMappingCSV = () => {
     if (!generationState) return;
 
     const csvContent = generateMappingCSV(generationState.mappings);
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${examData.setting.coursecode}_mapping.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadFile(csvContent, `${getBaseFilename()}_mapping.csv`, "text/csv");
   };
 
   const downloadOptionsMappingCSV = () => {
-        
-        if (!generationState) return;
-
-        const mappingTable = generateQuestionOptionMapping(generationState, examData.exam);
-        
-        // Convert 2D array to CSV
-        const csvContent = mappingTable.map(row => row.join(',')).join('\n');
-        
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${examData.setting.coursecode}_options_mapping.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      };
-
-  const openInOverleaf = () => {
     if (!generationState) return;
 
-    const latexContent = generateLatexDocument(
-      generationState.settings,
-      examData.exam,
-      generationState.versions,
-      generationState.mappings,
-      allowTrustedTex
+    const mappingTable = generateQuestionOptionMapping(
+      generationState,
+      examData.exam
     );
+    const csvContent = mappingTable.map((row) => row.join(",")).join("\n");
 
-    // Create hidden form for Overleaf submission
-    const form = document.createElement('form');
-    form.action = 'https://www.overleaf.com/docs';
-    form.method = 'post';
-    form.target = '_blank';
-    form.style.display = 'none';
-
-    // Add LaTeX content
-    const snippetInput = document.createElement('input');
-    snippetInput.type = 'hidden';
-    snippetInput.name = 'snip';
-    snippetInput.value = latexContent;
-    form.appendChild(snippetInput);
-
-    // Add project name
-    const projectName = `${examData.setting.coursecode}_${examData.setting.examname.replace(/\s+/g, '_')}`;
-    const nameInput = document.createElement('input');
-    nameInput.type = 'hidden';
-    nameInput.name = 'snip_name';
-    nameInput.value = `${projectName}.tex`;
-    form.appendChild(nameInput);
-
-    // Submit form
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+    downloadFile(
+      csvContent,
+      `${getBaseFilename()}_options_mapping.csv`,
+      "text/csv"
+    );
   };
-
-  const openTemplateInOverleaf = () => {
-    if (!generationState) return;
-
-    const numQuestions = examData.exam.questions.length;
-    
-    // Generate template questions using actual exam data with proper spacing
-    const templateQuestions = (() => {
-      const questions = examData.exam.questions.map((question, i) => {
-        const questionNumber = i + 1;
-        
-        // Generate the question tags based on question properties
-        let questionTags = '';
-        if (question.fixed) {
-          questionTags = '%{#fixed}';
-        } else if (question.fixedOptions && question.correctOptionLetter) {
-          questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
-        }
-        
-        const questionText = question.text || `Question ${questionNumber} text`;
-        const choices = question.choices[0] || [];
-        
-        // Only generate options if the question has choices (not open-ended)
-        const optionsText = choices.length > 0 ? 
-          choices.map((choice, index) => {
-            const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
-            return `    \\item
-    %{#o}
-    ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
-    %{/o}`;
-          }).join('\n\n') : '';
-        
-        // Format question with or without options based on choice count
-        if (choices.length === 0) {
-          // Open-ended question (no options)
-          return `% question ${questionNumber}
-\\item ${questionTags}
-%{#q}
-${questionText}
-%{/q}`;
-        } else {
-        // Multiple choice question
-        return `% question ${questionNumber}
-\\item ${questionTags}
-%{#q}
-${questionText}
-%{/q}
-
-  \\begin{enumerate}
-
-${optionsText}
-
-  \\end{enumerate}`;
-        }
-      });
-
-      // Apply spacing logic matching the master version
-      let questionsLatex = '';
-      let questionsOnCurrentPage = 0;
-      
-      questions.forEach((questionStr, index) => {
-        const question = examData.exam.questions[index];
-        const isLastQuestion = index === questions.length - 1;
-        
-        // Handle separate page questions
-        if (question.keepOnSeparatePage) {
-          // If current page has questions, add separator before starting new page
-          if (questionsOnCurrentPage > 0) {
-            questionsLatex += '\n\\eogseparator\n';
-          }
-          questionsLatex += questionStr;
-          // Force new page after separate question (unless it's the last)
-          if (!isLastQuestion) {
-            questionsLatex += '\n\\eogseparator';
-          }
-          questionsOnCurrentPage = 0;
-        } else {
-          // Regular question handling (2 per page)
-          if (questionsOnCurrentPage >= 2) {
-            questionsLatex += '\n\\eogseparator\n';
-            questionsOnCurrentPage = 0;
-          }
-          
-          questionsLatex += questionStr;
-          questionsOnCurrentPage++;
-          
-          // Add separator after every 2 regular questions (except for the last question)
-          if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-            questionsLatex += '\n\\eogseparator';
-            questionsOnCurrentPage = 0;
-          } else if (isLastQuestion) {
-            questionsLatex += '\n\\eogseparator';
-          } else {
-            questionsLatex += '\n\\questionseparator';
-          }
-        }
-      });
-      
-      return questionsLatex;
-    })();
-
-    // Use current exam settings for the template with actual generated values
-    const templateSettings = {
-      ...generationState.settings,
-      groups: generationState.settings.groups,
-      numberofvestions: generationState.versions.length,
-      seed: generationState.seed
-    };
-    
-    const settingsBlock = generateSettingsBlock(templateSettings);
-
-    const template = `${settingsBlock}
-\\documentclass[leqno,fleqn,12pt]{article}
-% exam paper size and margins
-\\usepackage[${templateSettings.paper_size.toLowerCase()}paper,top=2cm,bottom=1cm,left=1cm,right=1cm]{geometry}
-
-% math packages
-\\usepackage{mathtools}
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-\\usepackage{amsfonts}
-
-% graphics packages
-\\usepackage{graphicx}
-\\usepackage[final]{qrcode}
-\\usepackage[most]{tcolorbox}
-
-\\renewcommand{\\theequation}{\\alph{equation}}
-\\thicklines
-\\pagestyle{myheadings}
-%% put your preamble between the two tags {#preamble} and {/preamble} below
-%% You can also redefine the following commans
-%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
-%% by typing
-%\\renewcommand{\\bodyoptionseparator}{
-%\\vspace {0.8cm}
-%}
-%\\renewcommand{\\questionseparator}{
-%\\vspace*{\\fill}
-%}
-%\\renewcommand{\\eogseparator}{
-%\\vspace*{\\fill}
- %\\newpage}
-
-%% Predefined commands
-\\newcommand{\\bodyoptionseparator}{
-\\vspace {0.8cm}
-}
-\\newcommand{\\questionseparator}{
-\\vspace*{\\fill}
-}
-\\newcommand{\\eogseparator}{
-\\vspace*{\\fill}
- \\newpage
-}
-\\newcommand{\\newcodecover}[1]{}
-%%
-%%
-%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
-%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
-%\\renewcommand{\\newcodecover}[1]{%
-
-%\\newpage
-%\\thispagestyle{empty}
-%\\begin{large}
-%\\begin{center}
-%        {UNIVERSITY_NAME} \\\\
-%        {DEPT_NAME}  \\\\
-%        \\vspace*{4.5cm}
-%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
-%        {\\bf {COURSE_CODE} }  \\\\
-%        {\\bf {EXAM_NAME} }  \\\\
-%        {\\bf {TERM} }  \\\\
-%        {\\bf {EXAM_DATE} }  \\\\
-%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
-%        \\vspace*{0.2cm}
-%\\end{center}
-%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
-%\\end{tcolorbox}
-%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
-%\\end{tcolorbox}
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\begin{large}\\textbf{Sec}\\end{large}
-%\\end{tcolorbox}
-%\\end{tcbraster}
-%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
-%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
-%%     \\hspace*{-4pt}\\textbf{Instructor}
-%% \\end{tcolorbox}
-%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%%     \\textbf{Serial}
-%% \\end{tcolorbox}
-%% \\end{tcbraster}
-%\\end{tcbraster}
-%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
-%
-
-%\\vspace{2cm}
-
-%\\underline{\\bf Important Instructions:}
- %
-%\\begin{enumerate}
-%    \\begin{normalsize}
-%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
-%        \\item  Use HB 2.5 pencils only.
-%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
-%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
-%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
-%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
-%        \\item  When bubbling, make sure that the bubbled space is fully covered.
-%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
-%    \\end{normalsize}
-%\\end{enumerate}
-%\\end{large}
-%
- %\\vspace*{\\fill}
-%\\newpage
-
-%}
-%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
-%%
-%%
-%%
-%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
-%{#preamble}
-
-%{/preamble}
-%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
-%%
-%% document body
-\\begin{document}
-
-
-\\begin{enumerate}
-
-${templateQuestions}
-
-\\end{enumerate} % end of questions items
-
-%% ================================ RANDOMIZATION EXAMPLES ================================
-%% The following are examples showing different types of question randomization.
-%% Uncomment and modify these examples as needed for your exam.
-
-%% EXAMPLE 1: Completely Fixed Question (position and option order)
-%% Use %{#fixed} when you want a question to appear in the same position 
-%% in all versions with the same option order
-%
-% \\item %{#fixed}
-% %{#q}
-% This question will always appear in the same position in all exam versions.
-% The option order will also remain the same across all versions.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     Correct answer (will always be option A)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 1
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 2
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 3
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 4
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 2: Fixed Options with Random Position
-%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
-%% This keeps the option order the same but allows the question position to be randomized
-%
-% \\item %{#fixed-options:C}
-% %{#q}
-% This question can appear in different positions across versions,
-% but the option order will remain the same. The correct answer is option C.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 1 (always option A)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 2 (always option B)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Correct answer (always option C)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 3 (always option D)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 4 (always option E)
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 3: True/False question (2 options)
-%% You can have 2-5 options or none for open-ended questions
-%
-% \\item
-% %{#q}
-% This is a true or false question - supports variable option counts
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     True
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     False
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 4: Open-ended question (no options)
-%% For essay questions or short-answer format
-%
-% \\item
-% %{#q}
-% This is an open-ended question where students write their own answer.
-% No options are provided, making it suitable for essay or short-answer format.
-% %{/q}
-
-%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
-
-\\end{document}`;
-
-    // Create hidden form for Overleaf submission
-    const form = document.createElement('form');
-    form.action = 'https://www.overleaf.com/docs';
-    form.method = 'post';
-    form.target = '_blank';
-    form.style.display = 'none';
-
-    // Add template content
-    const snippetInput = document.createElement('input');
-    snippetInput.type = 'hidden';
-    snippetInput.name = 'snip';
-    snippetInput.value = template;
-    form.appendChild(snippetInput);
-
-    // Add project name
-    const projectName = `${examData.setting.examname.replace(/\s+/g, '_')}_template`;
-    const nameInput = document.createElement('input');
-    nameInput.type = 'hidden';
-    nameInput.name = 'snip_name';
-    nameInput.value = `${projectName}.tex`;
-    form.appendChild(nameInput);
-
-    // Submit form
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-  };
-
-  const downloadTemplate = () => {
-    if (!generationState) return;
-
-    const numQuestions = examData.exam.questions.length;
-    
-    // Generate template questions using actual exam data with proper spacing
-    const templateQuestions = (() => {
-      const questions = examData.exam.questions.map((question, i) => {
-        const questionNumber = i + 1;
-        
-        // Generate the question tags based on question properties
-        let questionTags = '';
-        if (question.fixed) {
-          questionTags = '%{#fixed}';
-        } else if (question.fixedOptions && question.correctOptionLetter) {
-          questionTags = `%{#fixed-options:${question.correctOptionLetter}}`;
-        }
-        
-        const questionText = question.text || `Question ${questionNumber} text`;
-        const choices = question.choices[0] || [];
-        
-        // Only generate options if the question has choices (not open-ended)
-        const optionsText = choices.length > 0 ? 
-          choices.map((choice, index) => {
-            const optionLetter = String.fromCharCode(65 + index); // A, B, C, D, E
-            return `    \\item
-    %{#o}
-    ${choice.text || `Option ${optionLetter} for question ${questionNumber}`}
-    %{/o}`;
-          }).join('\n\n') : '';
-        
-        // Format question with or without options based on choice count
-        if (choices.length === 0) {
-          // Open-ended question (no options)
-          return `% question ${questionNumber}
-\\item ${questionTags}
-%{#q}
-${questionText}
-%{/q}`;
-        } else {
-          // Multiple choice question
-          return `% question ${questionNumber}
-\\item ${questionTags}
-%{#q}
-${questionText}
-%{/q}
-
-  \\begin{enumerate}
-
-${optionsText}
-
-  \\end{enumerate}`;
-        }
-      });
-
-      // Apply spacing logic matching the master version
-      let questionsLatex = '';
-      let questionsOnCurrentPage = 0;
-      
-      questions.forEach((questionStr, index) => {
-        const question = examData.exam.questions[index];
-        const isLastQuestion = index === questions.length - 1;
-        
-        // Handle separate page questions
-        if (question.keepOnSeparatePage) {
-          // If current page has questions, add separator before starting new page
-          if (questionsOnCurrentPage > 0) {
-            questionsLatex += '\n\\eogseparator\n';
-          }
-          questionsLatex += questionStr;
-          // Force new page after separate question (unless it's the last)
-          if (!isLastQuestion) {
-            questionsLatex += '\n\\eogseparator\n';
-          }
-          questionsOnCurrentPage = 0;
-        } else {
-          // Regular question handling (2 per page)
-          if (questionsOnCurrentPage >= 2) {
-            questionsLatex += '\n\\eogseparator\n';
-            questionsOnCurrentPage = 0;
-          }
-          
-          questionsLatex += questionStr;
-          questionsOnCurrentPage++;
-          
-          // Add separator after every 2 regular questions (except for the last question)
-          if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-            questionsLatex += '\n\\eogseparator\n';
-            questionsOnCurrentPage = 0;
-          } else if (isLastQuestion) {
-            questionsLatex += '\n\\eogseparator';
-          } else {
-            questionsLatex += '\n\\questionseparator';
-          }
-        }
-      });
-      
-      return questionsLatex;
-    })();
-
-    // Use current exam settings for the template with actual generated values
-    const templateSettings = {
-      ...generationState.settings,
-      groups: generationState.settings.groups, // Keep the actual groups configuration
-      numberofvestions: generationState.versions.length, // Use actual number of versions generated
-      seed: generationState.seed // Include the seed used for generation
-    };
-    
-    const settingsBlock = generateSettingsBlock(templateSettings);
-
-    const template = `${settingsBlock}
-\\documentclass[leqno,fleqn,12pt]{article}
-% exam paper size and margins
-\\usepackage[${templateSettings.paper_size.toLowerCase()}paper,top=2cm,bottom=1cm,left=1cm,right=1cm]{geometry}
-
-% math packages
-\\usepackage{mathtools}
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-\\usepackage{amsfonts}
-
-% graphics packages
-\\usepackage{graphicx}
-\\usepackage[final]{qrcode}
-\\usepackage[most]{tcolorbox}
-
-\\renewcommand{\\theequation}{\\alph{equation}}
-\\thicklines
-\\pagestyle{myheadings}
-%% put your preamble between the two tags {#preamble} and {/preamble} below
-%% You can also redefine the following commans
-%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
-%% by typing
-%\\renewcommand{\\bodyoptionseparator}{
-%\\vspace {0.8cm}
-%}
-%\\renewcommand{\\questionseparator}{
-%\\vspace*{\\fill}
-%}
-%\\renewcommand{\\eogseparator}{
-%\\vspace*{\\fill}
- %\\newpage}
-
-%% Predefined commands
-\\newcommand{\\bodyoptionseparator}{
-\\vspace {0.8cm}
-}
-\\newcommand{\\questionseparator}{
-\\vspace*{\\fill}
-}
-\\newcommand{\\eogseparator}{
-\\vspace*{\\fill}
- \\newpage
-}
-\\newcommand{\\newcodecover}[1]{}
-%%
-%%
-%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
-%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
-%\\renewcommand{\\newcodecover}[1]{%
-
-%\\newpage
-%\\thispagestyle{empty}
-%\\begin{large}
-%\\begin{center}
-%        {UNIVERSITY_NAME} \\\\
-%        {DEPT_NAME}  \\\\
-%        \\vspace*{4.5cm}
-%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
-%        {\\bf {COURSE_CODE} }  \\\\
-%        {\\bf {EXAM_NAME} }  \\\\
-%        {\\bf {TERM} }  \\\\
-%        {\\bf {EXAM_DATE} }  \\\\
-%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
-%        \\vspace*{0.2cm}
-%\\end{center}
-%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
-%\\end{tcolorbox}
-%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
-%\\end{tcolorbox}
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\begin{large}\\textbf{Sec}\\end{large}
-%\\end{tcolorbox}
-%\\end{tcbraster}
-%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
-%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
-%%     \\hspace*{-4pt}\\textbf{Instructor}
-%% \\end{tcolorbox}
-%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%%     \\textbf{Serial}
-%% \\end{tcolorbox}
-%% \\end{tcbraster}
-%\\end{tcbraster}
-%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
-%
-%\\vspace{2cm}
-
-%\\underline{\\bf Important Instructions:}
- %
-%\\begin{enumerate}
-%    \\begin{normalsize}
-%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
-%        \\item  Use HB 2.5 pencils only.
-%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
-%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
-%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
-%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
-%        \\item  When bubbling, make sure that the bubbled space is fully covered.
-%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
-%    \\end{normalsize}
-%\\end{enumerate}
-%\\end{large}
-%
- %\\vspace*{\\fill}
-%\\newpage
-
-%}
-%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
-%%
-%%
-%%
-%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
-%{#preamble}
-
-%{/preamble}
-%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
-%%
-%% document body
-\\begin{document}
-
-
-\\begin{enumerate}
-
-${templateQuestions}
-
-\\end{enumerate} % end of questions items
-
-%% ================================ RANDOMIZATION EXAMPLES ================================
-%% The following are examples showing different types of question randomization.
-%% Uncomment and modify these examples as needed for your exam.
-
-%% EXAMPLE 1: Completely Fixed Question (position and option order)
-%% Use %{#fixed} when you want a question to appear in the same position 
-%% in all versions with the same option order
-%
-% \\item %{#fixed}
-% %{#q}
-% This question will always appear in the same position in all exam versions.
-% The option order will also remain the same across all versions.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     Correct answer (will always be option A)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 1
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 2
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 3
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 4
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 2: Fixed Options with Random Position
-%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
-%% This keeps the option order the same but allows the question position to be randomized
-%
-% \\item %{#fixed-options:C}
-% %{#q}
-% This question can appear in different positions across versions,
-% but the option order will remain the same. The correct answer is option C.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 1 (always option A)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 2 (always option B)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Correct answer (always option C)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 3 (always option D)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 4 (always option E)
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 3: True/False question (2 options)
-%% You can have 2-5 options or none for open-ended questions
-%
-% \\item
-% %{#q}
-% This is a true or false question - supports variable option counts
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     True
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     False
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 4: Open-ended question (no options)
-%% For essay questions or short-answer format
-%
-% \\item
-% %{#q}
-% This is an open-ended question where students write their own answer.
-% No options are provided, making it suitable for essay or short-answer format.
-% %{/q}
-
-%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
-
-\\end{document}`;
-
-    const blob = new Blob([template], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${examData.setting.examname.replace(/\s+/g, '_')}_template.tex`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const downloadSessionJSON = () => {
     if (!generationState) return;
 
@@ -911,20 +189,54 @@ ${templateQuestions}
           questions: generationState.questions,
           versions: generationState.versions,
           mappings: generationState.mappings,
-          seed: generationState.seed
-        }
-      }
+          seed: generationState.seed,
+        },
+      },
     };
 
-    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${examData.setting.coursecode}_session.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadFile(
+      JSON.stringify(sessionData, null, 2),
+      `${getBaseFilename()}_session.json`,
+      "application/json"
+    );
+  };
+
+  const openInOverleaf = () => {
+    if (!generationState) return;
+
+    const latexContent = generateLatexDocument(
+      generationState.settings,
+      examData.exam,
+      generationState.versions,
+      generationState.mappings,
+      allowTrustedTex
+    );
+
+    submitToOverleaf(latexContent, `${getBaseFilename()}.tex`);
+  };
+
+  const openTemplateInOverleaf = () => {
+    if (!generationState) return;
+
+    const template = generateLatexTemplate(
+      generationState.settings,
+      examData.exam,
+      generationState.versions.length
+    );
+
+    submitToOverleaf(template, `${getBaseFilename()}_template.tex`);
+  };
+
+  const downloadTemplate = () => {
+    if (!generationState) return;
+
+    const template = generateLatexTemplate(
+      generationState.settings,
+      examData.exam,
+      generationState.versions.length
+    );
+
+    downloadFile(template, `${getBaseFilename()}_template.tex`);
   };
 
   if (loading || !generationState) {
@@ -948,9 +260,9 @@ ${templateQuestions}
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center gap-3 mb-6">
-        <Button 
-          onClick={onBack} 
-          variant="ghost" 
+        <Button
+          onClick={onBack}
+          variant="ghost"
           size="sm"
           className="text-muted-foreground hover:text-foreground"
         >
@@ -983,7 +295,8 @@ ${templateQuestions}
                 <CardHeader>
                   <CardTitle>Generation Summary</CardTitle>
                   <CardDescription>
-                    Successfully generated {generationState.versions.length} exam versions
+                    Successfully generated {generationState.versions.length}{" "}
+                    exam versions
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -992,25 +305,33 @@ ${templateQuestions}
                       <div className="text-2xl font-bold text-primary">
                         {generationState.questions.length}
                       </div>
-                      <div className="text-sm text-muted-foreground">Questions</div>
+                      <div className="text-sm text-muted-foreground">
+                        Questions
+                      </div>
                     </div>
                     <div className="text-center p-4 bg-muted/50 rounded-lg">
                       <div className="text-2xl font-bold text-primary">
                         {generationState.versions.length}
                       </div>
-                      <div className="text-sm text-muted-foreground">Versions</div>
+                      <div className="text-sm text-muted-foreground">
+                        Versions
+                      </div>
                     </div>
                     <div className="text-center p-4 bg-muted/50 rounded-lg">
                       <div className="text-2xl font-bold text-primary">
-                        {generationState.settings.groups.split(',').length}
+                        {generationState.settings.groups.split(",").length}
                       </div>
-                      <div className="text-sm text-muted-foreground">Groups</div>
+                      <div className="text-sm text-muted-foreground">
+                        Groups
+                      </div>
                     </div>
                     <div className="text-center p-4 bg-muted/50 rounded-lg">
                       <div className="text-2xl font-bold text-primary">
                         {generationState.mappings.length}
                       </div>
-                      <div className="text-sm text-muted-foreground">Mappings</div>
+                      <div className="text-sm text-muted-foreground">
+                        Mappings
+                      </div>
                     </div>
                   </div>
 
@@ -1019,12 +340,30 @@ ${templateQuestions}
                   <div className="space-y-2">
                     <h4 className="font-semibold">Exam Information</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div><span className="font-medium">University:</span> {generationState.settings.university}</div>
-                      <div><span className="font-medium">Department:</span> {generationState.settings.department}</div>
-                      <div><span className="font-medium">Course:</span> {generationState.settings.coursecode}</div>
-                      <div><span className="font-medium">Exam:</span> {generationState.settings.examname}</div>
-                      <div><span className="font-medium">Date:</span> {generationState.settings.examdate}</div>
-                      <div><span className="font-medium">Time:</span> {generationState.settings.timeallowed}</div>
+                      <div>
+                        <span className="font-medium">University:</span>{" "}
+                        {generationState.settings.university}
+                      </div>
+                      <div>
+                        <span className="font-medium">Department:</span>{" "}
+                        {generationState.settings.department}
+                      </div>
+                      <div>
+                        <span className="font-medium">Course:</span>{" "}
+                        {generationState.settings.coursecode}
+                      </div>
+                      <div>
+                        <span className="font-medium">Exam:</span>{" "}
+                        {generationState.settings.examname}
+                      </div>
+                      <div>
+                        <span className="font-medium">Date:</span>{" "}
+                        {generationState.settings.examdate}
+                      </div>
+                      <div>
+                        <span className="font-medium">Time:</span>{" "}
+                        {generationState.settings.timeallowed}
+                      </div>
                     </div>
                   </div>
 
@@ -1033,10 +372,24 @@ ${templateQuestions}
                   <div className="space-y-2">
                     <h4 className="font-semibold">Generation Parameters</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div><span className="font-medium">Seed:</span> <code className="bg-muted px-1 rounded">{generationState.seed}</code></div>
-                      <div><span className="font-medium">Groups:</span> {generationState.settings.groups}</div>
-                      <div><span className="font-medium">Code Style:</span> {generationState.settings.code_numbering}</div>
-                      <div><span className="font-medium">Paper Size:</span> {generationState.settings.paper_size}</div>
+                      <div>
+                        <span className="font-medium">Seed:</span>{" "}
+                        <code className="bg-muted px-1 rounded">
+                          {generationState.seed}
+                        </code>
+                      </div>
+                      <div>
+                        <span className="font-medium">Groups:</span>{" "}
+                        {generationState.settings.groups}
+                      </div>
+                      <div>
+                        <span className="font-medium">Code Style:</span>{" "}
+                        {generationState.settings.code_numbering}
+                      </div>
+                      <div>
+                        <span className="font-medium">Paper Size:</span>{" "}
+                        {generationState.settings.paper_size}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1051,7 +404,8 @@ ${templateQuestions}
                     Question Mapping Table
                   </CardTitle>
                   <CardDescription>
-                    Complete mapping of questions and correct answers across all versions
+                    Complete mapping of questions and correct answers across all
+                    versions
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1077,9 +431,13 @@ ${templateQuestions}
                               <Badge variant="outline">{mapping.version}</Badge>
                             </TableCell>
                             <TableCell>{mapping.versionQNo}</TableCell>
-                            <TableCell className="font-mono text-xs">{mapping.perm}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {mapping.perm}
+                            </TableCell>
                             <TableCell>
-                              <Badge variant="secondary">{mapping.correct}</Badge>
+                              <Badge variant="secondary">
+                                {mapping.correct}
+                              </Badge>
                             </TableCell>
                             <TableCell>{mapping.points || 1}</TableCell>
                           </TableRow>
@@ -1104,16 +462,19 @@ ${templateQuestions}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                     {correctnessSummary.map((summary, index) => {
-                       const masterQuestion = examData.exam.questions[index];
-                       const isFixed = masterQuestion?.fixed;
-                       const hasOptions = masterQuestion?.choices[0]?.length > 0;
-                       return (
-                       <div key={index} className="space-y-2">
-                         <div className="flex items-center gap-2">
-                           <Badge variant="outline" className="w-8 h-6 justify-center">
-                             {summary.questionNo}
-                           </Badge>
+                    {correctnessSummary.map((summary, index) => {
+                      const masterQuestion = examData.exam.questions[index];
+                      const isFixed = masterQuestion?.fixed;
+                      const hasOptions = masterQuestion?.choices[0]?.length > 0;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="w-8 h-6 justify-center"
+                            >
+                              {summary.questionNo}
+                            </Badge>
                             {isFixed && (
                               <Badge variant="secondary" className="text-xs">
                                 Fixed
@@ -1121,7 +482,8 @@ ${templateQuestions}
                             )}
                             {masterQuestion?.fixedOptions && (
                               <Badge variant="outline" className="text-xs">
-                                Fixed Options ({masterQuestion.correctOptionLetter})
+                                Fixed Options (
+                                {masterQuestion.correctOptionLetter})
                               </Badge>
                             )}
                             {!hasOptions && (
@@ -1129,28 +491,37 @@ ${templateQuestions}
                                 Open-ended
                               </Badge>
                             )}
-                           <span className="text-sm font-medium truncate flex-1">
-                             {summary.text.length > 80 ? summary.text.substring(0, 80) + "..." : summary.text}
-                           </span>
-                         </div>
-                         {hasOptions ? (
-                           <div className="grid grid-cols-5 gap-2">
-                             {Object.entries(summary.correctCounts).map(([letter, count]) => (
-                               <div key={letter} className="text-center p-2 bg-muted/50 rounded">
-                                 <div className="font-bold">{letter}</div>
-                                 <div className="text-sm text-muted-foreground">{count}</div>
-                               </div>
-                              ))}
-                             </div>
-                         ) : (
-                           <div className="text-sm text-muted-foreground italic p-2 bg-muted/30 rounded">
-                             No options - students provide their own answers
-                           </div>
-                         )}
-                         </div>
-                        );
-                      })}
-                   </div>
+                            <span className="text-sm font-medium truncate flex-1">
+                              {summary.text.length > 80
+                                ? summary.text.substring(0, 80) + "..."
+                                : summary.text}
+                            </span>
+                          </div>
+                          {hasOptions ? (
+                            <div className="grid grid-cols-5 gap-2">
+                              {Object.entries(summary.correctCounts).map(
+                                ([letter, count]) => (
+                                  <div
+                                    key={letter}
+                                    className="text-center p-2 bg-muted/50 rounded"
+                                  >
+                                    <div className="font-bold">{letter}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {count}
+                                    </div>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground italic p-2 bg-muted/30 rounded">
+                              No options - students provide their own answers
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1165,53 +536,79 @@ ${templateQuestions}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {generationState.versions.slice(0, 2).map((version, index) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <h4 className="font-semibold mb-3">
-                          {generationState.settings.code_name} {version.name.replace('version_', '')}
-                        </h4>
-                        <div className="space-y-3">
-                           {version.questions.slice(0, 3).map((question, qIndex) => {
-                              const isFixed = question.fixed;
-                              const isFixedOptions = question.fixedOptions;
-                              return (
-                              <div key={qIndex} className="text-sm">
-                                <div className="font-medium mb-1 flex items-center gap-2">
-                                  <span>{qIndex + 1}. {question.text}</span>
-                                  {isFixed && (
-                                    <Badge variant="secondary" className="text-xs h-4">
-                                      Fixed
-                                    </Badge>
-                                  )}
-                                  {isFixedOptions && (
-                                    <Badge variant="outline" className="text-xs h-4">
-                                      Fixed Options ({question.correctOptionLetter})
-                                    </Badge>
-                                  )}
-                                </div>
-                              <div className="ml-4 space-y-1">
-                                {question.choices[0].map((choice, cIndex) => (
-                                  <div key={cIndex} className={`
-                                    ${cIndex === question.choices[1] ? 'text-green-600 font-medium' : 'text-muted-foreground'}
-                                  `}>
-                                    {String.fromCharCode(65 + cIndex)}. {choice.text}
+                    {generationState.versions
+                      .slice(0, 2)
+                      .map((version, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <h4 className="font-semibold mb-3">
+                            {generationState.settings.code_name}{" "}
+                            {version.name.replace("version_", "")}
+                          </h4>
+                          <div className="space-y-3">
+                            {version.questions
+                              .slice(0, 3)
+                              .map((question, qIndex) => {
+                                const isFixed = question.fixed;
+                                const isFixedOptions = question.fixedOptions;
+                                return (
+                                  <div key={qIndex} className="text-sm">
+                                    <div className="font-medium mb-1 flex items-center gap-2">
+                                      <span>
+                                        {qIndex + 1}. {question.text}
+                                      </span>
+                                      {isFixed && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs h-4"
+                                        >
+                                          Fixed
+                                        </Badge>
+                                      )}
+                                      {isFixedOptions && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs h-4"
+                                        >
+                                          Fixed Options (
+                                          {question.correctOptionLetter})
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="ml-4 space-y-1">
+                                      {question.choices[0].map(
+                                        (choice, cIndex) => (
+                                          <div
+                                            key={cIndex}
+                                            className={`
+                                    ${
+                                      cIndex === question.choices[1]
+                                        ? "text-green-600 font-medium"
+                                        : "text-muted-foreground"
+                                    }
+                                  `}
+                                          >
+                                            {String.fromCharCode(65 + cIndex)}.{" "}
+                                            {choice.text}
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
                                   </div>
-                                 ))}
-                               </div>
-                               </div>
-                              );
-                            })}
-                           {version.questions.length > 3 && (
-                            <div className="text-sm text-muted-foreground italic">
-                              ... and {version.questions.length - 3} more questions
-                            </div>
-                          )}
+                                );
+                              })}
+                            {version.questions.length > 3 && (
+                              <div className="text-sm text-muted-foreground italic">
+                                ... and {version.questions.length - 3} more
+                                questions
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                     {generationState.versions.length > 2 && (
                       <div className="text-center text-muted-foreground">
-                        ... and {generationState.versions.length - 2} more versions
+                        ... and {generationState.versions.length - 2} more
+                        versions
                       </div>
                     )}
                   </div>
@@ -1232,8 +629,8 @@ ${templateQuestions}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Switch 
-                  id="trusted-tex" 
+                <Switch
+                  id="trusted-tex"
                   checked={allowTrustedTex}
                   onCheckedChange={setAllowTrustedTex}
                 />
@@ -1252,7 +649,7 @@ ${templateQuestions}
               <CardTitle className="text-base">Downloads</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <ExamPreviewSheet 
+              <ExamPreviewSheet
                 versions={generationState?.versions || []}
                 settings={generationState?.settings || examData.setting}
               >
@@ -1261,17 +658,13 @@ ${templateQuestions}
                   Preview
                 </Button>
               </ExamPreviewSheet>
-              
-              <Button 
-                onClick={downloadLatex}
-                variant="hero"
-                className="w-full"
-              >
+
+              <Button onClick={downloadLatex} variant="hero" className="w-full">
                 <FileText className="h-4 w-4 mr-2" />
                 Complete Exam
               </Button>
-              
-              <Button 
+
+              <Button
                 onClick={downloadTemplate}
                 variant="outline"
                 className="w-full"
@@ -1279,9 +672,8 @@ ${templateQuestions}
                 <FileText className="h-4 w-4 mr-2" />
                 Template
               </Button>
-               
-              
-              <Button 
+
+              <Button
                 onClick={downloadMappingCSV}
                 variant="outline"
                 className="w-full"
@@ -1289,8 +681,8 @@ ${templateQuestions}
                 <TableIcon className="h-4 w-4 mr-2" />
                 Question Map
               </Button>
-              
-              <Button 
+
+              <Button
                 onClick={downloadOptionsMappingCSV}
                 variant="outline"
                 className="w-full"
@@ -1299,7 +691,7 @@ ${templateQuestions}
                 Options Matrix
               </Button>
 
-              <Button 
+              <Button
                 onClick={downloadSessionJSON}
                 variant="outline"
                 className="w-full"
@@ -1318,25 +710,21 @@ ${templateQuestions}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button 
-                onClick={openInOverleaf}
-                className="w-full text-white border-0"
-                style={{ backgroundColor: 'rgb(71, 161, 65)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(60, 140, 55)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
-              >
-                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
+              <Button onClick={openInOverleaf} {...overleafButtonProps}>
+                <img
+                  src={overleafIcon}
+                  alt="Overleaf"
+                  className="h-4 w-4 mr-2"
+                />
                 Complete Exam
               </Button>
-              
-              <Button 
-                onClick={openTemplateInOverleaf}
-                className="w-full text-white border-0"
-                style={{ backgroundColor: 'rgb(71, 161, 65)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(60, 140, 55)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(71, 161, 65)'}
-              >
-                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4 mr-2" />
+
+              <Button onClick={openTemplateInOverleaf} {...overleafButtonProps}>
+                <img
+                  src={overleafIcon}
+                  alt="Overleaf"
+                  className="h-4 w-4 mr-2"
+                />
                 Template
               </Button>
             </CardContent>

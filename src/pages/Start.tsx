@@ -1,93 +1,46 @@
-import { useState } from 'react';
-import { FileText, Download, Upload, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileUpload } from '@/components/ui/file-upload';
-import { PrivacyNotice } from '@/components/ui/privacy-notice';
-import { TemplateDialog } from '@/components/ui/template-dialog';
-import { parseLatexTemplate, validateParsedTemplate } from '@/lib/core/parser';
-import { generateTemplateSettings, generateSettingsBlock, getDefaultSettings } from '@/lib/core/settings';
-import type { ExamJSON, ParsedLatexTemplate, ExamSettings } from '@/lib/types';
+import { useState } from "react";
+import { FileText, Download, Upload, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { FileUpload } from "@/components/ui/file-upload";
+import { PrivacyNotice } from "@/components/ui/privacy-notice";
+import { TemplateDialog } from "@/components/ui/template-dialog";
+import { parseLatexTemplate, validateParsedTemplate } from "@/lib/core/parser";
+import {
+  generateTemplateSettings,
+  generateSettingsBlock,
+  getDefaultSettings,
+} from "@/lib/core/settings";
+import type {
+  ExamJSON,
+  ParsedLatexTemplate,
+  ExamSettings,
+  Question,
+  ExamData,
+} from "@/lib/types";
+import { generateLatexTemplate } from "@/lib/core/latex";
 
 interface StartPageProps {
   onDataLoaded: (data: ExamJSON) => void;
 }
 
-export function StartPage({ onDataLoaded }: StartPageProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Add this helper function inside Start.tsx, before generateTemplate()
+const createExampleQuestions = (
+  numQuestions: number,
+  includeImageQuestion: boolean
+): Question[] => {
+  const questions: Question[] = [];
 
-  const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
-    console.log('🔥 CREATING EXAM FROM TEMPLATE');
-    console.log('Template questions count:', template.questions.length);
-    console.log('Template questions:', template.questions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
-    
-    const defaults = getDefaultSettings();
-    const settings = { ...defaults, ...template.settings };
-    
-    const examQuestions = template.questions.map((q, index) => ({
-      ...q,
-      group: 1,
-      order: index + 1
-    }));
-    
-    console.log('Final exam questions count:', examQuestions.length);
-    console.log('Final exam questions:', examQuestions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
-    
-    const result = {
-      setting: settings as ExamSettings,
-      exam: {
-        name: 'master',
-        ordering: null,
-        preamble: template.preamble || '',
-        questions: examQuestions,
-        kept_in_one_page: []
-      },
-      options_order: {}
-    };
-    
-    console.log('✅ EXAM CREATED - Final questions count:', result.exam.questions.length);
-    return result;
-  };
-
-  const handleFileSelected = async (file: File) => {
-    setSelectedFile(file);
-    setError(null);
-    setLoading(true);
-
-    try {
-      const content = await file.text();
-      
-      if (file.name.endsWith('.json')) {
-        const jsonData = JSON.parse(content) as ExamJSON;
-        onDataLoaded(jsonData);
-      } else if (file.name.endsWith('.tex')) {
-        const parsed = parseLatexTemplate(content);
-        const errors = validateParsedTemplate(parsed);
-        
-        if (errors.length > 0) {
-          setError(`Template validation failed:\n${errors.join('\n')}`);
-        } else {
-          const examData = createExamFromTemplate(parsed);
-          onDataLoaded(examData);
-        }
-      } else {
-        setError('Unsupported file type. Please upload a .tex or .json file.');
-      }
-    } catch (err) {
-      setError('Failed to process file. Please check the format and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateTemplate = (numQuestions: number, includeImageQuestion = false) => {
-    // Create image question if requested
-    const imageQuestion = includeImageQuestion ? `% question 1
-\\item
-%{#q}
-    %% play with parameters of the minipage, vspace*, hspace* environments to control the positioning of your text and figures
+  // Add image question if requested
+  if (includeImageQuestion) {
+    questions.push({
+      text: `%% play with parameters of the minipage, vspace*, hspace* environments to control the positioning of your text and figures
     \\begin{minipage}[t][10cm][t]{0.5\\textwidth}
     Consider the definite integral:
     $$\\int_{0}^{\\pi} \\sin(2x) \\, dx$$
@@ -100,490 +53,226 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     %% replace the image(example-image) with your own
     \\vspace*{0.5cm}\\hspace*{1cm}%
     \\includegraphics[width=70mm,height=80mm]{example-image}
-    \\end{minipage}
-%{/q}
+    \\end{minipage}`,
+      choices: [
+        [
+          { text: "$-2$" },
+          { text: "$0$" },
+          { text: "$2$" },
+          { text: "$\\pi$" },
+          { text: "$-\\pi$" },
+        ],
+        0,
+        null,
+      ],
+      group: 1,
+      order: 1,
+      fixed: false,
+      fixedOptions: false,
+      keepOnSeparatePage: false,
+    });
+  }
 
-  \\begin{enumerate}
+  const regularQuestionCount = includeImageQuestion
+    ? numQuestions - 1
+    : numQuestions;
 
-    \\item
-    %{#o}
-    $-2$
-    %{/o}
+  for (let i = 0; i < regularQuestionCount; i++) {
+    const questionNumber = includeImageQuestion ? i + 2 : i + 1;
+    const orderNumber = questions.length + 1;
 
-    \\item
-    %{#o}
-    $0$
-    %{/o}
+    // First non-image question is fixed as an example
+    const isFixed = orderNumber === (includeImageQuestion ? 2 : 1);
 
-    \\item
-    %{#o}
-    $2$
-    %{/o}
+    // Question 2 (or 3 if image included) is a calculus question
+    const isMathQuestion = questionNumber === (includeImageQuestion ? 3 : 2);
 
-    \\item
-    %{#o}
-    $\\pi$
-    %{/o}
+    // Question 3 (or 4 if image included) is an algebra question
+    const isAlgebraQuestion = questionNumber === (includeImageQuestion ? 4 : 3);
 
-    \\item
-    %{#o}
-    $-\\pi$
-    %{/o}
-
-  \\end{enumerate}` : '';
-
-    const regularQuestionCount = includeImageQuestion ? numQuestions - 1 : numQuestions;
-    const templateQuestions = Array.from({ length: regularQuestionCount }, (_, i) => {
-      const questionNumber = includeImageQuestion ? i + 2 : i + 1;
-      // Add %{#fixed} comment for the first non-image question as an example
-      const fixedComment = (!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? `%{#fixed}
-` : '';
-      
-      // Make question 2 (or 3 if image is included) a mathematical calculus question
-      const isMathQuestion = (!includeImageQuestion && questionNumber === 2) || (includeImageQuestion && questionNumber === 3);
-      
-      if (isMathQuestion) {
-        return `% question ${questionNumber}
-\\item
-%{#q}
-Find the derivative of the following function:
-$$f(x) = 3x^4 - 2x^3 + 5x^2 - 7x + 1$$
-%{/q}
-
-  \\begin{enumerate}
-
-    \\item
-    %{#o}
-    $f'(x) = 12x^3 - 6x^2 + 10x - 7$
-    %{/o}
-
-    \\item
-    %{#o}
-    $f'(x) = 12x^3 - 6x^2 + 5x - 7$
-    %{/o}
-
-    \\item
-    %{#o}
-    $f'(x) = 3x^3 - 2x^2 + 5x - 7$
-    %{/o}
-
-    \\item
-    %{#o}
-    $f'(x) = 12x^4 - 6x^3 + 10x^2 - 7x$
-    %{/o}
-
-    \\item
-    %{#o}
-    $f'(x) = 12x^3 - 6x^2 + 10x + 7$
-    %{/o}
-
-  \\end{enumerate}`;
-      }
-      
-      // Make the next question an algebra system of equations
-      const isAlgebraQuestion = (!includeImageQuestion && questionNumber === 3) || (includeImageQuestion && questionNumber === 4);
-      
-      if (isAlgebraQuestion) {
-        return `% question ${questionNumber}
-\\item
-%{#q}
-Solve the following system of linear equations:
+    if (isMathQuestion) {
+      questions.push({
+        text: `Find the derivative of the following function:
+$$f(x) = 3x^4 - 2x^3 + 5x^2 - 7x + 1$$`,
+        choices: [
+          [
+            { text: "$f'(x) = 12x^3 - 6x^2 + 10x - 7$" },
+            { text: "$f'(x) = 12x^3 - 6x^2 + 5x - 7$" },
+            { text: "$f'(x) = 3x^3 - 2x^2 + 5x - 7$" },
+            { text: "$f'(x) = 12x^4 - 6x^3 + 10x^2 - 7x$" },
+            { text: "$f'(x) = 12x^3 - 6x^2 + 10x + 7$" },
+          ],
+          0,
+          null,
+        ],
+        group: 1,
+        order: orderNumber,
+        fixed: false,
+        fixedOptions: false,
+        keepOnSeparatePage: false,
+      });
+    } else if (isAlgebraQuestion) {
+      questions.push({
+        text: `Solve the following system of linear equations:
 \\begin{align}
 2x + 3y &= 7 \\\\
 x - y &= 1
-\\end{align}
-%{/q}
-
-  \\begin{enumerate}
-
-    \\item
-    %{#o}
-    $x = 2, y = 1$
-    %{/o}
-
-    \\item
-    %{#o}
-    $x = 1, y = 2$
-    %{/o}
-
-    \\item
-    %{#o}
-    $x = 3, y = 0$
-    %{/o}
-
-    \\item
-    %{#o}
-    $x = 0, y = 3$
-    %{/o}
-
-    \\item
-    %{#o}
-    $x = 4, y = -1$
-    %{/o}
-
-  \\end{enumerate}`;
-      }
-      
-      return `% question ${questionNumber}
-\\item
-${fixedComment}%{#q}
-This is the body of question ${questionNumber}${(!includeImageQuestion && questionNumber === 1) || (includeImageQuestion && questionNumber === 2) ? ' (this question will appear in the same position across all versions)' : ''}
-%{/q}
-
-  \\begin{enumerate}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 1
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 2
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 3
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 4
-    %{/o}
-
-    \\item
-    %{#o}
-    question ${questionNumber}, Item 5
-    %{/o}
-
-  \\end{enumerate}`;
-    });
-
-    const allQuestions = includeImageQuestion 
-      ? [imageQuestion, ...templateQuestions]
-      : templateQuestions;
-
-    // Add proper spacing for 2 questions per page default
-    const questionsWithSpacing = (() => {
-      let questionsLatex = '';
-      let questionsOnCurrentPage = 0;
-      
-      allQuestions.forEach((question, index) => {
-        const isLastQuestion = index === allQuestions.length - 1;
-        
-        // Check if we need a new page (2 questions per page rule)
-        if (questionsOnCurrentPage >= 2) {
-          questionsLatex += '\n\\eogseparator\n';
-          questionsOnCurrentPage = 0;
-        }
-        
-        questionsLatex += question;
-        questionsOnCurrentPage++;
-        
-        // Add appropriate separator
-        if (questionsOnCurrentPage === 2 && !isLastQuestion) {
-          questionsLatex += '\n\\eogseparator\n';
-          questionsOnCurrentPage = 0;
-        } else if (isLastQuestion) {
-          questionsLatex += '\n\\eogseparator';
-        } else {
-          questionsLatex += '\n\\questionseparator\n';
-        }
+\\end{align}`,
+        choices: [
+          [
+            { text: "$x = 2, y = 1$" },
+            { text: "$x = 1, y = 2$" },
+            { text: "$x = 3, y = 0$" },
+            { text: "$x = 0, y = 3$" },
+            { text: "$x = 4, y = -1$" },
+          ],
+          0,
+          null,
+        ],
+        group: 1,
+        order: orderNumber,
+        fixed: false,
+        fixedOptions: false,
+        keepOnSeparatePage: false,
       });
-      
-      return questionsLatex;
-    })();
+    } else {
+      // Regular placeholder question
+      const fixedNote = isFixed
+        ? " (this question will appear in the same position across all versions)"
+        : "";
+      questions.push({
+        text: `This is the body of question ${questionNumber}${fixedNote}`,
+        choices: [
+          [
+            { text: `question ${questionNumber}, Item 1` },
+            { text: `question ${questionNumber}, Item 2` },
+            { text: `question ${questionNumber}, Item 3` },
+            { text: `question ${questionNumber}, Item 4` },
+            { text: `question ${questionNumber}, Item 5` },
+          ],
+          0,
+          null,
+        ],
+        group: 1,
+        order: orderNumber,
+        fixed: isFixed,
+        fixedOptions: false,
+        keepOnSeparatePage: false,
+      });
+    }
+  }
 
-    const templateSettings = generateTemplateSettings(numQuestions);
-    const settingsBlock = generateSettingsBlock(templateSettings);
+  return questions;
+};
 
-    const template = `${settingsBlock}
-\\documentclass{article}
-\\usepackage{graphicx}
-\\usepackage{mathtools}
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-\\usepackage{amsfonts}
-%% put your preamble between the two tags {#preamble} and {/preamble} below
-%% You can also redefine the following commans
-%% \\bodyoptionseparator, \\questionseparator, \\eogseparator, \\newcodecover
-%% by typing
-%\\renewcommand{\\bodyoptionseparator}{
-%\\vspace {0.8cm}
-%}
-%\\renewcommand{\\questionseparator}{
-%\\vspace*{\\fill}
-%}
-%\\renewcommand{\\eogseparator}{
-%\\vspace*{\\fill}
- %\\newpage}
+export function StartPage({ onDataLoaded }: StartPageProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-%% Predefined commands
-\\newcommand{\\bodyoptionseparator}{
-\\vspace {0.8cm}
-}
-\\newcommand{\\questionseparator}{
-\\vspace*{\\fill}
-}
-\\newcommand{\\eogseparator}{
-\\vspace*{\\fill}
- \\newpage
-}
-\\newcommand{\\newcodecover}[1]{}
-%%
-%%
-%% COPY AND PASTE YOUR CUSTOM COVER PAGE BELOW  THE TAGS {#preamble} and {/preamble} BETWEEN
-%% --------------------------------- YOUR CUSTOM COVER PAGE    ---------------------------------
-%\\renewcommand{\\newcodecover}[1]{%
+  const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
+    console.log("🔥 CREATING EXAM FROM TEMPLATE");
+    console.log("Template questions count:", template.questions.length);
+    console.log(
+      "Template questions:",
+      template.questions.map(
+        (q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`
+      )
+    );
 
-%\\newpage
-%\\thispagestyle{empty}
-%\\begin{large}
-%\\begin{center}
-%        {UNIVERSITY_NAME} \\\\
-%        {DEPT_NAME}  \\\\
-%        \\vspace*{4.5cm}
-%        {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
-%        {\\bf {COURSE_CODE} }  \\\\
-%        {\\bf {EXAM_NAME} }  \\\\
-%        {\\bf {TERM} }  \\\\
-%        {\\bf {EXAM_DATE} }  \\\\
-%        {\\bf Net Time Allowed: {TIME_ALLOWED} }  \\\\
-%        \\vspace*{0.2cm}
-%\\end{center}
-%\\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
-%\\end{tcolorbox}
-%\\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\hspace*{-4pt}\\begin{large}\\textbf{ID}\\end{large}
-%\\end{tcolorbox}
-%\\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%    \\begin{large}\\textbf{Sec}\\end{large}
-%\\end{tcolorbox}
-%\\end{tcbraster}
-%% \\begin{tcbraster}[raster columns=2, raster column skip=2pt, raster equal height, colback=white, before skip=0pt]
-%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=2cm]
-%%     \\hspace*{-4pt}\\textbf{Instructor}
-%% \\end{tcolorbox}
-%% \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
-%%     \\textbf{Serial}
-%% \\end{tcolorbox}
-%% \\end{tcbraster}
-%\\end{tcbraster}
-%\\begin{center}\\bf{Check that this exam has {\\underline{ {NUM_OF_QUESTIONS} }} questions.} \\end{center}
-%
-%\\vspace{2cm}
+    const defaults = getDefaultSettings();
+    const settings = { ...defaults, ...template.settings };
 
-%\\underline{\\bf Important Instructions:}
- %
-%\\begin{enumerate}
-%    \\begin{normalsize}
-%        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.
-%        \\item  Use HB 2.5 pencils only.
-%        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.
-%        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.
-%        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.
-%        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.
-%        \\item  When bubbling, make sure that the bubbled space is fully covered.
-%        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
-%    \\end{normalsize}
-%\\end{enumerate}
-%\\end{large}
-%
- %\\vspace*{\\fill}
-%\\newpage
+    const examQuestions = template.questions.map((q, index) => ({
+      ...q,
+      group: 1,
+      order: index + 1,
+    }));
 
-%}
-%% --------------------------------- END OF CUSTOM COVER PAGE  ---------------------------------
-%%
-%%
-%%
-%% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
-%{#preamble}
+    console.log("Final exam questions count:", examQuestions.length);
+    console.log(
+      "Final exam questions:",
+      examQuestions.map((q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`)
+    );
 
-%{/preamble}
-%% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
-%%
-%% document body
-\\begin{document}
+    const result = {
+      setting: settings as ExamSettings,
+      exam: {
+        name: "master",
+        ordering: null,
+        preamble: template.preamble || "",
+        questions: examQuestions,
+        kept_in_one_page: [],
+      },
+      options_order: {},
+    };
 
+    console.log(
+      "✅ EXAM CREATED - Final questions count:",
+      result.exam.questions.length
+    );
+    return result;
+  };
 
-\\begin{enumerate}
+  const handleFileSelected = async (file: File) => {
+    setSelectedFile(file);
+    setError(null);
+    setLoading(true);
 
-${questionsWithSpacing}
+    try {
+      const content = await file.text();
 
-\\end{enumerate} % end of questions items
+      if (file.name.endsWith(".json")) {
+        const jsonData = JSON.parse(content) as ExamJSON;
+        onDataLoaded(jsonData);
+      } else if (file.name.endsWith(".tex")) {
+        const parsed = parseLatexTemplate(content);
+        const errors = validateParsedTemplate(parsed);
 
-%% ================================ RANDOMIZATION EXAMPLES ================================
-%% The following are examples showing different types of question randomization.
-%% Uncomment and modify these examples as needed for your exam.
+        if (errors.length > 0) {
+          setError(`Template validation failed:\n${errors.join("\n")}`);
+        } else {
+          const examData = createExamFromTemplate(parsed);
+          onDataLoaded(examData);
+        }
+      } else {
+        setError("Unsupported file type. Please upload a .tex or .json file.");
+      }
+    } catch (err) {
+      setError(
+        "Failed to process file. Please check the format and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-%% EXAMPLE 1: Completely Fixed Question (position and option order)
-%% Use %{#fixed} when you want a question to appear in the same position 
-%% in all versions with the same option order
-%
-% \\item %{#fixed}
-% %{#q}
-% This question will always appear in the same position in all exam versions.
-% The option order will also remain the same across all versions.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     Correct answer (will always be option A)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 1
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 2
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 3
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Wrong answer option 4
-%     %{/o}
-% 
-%   \\end{enumerate}
+  const generateTemplate = (
+    numQuestions: number,
+    includeImageQuestion = false
+  ) => {
+    // Create mock exam data with example questions
+    const mockExam: ExamData = {
+      name: "master",
+      ordering: null,
+      preamble: "",
+      questions: createExampleQuestions(numQuestions, includeImageQuestion),
+      kept_in_one_page: [],
+    };
 
-%% EXAMPLE 2: Mathematical Question with Complex LaTeX Environments
-%% Shows how to use advanced LaTeX math environments in questions
-%
-% \\item
-% %{#q}
-% Given the piecewise function:
-% $$f(x) = \\begin{cases} 
-% x^2 - 1 & \\text{if } x \\leq 0 \\\\
-% \\sqrt{x} + 1 & \\text{if } 0 < x < 4 \\\\
-% \\frac{1}{x-3} & \\text{if } x \\geq 4
-% \\end{cases}$$
-% Find $\\lim_{x \\to 0^+} f(x)$.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     $1$
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $0$
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $-1$
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     Does not exist
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $\\infty$
-%     %{/o}
-% 
-%   \\end{enumerate}
+    const mockSettings = generateTemplateSettings(numQuestions);
 
-%% EXAMPLE 3: Fixed Options with Random Position (Mathematical)
-%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
-%% This keeps the option order the same but allows the question position to be randomized
-%
-% \\item %{#fixed-options:C}
-% %{#q}
-% Evaluate the following matrix determinant:
-% $$\\begin{vmatrix}
-% 2 & -1 & 3 \\\\
-% 0 & 4 & 1 \\\\
-% 5 & 2 & -2
-% \\end{vmatrix}$$
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     $-42$
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $28$
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $-78$ % Correct answer (always option C)
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $56$
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     $0$
-%     %{/o}
-% 
-%   \\end{enumerate}
+    // Use the shared function from latex.ts
+    const template = generateLatexTemplate(
+      mockSettings,
+      mockExam,
+      mockSettings.numberofvestions
+    );
 
-%% EXAMPLE 4: True/False question (2 options)
-%% You can have 2-5 options or none for open-ended questions
-%
-% \\item
-% %{#q}
-% True or False: For any differentiable function $f(x)$, if $f'(c) = 0$ for some $c$ in the domain, then $f$ has a local extremum at $x = c$.
-% %{/q}
-% 
-%   \\begin{enumerate}
-% 
-%     \\item
-%     %{#o}
-%     True
-%     %{/o}
-% 
-%     \\item
-%     %{#o}
-%     False
-%     %{/o}
-% 
-%   \\end{enumerate}
-
-%% EXAMPLE 5: Open-ended Mathematical Question (no options)
-%% For problems requiring detailed solutions or proofs
-%
-% \\item
-% %{#q}
-% Prove that $\\lim_{n \\to \\infty} \\frac{n^2 + 3n + 1}{2n^2 - n + 5} = \\frac{1}{2}$ using the definition of limits.
-% Show all steps in your proof and justify each limit law used.
-% %{/q}
-
-%% =========================== END OF RANDOMIZATION EXAMPLES ===========================
-
-\\end{document}`;
-
-    const blob = new Blob([template], { type: 'text/plain' });
+    // Download the template
+    const blob = new Blob([template], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `exam-template-${numQuestions}-questions.tex`;
     document.body.appendChild(a);
@@ -599,10 +288,10 @@ ${questionsWithSpacing}
           Create Professional MCQ Exams
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-          Generate randomized exam versions with automatic answer keys. 
-          Built for university professors who value privacy and precision.
+          Generate randomized exam versions with automatic answer keys. Built
+          for university professors who value privacy and precision.
         </p>
-        
+
         <div className="max-w-xl mx-auto">
           <PrivacyNotice />
         </div>
@@ -617,7 +306,8 @@ ${questionsWithSpacing}
                 Upload Existing Exam
               </CardTitle>
               <CardDescription>
-                Upload a LaTeX template (.tex) or existing exam JSON file to continue working
+                Upload a LaTeX template (.tex) or existing exam JSON file to
+                continue working
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -627,13 +317,15 @@ ${questionsWithSpacing}
                 selectedFile={selectedFile}
                 onFileRemove={() => setSelectedFile(null)}
               />
-              
+
               {error && (
                 <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                  <p className="text-sm text-destructive whitespace-pre-line">{error}</p>
+                  <p className="text-sm text-destructive whitespace-pre-line">
+                    {error}
+                  </p>
                 </div>
               )}
-              
+
               {selectedFile && !error && !loading && (
                 <div className="flex items-center justify-between p-3 rounded-md border border-success/20 bg-success/10">
                   <div className="flex items-center gap-2">
@@ -667,7 +359,7 @@ ${questionsWithSpacing}
         </div>
       </div>
 
-      <div className="space-y-6 mt-8">        
+      <div className="space-y-6 mt-8">
         <Card>
           <CardHeader>
             <CardTitle>How It Works</CardTitle>
@@ -680,7 +372,8 @@ ${questionsWithSpacing}
                 </div>
                 <h3 className="font-medium mb-2">1. Prepare Your Exam</h3>
                 <p className="text-sm text-muted-foreground">
-                  Write questions in our LaTeX template format or upload an existing file
+                  Write questions in our LaTeX template format or upload an
+                  existing file
                 </p>
               </div>
               <div className="text-center">
