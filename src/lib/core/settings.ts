@@ -1,11 +1,12 @@
-import type { ExamSettings } from '../types';
+import type { ExamSettings } from "../types";
+import { generateDynamicSeed } from "@/lib/utils/seed-generator";
 
 function getCurrentTerm(date = new Date()) {
   const y = date.getFullYear();
   const m = date.getMonth() + 1; // 1..12
   const d = date.getDate();
 
-  let fallYear;   // anchor year of the Fall term
+  let fallYear; // anchor year of the Fall term
   let suffix;
 
   // Fall: Aug 15 → Dec 31
@@ -36,10 +37,24 @@ function getCurrentTerm(date = new Date()) {
 export function getDefaultSettings(): Partial<ExamSettings> {
   // Get current date in the requested format
   const currentDate = new Date();
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
-  const formattedDate = `${monthNames[currentDate.getMonth()]} ${currentDate.getDate().toString().padStart(2, '0')}, ${currentDate.getFullYear()}`;
+  const formattedDate = `${monthNames[currentDate.getMonth()]} ${currentDate
+    .getDate()
+    .toString()
+    .padStart(2, "0")}, ${currentDate.getFullYear()}`;
 
   return {
     university: "King Fahd University of Petroleum and Minerals",
@@ -66,13 +81,17 @@ export function getDefaultSettings(): Partial<ExamSettings> {
         \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.
     \\end{normalsize}
 \\end{enumerate}`,
-    includeCoverPage: true
+    includeCoverPage: true,
   };
 }
 
-export function generateSettingsBlock(settings: ExamSettings, actualVersions?: number): string {
-  const versionCount = actualVersions !== undefined ? actualVersions : settings.numberofvestions;
-  
+export function generateSettingsBlock(
+  settings: ExamSettings,
+  actualVersions?: number
+): string {
+  const versionCount =
+    actualVersions !== undefined ? actualVersions : settings.numberofvestions;
+
   return `%{#setting}
 %		university=${settings.university}
 %		department=${settings.department}
@@ -86,18 +105,23 @@ export function generateSettingsBlock(settings: ExamSettings, actualVersions?: n
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
 %		code_numbering=${settings.code_numbering}
-%		includeCoverPage=${settings.includeCoverPage ? 'yes' : 'no'}${settings.seed ? `\n%		seed=${settings.seed}` : ''}
+%		includeCoverPage=${settings.includeCoverPage ? "yes" : "no"}${
+    settings.seed ? `\n%		seed=${settings.seed}` : ""
+  }
 %{/setting}
 
 %{#instructions}
-${settings.instructions.split('\n').map(line => `%${line}`).join('\n')}
+${settings.instructions
+  .split("\n")
+  .map((line) => `%${line}`)
+  .join("\n")}
 %{/instructions}`;
 }
 
 export function generateTemplateSettings(numQuestions: number): ExamSettings {
   const defaults = getDefaultSettings();
-  
-  return {
+
+  const baseSettings = {
     university: defaults.university!,
     department: defaults.department!,
     term: defaults.term!,
@@ -109,9 +133,21 @@ export function generateTemplateSettings(numQuestions: number): ExamSettings {
     groups: numQuestions.toString(), // Full randomization for template
     examtype: defaults.examtype!,
     code_name: defaults.code_name!,
-    code_numbering: "NUMERIC", // Use numeric numbering for sample templates
+    code_numbering: "NUMERIC" as const, // Use numeric numbering for sample templates
     paper_size: defaults.paper_size!,
     instructions: defaults.instructions!,
-    includeCoverPage: defaults.includeCoverPage!
+    includeCoverPage: defaults.includeCoverPage!,
+  };
+  // Generate seed based on exam metadata
+  const seed = generateDynamicSeed({
+    coursecode: baseSettings.coursecode,
+    examname: baseSettings.examname,
+    term: baseSettings.term,
+    examdate: baseSettings.examdate,
+  });
+
+  return {
+    ...baseSettings,
+    seed,
   };
 }

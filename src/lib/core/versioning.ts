@@ -1,5 +1,10 @@
-import { DeterministicRNG } from './rng';
-import type { Question, ExamData, VersionMapping, ExamSettings } from '../types';
+import { DeterministicRNG } from "./rng";
+import type {
+  Question,
+  ExamData,
+  VersionMapping,
+  ExamSettings,
+} from "../types";
 
 /**
  * Generates a 2D array mapping questions and options from master to all versions
@@ -10,113 +15,145 @@ import type { Question, ExamData, VersionMapping, ExamSettings } from '../types'
 export function generateQuestionOptionMapping(state, master) {
   const { versions, mappings } = state;
   const numVersions = versions.length;
-  
+
   // Create header row using actual version names
-  const header = ['Q', 'Option', 'Master_Correct'];
+  const header = ["Q", "Option", "Master_Correct"];
   for (let i = 0; i < numVersions; i++) {
     const versionName = versions[i].name;
     header.push(`${versionName}_Q`, `${versionName}_Opt`);
   }
-  
+
   const rows = [header];
-  
+
   // Process each question in master
   master.questions.forEach((masterQuestion, masterIdx) => {
     const masterQNo = masterIdx + 1;
     const numOptions = masterQuestion.choices[0]?.length || 0;
     const correctIndex = masterQuestion.choices[1]; // Index of correct answer in master
-    
+
     // If question has no options, create a single row for the question
     if (numOptions === 0) {
-      const row = [masterQNo.toString(), '', ''];
-      
+      const row = [masterQNo.toString(), "", ""];
+
       // Find mapping for this question in each version
       for (let versionIdx = 0; versionIdx < numVersions; versionIdx++) {
         const versionName = versions[versionIdx].name;
-        const versionNumber = versionName.split('_')[1] || versionName;
-        
-        const mapping = mappings.find(m => 
-          m.masterQNo === masterQNo && 
-          m.version === versionNumber
+        const versionNumber = versionName.split("_")[1] || versionName;
+
+        const mapping = mappings.find(
+          (m) => m.masterQNo === masterQNo && m.version === versionNumber
         );
-        
+
         if (mapping) {
-          row.push(mapping.versionQNo.toString(), '');
+          row.push(mapping.versionQNo.toString(), "");
         } else {
-          row.push('', '');
+          row.push("", "");
         }
       }
-      
+
       rows.push(row);
     } else {
       // Create a row for each option
       for (let optIdx = 0; optIdx < numOptions; optIdx++) {
         const optionLetter = String.fromCharCode(65 + optIdx); // A, B, C, D, E, etc.
-        const isCorrectInMaster = optIdx === correctIndex ? 'YES' : '';
+        const isCorrectInMaster = optIdx === correctIndex ? "YES" : "";
         const row = [masterQNo.toString(), optionLetter, isCorrectInMaster];
-        
+
         // Find mapping for this question in each version
         for (let versionIdx = 0; versionIdx < numVersions; versionIdx++) {
           const versionName = versions[versionIdx].name;
-          const versionNumber = versionName.split('_')[1] || versionName;
-          
-          const mapping = mappings.find(m => 
-            m.masterQNo === masterQNo && 
-            m.version === versionNumber
+          const versionNumber = versionName.split("_")[1] || versionName;
+
+          const mapping = mappings.find(
+            (m) => m.masterQNo === masterQNo && m.version === versionNumber
           );
-          
+
           if (mapping) {
             row.push(mapping.versionQNo.toString());
-            
+
             // Map the option using the perm string
             if (mapping.perm && mapping.perm.length > optIdx) {
               row.push(mapping.perm[optIdx]);
             } else {
-              row.push('');
+              row.push("");
             }
           } else {
-            row.push('', '');
+            row.push("", "");
           }
         }
-        
+
         rows.push(row);
       }
     }
   });
-  
+
   return rows;
 }
 
-export function generateVersionLabel(index: number, numbering: 'ALPHA' | 'NUMERIC' | 'ROMAN'): string {
+export function generateVersionLabel(
+  index: number,
+  numbering: "ALPHA" | "NUMERIC" | "ROMAN"
+): string {
   switch (numbering) {
-    case 'ALPHA':
+    case "ALPHA":
       return String.fromCharCode(65 + index); // A, B, C...
-    case 'NUMERIC':
+    case "NUMERIC":
       return (index + 1).toString(); // 1, 2, 3...
-    case 'ROMAN':
-      const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
-                            'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX',
-                            'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI'];
+    case "ROMAN": {
+      const romanNumerals = [
+        "I",
+        "II",
+        "III",
+        "IV",
+        "V",
+        "VI",
+        "VII",
+        "VIII",
+        "IX",
+        "X",
+        "XI",
+        "XII",
+        "XIII",
+        "XIV",
+        "XV",
+        "XVI",
+        "XVII",
+        "XVIII",
+        "XIX",
+        "XX",
+        "XXI",
+        "XXII",
+        "XXIII",
+        "XXIV",
+        "XXV",
+        "XXVI",
+      ];
       return romanNumerals[index] || (index + 1).toString();
+    }
     default:
       return String.fromCharCode(65 + index);
   }
 }
 
-export function partitionQuestions(questions: Question[], groupSizes: number[]): Question[][] {
+export function partitionQuestions(
+  questions: Question[],
+  groupSizes: number[]
+): Question[][] {
   const groups: Question[][] = [];
   let startIndex = 0;
-  
+
   for (const size of groupSizes) {
-    const group = questions.slice(startIndex, startIndex + size).map((q, index) => ({
-      ...q,
-      group: groups.length + 1,
-      order: index + 1
-    }));
+    const group = questions
+      .slice(startIndex, startIndex + size)
+      .map((q, index) => ({
+        ...q,
+        group: groups.length + 1,
+        order: index + 1,
+      }));
     groups.push(group);
     startIndex += size;
   }
-  
+
   return groups;
 }
 
@@ -124,33 +161,41 @@ export function generateExamVersions(
   masterQuestions: Question[],
   settings: ExamSettings,
   baseSeed: string
-): { versions: ExamData[], mappings: VersionMapping[] } {
-  const groupSizes = settings.groups.split(',').map(g => parseInt(g.trim()));
+): { versions: ExamData[]; mappings: VersionMapping[] } {
+  const groupSizes = settings.groups.split(",").map((g) => parseInt(g.trim()));
   const questionGroups = partitionQuestions(masterQuestions, groupSizes);
   const numVersions = settings.numberofvestions;
-  
+
   const versions: ExamData[] = [];
   const mappings: VersionMapping[] = [];
-  
+
   for (let versionIndex = 0; versionIndex < numVersions; versionIndex++) {
-    const versionLabel = generateVersionLabel(versionIndex, settings.code_numbering);
+    const versionLabel = generateVersionLabel(
+      versionIndex,
+      settings.code_numbering
+    );
     const versionSeed = `${baseSeed}#${versionLabel}`;
     const rng = new DeterministicRNG(versionSeed);
-    
+
     const versionQuestions: Question[] = [];
     let questionCounter = 1;
-    
+
     // Process each group
     questionGroups.forEach((group, groupIndex) => {
       // Separate questions by type: fixed position, fixed options, and regular
-      const fixedPositionQuestions = group.filter(q => q.fixed);
-      const fixedOptionsQuestions = group.filter(q => q.fixedOptions && !q.fixed);
-      const regularQuestions = group.filter(q => !q.fixed && !q.fixedOptions);
-      
+      const fixedPositionQuestions = group.filter((q) => q.fixed);
+      const fixedOptionsQuestions = group.filter(
+        (q) => q.fixedOptions && !q.fixed
+      );
+      const regularQuestions = group.filter((q) => !q.fixed && !q.fixedOptions);
+
       // Shuffle regular and fixed-options questions together (position can change)
-      const shufflableQuestions = [...fixedOptionsQuestions, ...regularQuestions];
+      const shufflableQuestions = [
+        ...fixedOptionsQuestions,
+        ...regularQuestions,
+      ];
       const shuffledQuestions = rng.shuffle(shufflableQuestions);
-      
+
       // Combine fixed position questions with shuffled questions, maintaining original order for fixed ones
       const combinedQuestions = [...group].sort((a, b) => {
         if (a.fixed && b.fixed) {
@@ -164,49 +209,57 @@ export function generateExamVersions(
         }
         return group.indexOf(a) - group.indexOf(b);
       });
-      
+
       // Replace shufflable questions with their shuffled versions
       let shuffledIndex = 0;
-      const finalQuestions = combinedQuestions.map(q => {
+      const finalQuestions = combinedQuestions.map((q) => {
         if (q.fixed) {
           return q;
         } else {
           return shuffledQuestions[shuffledIndex++];
         }
       });
-      
+
       finalQuestions.forEach((question, questionIndexInGroup) => {
         let shuffledChoices: any[];
         let newCorrectIndex: number;
         let permString: string;
-        
+
         if (question.fixed || question.fixedOptions) {
           // For fixed questions or fixed-options questions, don't shuffle options
           shuffledChoices = question.choices[0];
           newCorrectIndex = question.choices[1]; // Use the original correct index
-          permString = 'ABCDE'; // No permutation for fixed questions
+          permString = "ABCDE"; // No permutation for fixed questions
         } else {
           // Shuffle options for regular questions
           const actualOptionCount = question.choices[0].length;
-          const optionIndices = Array.from({ length: actualOptionCount }, (_, i) => i);
+          const optionIndices = Array.from(
+            { length: actualOptionCount },
+            (_, i) => i
+          );
           const shuffledIndices = rng.shuffle(optionIndices);
-          shuffledChoices = shuffledIndices.map(index => question.choices[0][index]);
+          shuffledChoices = shuffledIndices.map(
+            (index) => question.choices[0][index]
+          );
           newCorrectIndex = shuffledIndices.indexOf(question.choices[1]); // Find where the original correct answer ended up
-          permString = shuffledIndices.map(i => String.fromCharCode(65 + i)).join('');
+          permString = shuffledIndices
+            .map((i) => String.fromCharCode(65 + i))
+            .join("");
         }
-        
+
         const versionQuestion: Question = {
           ...question,
           order: questionCounter,
-          choices: [shuffledChoices, newCorrectIndex, null]
+          choices: [shuffledChoices, newCorrectIndex, null],
         };
-        
+
         versionQuestions.push(versionQuestion);
-        
+
         // Create mapping entry
-        const masterQNo = masterQuestions.findIndex(mq => mq.text === question.text) + 1;
+        const masterQNo =
+          masterQuestions.findIndex((mq) => mq.text === question.text) + 1;
         const correctLetter = String.fromCharCode(65 + newCorrectIndex);
-        
+
         mappings.push({
           group: groupIndex + 1,
           masterQNo,
@@ -214,43 +267,47 @@ export function generateExamVersions(
           versionQNo: questionCounter,
           perm: permString,
           correct: correctLetter,
-          points: 1 // Default points
+          points: 1, // Default points
         });
-        
+
         questionCounter++;
       });
     });
-    
+
     const versionData: ExamData = {
       name: `version_${versionLabel}`,
       ordering: null,
-      preamble: '',
+      preamble: "",
       questions: versionQuestions,
-      kept_in_one_page: []
+      kept_in_one_page: [],
     };
-    
+
     versions.push(versionData);
   }
-  
+
   return { versions, mappings };
 }
 
 export function generateCorrectnessSummary(
   masterQuestions: Question[],
   mappings: VersionMapping[]
-): { questionNo: number; text: string; correctCounts: Record<string, number> }[] {
+): {
+  questionNo: number;
+  text: string;
+  correctCounts: Record<string, number>;
+}[] {
   return masterQuestions.map((question, index) => {
-    const questionMappings = mappings.filter(m => m.masterQNo === index + 1);
+    const questionMappings = mappings.filter((m) => m.masterQNo === index + 1);
     const correctCounts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
-    
-    questionMappings.forEach(mapping => {
+
+    questionMappings.forEach((mapping) => {
       correctCounts[mapping.correct]++;
     });
-    
+
     return {
       questionNo: index + 1,
       text: question.text,
-      correctCounts
+      correctCounts,
     };
   });
 }
