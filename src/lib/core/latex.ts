@@ -588,19 +588,20 @@ ${versionQuestionsSection}`;
     .map((v) => v.name.replace("version_", "").toUpperCase())
     .join("&")} \\\\ \\hline
   ${masterExam.questions
-    .map((_, qIndex) => {
-      const masterAnswer = "A"; // Always A for master (first option)
+    .map((mQ, qIndex) => {
+      const masterAnswer = mQ.correctOptionLetter || "A";
+
       const versionAnswers = versions.map((version) => {
+        // Find which master question appears at position (qIndex + 1) in this version
         const mapping = mappings.find(
           (m) =>
-            m.masterQNo === qIndex + 1 &&
+            m.versionQNo === qIndex + 1 &&
             m.version === version.name.replace("version_", "").toUpperCase()
         );
-        // Find the position of this master question in the version
-        const versionPosition = mapping ? mapping.versionQNo : qIndex + 1;
+
         return mapping
-          ? `${mapping.correct}\\; {\\tiny $_{${versionPosition}}$}`
-          : `A\\; {\\tiny $_{${versionPosition}}$}`;
+          ? `${mapping.correct}\\; {\\tiny $_{${mapping.masterQNo}}$}`
+          : `A\\; {\\tiny $_{${qIndex + 1}}$}`;
       });
 
       return `${qIndex + 1}&${masterAnswer}&${versionAnswers.join("&")}`;
