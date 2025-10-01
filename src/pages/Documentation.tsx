@@ -27,7 +27,8 @@ import {
   RefreshCw,
   Zap,
   Target,
-  Clock
+  Clock,
+  Table as TableIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -97,7 +98,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
       'export': {
         content: [
           "LaTeX Document Output generated files master cover answer keys", "Version Mapping CSV track question distribution",
-          "Best Practices Recommendations printing exam distribution", "Overleaf Integration", "Printing Tips"
+          "Options Matrix CSV option mapping answer choices permutation grading tracking", "Best Practices Recommendations printing exam distribution", "Overleaf Integration", "Printing Tips"
         ],
         count: 0,
         hasMatches: false
@@ -1169,6 +1170,112 @@ Which is largest?
                     1,2,A,2,CADBE,C<br/>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+            )}
+
+            {shouldShowContent("Options Matrix CSV option mapping answer choices permutation grading tracking") && (
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TableIcon className="h-5 w-5 text-blue-500" />
+                  {highlightText("Options Matrix CSV")}
+                  <Badge variant="secondary" className="text-xs">New!</Badge>
+                </CardTitle>
+                <CardDescription>
+                  {highlightText("Detailed option-by-option mapping across all versions")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm">
+                  {highlightText("The Options Matrix provides a comprehensive view of how each answer choice maps across all exam versions - essential for grading and verification.")}
+                </p>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">{highlightText("What's Different from Question Map?")}</h4>
+                  <div className="grid md:grid-cols-2 gap-3 text-sm">
+                    <div className="bg-muted/50 p-3 rounded-lg border">
+                      <p className="font-semibold text-primary mb-1">Question Map CSV</p>
+                      <p className="text-muted-foreground">Shows which questions moved where</p>
+                      <p className="text-xs mt-1">Example: Q5 → Q2 in Version A</p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="font-semibold text-blue-600 dark:text-blue-400 mb-1">Options Matrix CSV</p>
+                      <p className="text-muted-foreground">Shows which answer letters moved where</p>
+                      <p className="text-xs mt-1">Example: Option C → Option A in Version A</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">{highlightText("CSV Structure")}</h4>
+                  <div className="bg-muted p-3 rounded-lg overflow-x-auto">
+                    <div className="text-xs font-mono whitespace-nowrap">
+                      Q, Option, Master_Correct, A_Q, A_Opt, B_Q, B_Opt, C_Q, C_Opt<br/>
+                      1, A, YES, 1, B, 3, C, 5, A<br/>
+                      1, B, , 1, A, 3, D, 5, E<br/>
+                      1, C, , 1, D, 3, A, 5, B<br/>
+                      1, D, , 1, C, 3, B, 5, D<br/>
+                      1, E, , 1, E, 3, E, 5, C
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm space-y-2">
+                    <p className="font-medium">Column Explanation:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• <code className="bg-muted px-1 rounded">Q</code> - Master question number</li>
+                      <li>• <code className="bg-muted px-1 rounded">Option</code> - Original option letter (A, B, C, D, E)</li>
+                      <li>• <code className="bg-muted px-1 rounded">Master_Correct</code> - "YES" if this is the correct answer</li>
+                      <li>• <code className="bg-muted px-1 rounded">[Version]_Q</code> - Question position in that version</li>
+                      <li>• <code className="bg-muted px-1 rounded">[Version]_Opt</code> - What letter the option became</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">{highlightText("Use Cases")}</h4>
+                  <ul className="text-sm space-y-2">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Manual Grading:</span>
+                        <span className="text-muted-foreground"> Quickly find where each answer choice appears across versions when students use different versions</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Verification:</span>
+                        <span className="text-muted-foreground"> Confirm that option shuffling worked correctly and all choices were properly randomized</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Answer Distribution:</span>
+                        <span className="text-muted-foreground"> Analyze correct answer distribution to ensure no patterns (e.g., all A's) appear in any version</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Academic Integrity:</span>
+                        <span className="text-muted-foreground"> Document the randomization for academic records or dispute resolution</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
+                  <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-200">
+                    <strong>Tip:</strong> Use the Options Matrix when you need to trace specific answer choices. Use the Question Map when you just need to know which questions moved positions.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
             )}
