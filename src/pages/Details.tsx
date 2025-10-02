@@ -1,17 +1,38 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Settings, Users, Hash, Shuffle, FileText, RefreshCw } from 'lucide-react';
-import type { ExamJSON, ExamSettings } from '@/lib/types';
-import { InstructionsDialog } from '@/components/ui/instructions-dialog';
-import { generateDynamicSeed, isDefaultSeed } from '@/lib/utils/seed-generator';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Settings,
+  Users,
+  Hash,
+  Shuffle,
+  FileText,
+  RefreshCw,
+} from "lucide-react";
+import type { ExamJSON, ExamSettings } from "@/lib/types";
+import { InstructionsDialog } from "@/components/ui/instructions-dialog";
+import { generateDynamicSeed, isDefaultSeed } from "@/lib/utils/seed-generator";
 
 interface DetailsPageProps {
   examData: ExamJSON;
@@ -20,93 +41,186 @@ interface DetailsPageProps {
   onContinue: (seed: string) => void;
 }
 
-export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: DetailsPageProps) {
+export function DetailsPage({
+  examData,
+  onDataUpdated,
+  onBack,
+  onContinue,
+}: DetailsPageProps) {
   const [settings, setSettings] = useState<ExamSettings>(examData.setting);
   const [groupPartition, setGroupPartition] = useState<string>(
     examData.setting.groups || `${examData.exam.questions.length}`
   );
-  const [versions, setVersions] = useState<number>(examData.setting.numberofvestions || 8);
+  const [versions, setVersions] = useState<number>(
+    examData.setting.numberofvestions || 8
+  );
   const [seed, setSeed] = useState<string>(() => {
-    const currentSeed = examData.setting.seed || 'exam2024';
+    const currentSeed = examData.setting.seed || "exam2024";
     // Generate fresh seed if current is default/empty
     if (isDefaultSeed(currentSeed)) {
       return generateDynamicSeed({
         coursecode: examData.setting.coursecode,
         examname: examData.setting.examname,
         term: examData.setting.term,
-        examdate: examData.setting.examdate
+        examdate: examData.setting.examdate,
       });
     }
     return currentSeed;
   });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  // const validateSettings = () => {
+  //   const errors: string[] = [];
+
+  //   // Validate group partition
+  //   const groups = groupPartition.split(',').map(g => parseInt(g.trim())).filter(n => !isNaN(n));
+  //   const totalQuestions = examData.exam.questions.length;
+  //   const groupSum = groups.reduce((sum, g) => sum + g, 0);
+
+  //   if (groupSum !== totalQuestions) {
+  //     errors.push(`Group partition must sum to ${totalQuestions} questions (currently sums to ${groupSum})`);
+  //   }
+
+  //   if (groups.some(g => g <= 0)) {
+  //     errors.push('All group sizes must be positive numbers');
+  //   }
+
+  //   // Validate versions
+  //   if (versions < 1 || versions > 26) {
+  //     errors.push('Number of versions must be between 1 and 26');
+  //   }
+
+  //   // Validate required fields
+  //   if (!settings.university.trim()) errors.push('University is required');
+  //   if (!settings.department.trim()) errors.push('Department is required');
+  //   if (!settings.coursecode.trim()) errors.push('Course code is required');
+  //   if (!settings.examname.trim()) errors.push('Exam name is required');
+  //   if (!seed.trim()) errors.push('Seed is required for deterministic generation');
+
+  //   setValidationErrors(errors);
+  //   return errors.length === 0;
+  // };
   const validateSettings = () => {
     const errors: string[] = [];
-    
-    // Validate group partition
-    const groups = groupPartition.split(',').map(g => parseInt(g.trim())).filter(n => !isNaN(n));
-    const totalQuestions = examData.exam.questions.length;
-    const groupSum = groups.reduce((sum, g) => sum + g, 0);
-    
-    if (groupSum !== totalQuestions) {
-      errors.push(`Group partition must sum to ${totalQuestions} questions (currently sums to ${groupSum})`);
+
+    // Parse group partition - handle parentheses
+    const groupTokens = groupPartition.split(",").map((g) => g.trim());
+    const groups: number[] = [];
+
+    for (const token of groupTokens) {
+      // Check for malformed parentheses
+      const openCount = (token.match(/\(/g) || []).length;
+      const closeCount = (token.match(/\)/g) || []).length;
+
+      if (openCount !== closeCount) {
+        errors.push(`Mismatched parentheses in: "${token}"`);
+        continue;
+      }
+
+      if (openCount > 1 || closeCount > 1) {
+        errors.push(`Multiple or nested parentheses not allowed: "${token}"`);
+        continue;
+      }
+
+      // Check for invalid formats like "(5,10)" or mixed content
+      if (openCount === 1) {
+        const innerContent = token.slice(1, -1).trim();
+        if (innerContent.includes(",")) {
+          errors.push(
+            `Comma inside parentheses not allowed: "${token}". Use separate groups like "(5),(10)" instead`
+          );
+          continue;
+        }
+      }
+
+      // Remove parentheses if present and parse number
+      const cleaned = token.replace(/[()]/g, "");
+      const num = parseInt(cleaned);
+
+      if (isNaN(num)) {
+        errors.push(`Invalid group size: "${token}"`);
+        continue;
+      }
+
+      if (num <= 0) {
+        errors.push(`Group size must be positive: "${token}"`);
+        continue;
+      }
+
+      groups.push(num);
     }
-    
-    if (groups.some(g => g <= 0)) {
-      errors.push('All group sizes must be positive numbers');
+
+    // Validate group sum only if we successfully parsed all groups
+    if (groups.length === groupTokens.length) {
+      const totalQuestions = examData.exam.questions.length;
+      const groupSum = groups.reduce((sum, g) => sum + g, 0);
+
+      if (groupSum !== totalQuestions) {
+        errors.push(
+          `Group partition must sum to ${totalQuestions} questions (currently sums to ${groupSum})`
+        );
+      }
     }
-    
+
     // Validate versions
     if (versions < 1 || versions > 26) {
-      errors.push('Number of versions must be between 1 and 26');
+      errors.push("Number of versions must be between 1 and 26");
     }
-    
+
     // Validate required fields
-    if (!settings.university.trim()) errors.push('University is required');
-    if (!settings.department.trim()) errors.push('Department is required');
-    if (!settings.coursecode.trim()) errors.push('Course code is required');
-    if (!settings.examname.trim()) errors.push('Exam name is required');
-    if (!seed.trim()) errors.push('Seed is required for deterministic generation');
-    
+    if (!settings.university.trim()) errors.push("University is required");
+    if (!settings.department.trim()) errors.push("Department is required");
+    if (!settings.coursecode.trim()) errors.push("Course code is required");
+    if (!settings.examname.trim()) errors.push("Exam name is required");
+    if (!seed.trim())
+      errors.push("Seed is required for deterministic generation");
+
     setValidationErrors(errors);
     return errors.length === 0;
   };
-
   useEffect(() => {
     validateSettings();
   }, [settings, groupPartition, versions, seed]);
 
-  const handleSettingChange = (key: keyof ExamSettings, value: string | number | boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  const handleSettingChange = (
+    key: keyof ExamSettings,
+    value: string | number | boolean
+  ) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleContinue = () => {
     if (!validateSettings()) return;
-    
+
     const updatedData: ExamJSON = {
       ...examData,
       setting: {
         ...settings,
         numberofvestions: versions,
         groups: groupPartition,
-        seed: seed // Save the seed in settings
-      }
+        seed: seed, // Save the seed in settings
+      },
     };
-    
+
     onDataUpdated(updatedData);
     onContinue(seed);
   };
 
-  const groupSizes = groupPartition.split(',').map(g => parseInt(g.trim())).filter(n => !isNaN(n));
+  const groupSizes = groupPartition
+    .split(",")
+    .map((g) => {
+      const cleaned = g.trim().replace(/[()]/g, "");
+      return parseInt(cleaned);
+    })
+    .filter((n) => !isNaN(n));
   const isValid = validationErrors.length === 0;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center gap-3 mb-6">
-        <Button 
-          onClick={onBack} 
-          variant="ghost" 
+        <Button
+          onClick={onBack}
+          variant="ghost"
           size="sm"
           className="text-muted-foreground hover:text-foreground"
         >
@@ -143,7 +257,9 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="university"
                     value={settings.university}
-                    onChange={(e) => handleSettingChange('university', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("university", e.target.value)
+                    }
                     placeholder="Your University"
                   />
                 </div>
@@ -152,7 +268,9 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="department"
                     value={settings.department}
-                    onChange={(e) => handleSettingChange('department', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("department", e.target.value)
+                    }
                     placeholder="Department of Mathematics"
                   />
                 </div>
@@ -161,7 +279,9 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="coursecode"
                     value={settings.coursecode}
-                    onChange={(e) => handleSettingChange('coursecode', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("coursecode", e.target.value)
+                    }
                     placeholder="MATH101"
                   />
                 </div>
@@ -170,7 +290,9 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="term"
                     value={settings.term}
-                    onChange={(e) => handleSettingChange('term', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("term", e.target.value)
+                    }
                     placeholder="Fall 2024"
                   />
                 </div>
@@ -179,7 +301,9 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="examname"
                     value={settings.examname}
-                    onChange={(e) => handleSettingChange('examname', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("examname", e.target.value)
+                    }
                     placeholder="Midterm Examination"
                   />
                 </div>
@@ -188,7 +312,9 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="examdate"
                     value={settings.examdate}
-                    onChange={(e) => handleSettingChange('examdate', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("examdate", e.target.value)
+                    }
                     placeholder="November 15, 2024"
                   />
                 </div>
@@ -197,13 +323,20 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   <Input
                     id="timeallowed"
                     value={settings.timeallowed}
-                    onChange={(e) => handleSettingChange('timeallowed', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("timeallowed", e.target.value)
+                    }
                     placeholder="2 hours"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="examtype">Exam Type</Label>
-                  <Select value={settings.examtype} onValueChange={(value) => handleSettingChange('examtype', value)}>
+                  <Select
+                    value={settings.examtype}
+                    onValueChange={(value) =>
+                      handleSettingChange("examtype", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -216,21 +349,26 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   </Select>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label htmlFor="includeCoverPage">Include Cover Pages</Label>
+                    <Label htmlFor="includeCoverPage">
+                      Include Cover Pages
+                    </Label>
                     <p className="text-sm text-muted-foreground">
-                      Add individual cover pages for each exam version with student information fields
+                      Add individual cover pages for each exam version with
+                      student information fields
                     </p>
                   </div>
                   <Switch
                     id="includeCoverPage"
                     checked={settings.includeCoverPage}
-                    onCheckedChange={(checked) => handleSettingChange('includeCoverPage', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSettingChange("includeCoverPage", checked)
+                    }
                   />
                 </div>
               </div>
@@ -244,12 +382,15 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                 Question Groups
               </CardTitle>
               <CardDescription>
-                Organize questions into groups that maintain their relative order
+                Organize questions into groups that maintain their relative
+                order
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="groups">Group Partition (comma-separated sizes)</Label>
+                <Label htmlFor="groups">
+                  Group Partition (comma-separated sizes)
+                </Label>
                 <Input
                   id="groups"
                   value={groupPartition}
@@ -261,16 +402,34 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   Total questions: {examData.exam.questions.length}
                 </p>
               </div>
-              
+
               {groupSizes.length > 0 && (
                 <div className="space-y-2">
                   <Label>Preview</Label>
                   <div className="flex flex-wrap gap-2">
-                    {groupSizes.map((size, index) => (
-                      <Badge key={index} variant="outline" className="font-mono">
-                        Group {index + 1}: {size} questions
-                      </Badge>
-                    ))}
+                    {groupSizes.map((size, index) => {
+                      const tokens = groupPartition
+                        .split(",")
+                        .map((g) => g.trim());
+                      const token = tokens[index] || "";
+                      const isShuffleable =
+                        token.startsWith("(") && token.endsWith(")");
+
+                      return (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="font-mono"
+                        >
+                          Group {index + 1}: {size} questions
+                          {isShuffleable && (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              (group shuffles, questions keeps order)
+                            </span>
+                          )}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -302,9 +461,11 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="code_name">Version Label</Label>
-                  <Select 
-                    value={settings.code_name} 
-                    onValueChange={(value) => handleSettingChange('code_name', value)}
+                  <Select
+                    value={settings.code_name}
+                    onValueChange={(value) =>
+                      handleSettingChange("code_name", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -316,29 +477,39 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   </Select>
                   <Input
                     value={settings.code_name}
-                    onChange={(e) => handleSettingChange('code_name', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("code_name", e.target.value)
+                    }
                     placeholder="Enter custom label"
                     className="mt-2"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="code_numbering">Numbering Style</Label>
-                  <Select 
-                    value={settings.code_numbering} 
-                    onValueChange={(value: 'ALPHA' | 'NUMERIC' | 'ROMAN') => handleSettingChange('code_numbering', value)}
+                  <Select
+                    value={settings.code_numbering}
+                    onValueChange={(value: "ALPHA" | "NUMERIC" | "ROMAN") =>
+                      handleSettingChange("code_numbering", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALPHA">Alphabetic (A, B, C...)</SelectItem>
-                      <SelectItem value="NUMERIC">Numeric (1, 2, 3...)</SelectItem>
-                      <SelectItem value="ROMAN">Roman (I, II, III...)</SelectItem>
+                      <SelectItem value="ALPHA">
+                        Alphabetic (A, B, C...)
+                      </SelectItem>
+                      <SelectItem value="NUMERIC">
+                        Numeric (1, 2, 3...)
+                      </SelectItem>
+                      <SelectItem value="ROMAN">
+                        Roman (I, II, III...)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="seed">Randomization Seed</Label>
@@ -346,12 +517,16 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSeed(generateDynamicSeed({
-                      coursecode: settings.coursecode,
-                      examname: settings.examname,
-                      term: settings.term,
-                      examdate: settings.examdate
-                    }))}
+                    onClick={() =>
+                      setSeed(
+                        generateDynamicSeed({
+                          coursecode: settings.coursecode,
+                          examname: settings.examname,
+                          term: settings.term,
+                          examdate: settings.examdate,
+                        })
+                      )
+                    }
                     className="h-6 w-6 p-0"
                   >
                     <RefreshCw className="h-3 w-3" />
@@ -365,10 +540,10 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
                   className="font-mono"
                 />
                 <p className="text-sm text-muted-foreground">
-                  Same seed produces identical randomization across generations. Click refresh for a new dynamic seed.
+                  Same seed produces identical randomization across generations.
+                  Click refresh for a new dynamic seed.
                 </p>
               </div>
-
             </CardContent>
           </Card>
 
@@ -385,10 +560,13 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
             <CardContent>
               <InstructionsDialog
                 instructions={settings.instructions}
-                onInstructionsChange={(instructions) => handleSettingChange('instructions', instructions)}
+                onInstructionsChange={(instructions) =>
+                  handleSettingChange("instructions", instructions)
+                }
               />
               <p className="text-sm text-muted-foreground mt-2">
-                Instructions will be formatted and included on each exam version cover page
+                Instructions will be formatted and included on each exam version
+                cover page
               </p>
             </CardContent>
           </Card>
@@ -426,15 +604,21 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
             <CardContent className="space-y-3">
               <div className="text-sm">
                 <div className="font-medium">Questions</div>
-                <div className="text-muted-foreground">{examData.exam.questions.length} total</div>
+                <div className="text-muted-foreground">
+                  {examData.exam.questions.length} total
+                </div>
               </div>
               <div className="text-sm">
                 <div className="font-medium">Groups</div>
-                <div className="text-muted-foreground">{groupSizes.length} groups</div>
+                <div className="text-muted-foreground">
+                  {groupSizes.length} groups
+                </div>
               </div>
               <div className="text-sm">
                 <div className="font-medium">Versions</div>
-                <div className="text-muted-foreground">{versions} variations</div>
+                <div className="text-muted-foreground">
+                  {versions} variations
+                </div>
               </div>
               <div className="text-sm">
                 <div className="font-medium">Output</div>
@@ -444,7 +628,7 @@ export function DetailsPage({ examData, onDataUpdated, onBack, onContinue }: Det
           </Card>
 
           {/* Continue Button */}
-          <Button 
+          <Button
             onClick={handleContinue}
             disabled={!isValid}
             variant="hero"
