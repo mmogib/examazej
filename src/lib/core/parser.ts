@@ -1,82 +1,91 @@
 // LaTeX template parser for the Exam Generator
 
-import { ParsedLatexTemplate, ExamSettings, Question } from '../types';
-import { generateDynamicSeed } from '../utils/seed-generator';
+import { ParsedLatexTemplate, ExamSettings, Question } from "../types";
+import { generateDynamicSeed } from "../utils/seed-generator";
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
-  console.log('==== STARTING LATEX PARSING ====');
-  console.log('Parsing LaTeX template, content length:', content.length);
-  const lines = content.split('\n');
+  // console.log("==== STARTING LATEX PARSING ====");
+  // console.log("Parsing LaTeX template, content length:", content.length);
+  const lines = content.split("\n");
   const result: ParsedLatexTemplate = {
-    questions: []
+    questions: [],
   };
-  
-  console.log('Total lines to process:', lines.length);
+
+  // console.log("Total lines to process:", lines.length);
 
   // Parse settings section
-  const settingStart = lines.findIndex(line => line.trim() === '%{#setting}');
-  const settingEnd = lines.findIndex(line => line.trim() === '%{/setting}');
-  
+  const settingStart = lines.findIndex((line) => line.trim() === "%{#setting}");
+  const settingEnd = lines.findIndex((line) => line.trim() === "%{/setting}");
+
   if (settingStart !== -1 && settingEnd !== -1) {
     const settingLines = lines.slice(settingStart + 1, settingEnd);
     const settings: Partial<ExamSettings> = {};
-    
+
     for (const line of settingLines) {
       const trimmed = line.trim();
-      if (trimmed.startsWith('%') && trimmed.includes('=')) {
-        const [key, ...valueParts] = trimmed.substring(1).split('=');
-        const value = valueParts.join('=').trim();
+      if (trimmed.startsWith("%") && trimmed.includes("=")) {
+        const [key, ...valueParts] = trimmed.substring(1).split("=");
+        const value = valueParts.join("=").trim();
         const cleanKey = key.trim();
-        
-        if (cleanKey === 'numberofvestions') {
+
+        if (cleanKey === "numberofvestions") {
           (settings as any)[cleanKey] = parseInt(value) || 1;
-        } else if (cleanKey === 'includeCoverPage') {
+        } else if (cleanKey === "includeCoverPage") {
           // Convert string to boolean: missing or "yes" = true, "no" = false
-          (settings as any)[cleanKey] = value.toLowerCase() !== 'no';
+          (settings as any)[cleanKey] = value.toLowerCase() !== "no";
         } else {
           (settings as any)[cleanKey] = value;
         }
       }
     }
-    
+
     // Set dynamic seed if not present
     if (!settings.seed) {
       settings.seed = generateDynamicSeed({
         coursecode: settings.coursecode,
         examname: settings.examname,
         term: settings.term,
-        examdate: settings.examdate
+        examdate: settings.examdate,
       });
     }
-    
+
     // Set default includeCoverPage if not present
     if (settings.includeCoverPage === undefined) {
       settings.includeCoverPage = true;
     }
-    
+
     result.settings = settings;
   }
 
   // Parse preamble section
-  const preambleStart = lines.findIndex(line => line.trim() === '%{#preamble}');
-  const preambleEnd = lines.findIndex(line => line.trim() === '%{/preamble}');
-  
+  const preambleStart = lines.findIndex(
+    (line) => line.trim() === "%{#preamble}"
+  );
+  const preambleEnd = lines.findIndex((line) => line.trim() === "%{/preamble}");
+
   if (preambleStart !== -1 && preambleEnd !== -1) {
     const preambleLines = lines.slice(preambleStart + 1, preambleEnd);
-    result.preamble = preambleLines.join('\n');
+    result.preamble = preambleLines.join("\n");
   }
 
   // Parse instructions section
-  const instructionsStart = lines.findIndex(line => line.trim() === '%{#instructions}');
-  const instructionsEnd = lines.findIndex(line => line.trim() === '%{/instructions}');
-  
+  const instructionsStart = lines.findIndex(
+    (line) => line.trim() === "%{#instructions}"
+  );
+  const instructionsEnd = lines.findIndex(
+    (line) => line.trim() === "%{/instructions}"
+  );
+
   if (instructionsStart !== -1 && instructionsEnd !== -1) {
-    const instructionsLines = lines.slice(instructionsStart + 1, instructionsEnd);
+    const instructionsLines = lines.slice(
+      instructionsStart + 1,
+      instructionsEnd
+    );
     // Remove the % prefix from each line and join
     const instructions = instructionsLines
-      .map(line => line.startsWith('%') ? line.substring(1) : line)
-      .join('\n');
-    
+      .map((line) => (line.startsWith("%") ? line.substring(1) : line))
+      .join("\n");
+
     if (result.settings) {
       result.settings.instructions = instructions;
     } else {
@@ -95,51 +104,65 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
   let inOptionBlock = false;
-  let currentOptionText = '';
+  let currentOptionText = "";
 
-  console.log('Starting question parsing with', lines.length, 'lines');
+  // console.log('Starting question parsing with', lines.length, 'lines');
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
-    
+
     // Skip LaTeX comment lines (but not our special markers that start with %)
-    if (trimmed.startsWith('%') && !trimmed.startsWith('%{')) {
+    if (trimmed.startsWith("%") && !trimmed.startsWith("%{")) {
       continue;
     }
-    
+
     // Track enumerate depth
-    if (trimmed.includes('\\begin{enumerate}')) {
+    if (trimmed.includes("\\begin{enumerate}")) {
       enumerateDepth++;
-      console.log('Found enumerate begin, depth:', enumerateDepth, 'at line:', i + 1);
+      // console.log(
+      //   "Found enumerate begin, depth:",
+      //   enumerateDepth,
+      //   "at line:",
+      //   i + 1
+      // );
       if (enumerateDepth === 1) {
         inQuestionEnumerate = true;
       }
       continue;
     }
-    
-    if (trimmed.includes('\\end{enumerate}')) {
-      console.log('Found enumerate end, depth was:', enumerateDepth, 'at line:', i + 1);
-      
+
+    if (trimmed.includes("\\end{enumerate}")) {
+      // console.log(
+      //   "Found enumerate end, depth was:",
+      //   enumerateDepth,
+      //   "at line:",
+      //   i + 1
+      // );
+
       // Save question when ending options enumerate
-      if (enumerateDepth === 2 && currentQuestion && currentOptions.length >= 0) {
-        console.log('🔥 SAVING QUESTION FROM ENUMERATE END:', {
-          questionText: currentQuestion,
-          optionsCount: currentOptions.length,
-          questionNumber: result.questions.length + 1,
-          fixed: currentQuestionFixed,
-          line: i + 1
-        });
+      if (
+        enumerateDepth === 2 &&
+        currentQuestion &&
+        currentOptions.length >= 0
+      ) {
+        // console.log("🔥 SAVING QUESTION FROM ENUMERATE END:", {
+        //   questionText: currentQuestion,
+        //   optionsCount: currentOptions.length,
+        //   questionNumber: result.questions.length + 1,
+        //   fixed: currentQuestionFixed,
+        //   line: i + 1,
+        // });
         const question: any = {
           text: currentQuestion,
           choices: [
-            currentOptions.map(text => ({ text })),
+            currentOptions.map((text) => ({ text })),
             currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
-            null
+            null,
           ],
-          keepOnSeparatePage: currentSeparatePage
+          keepOnSeparatePage: currentSeparatePage,
         };
-        
+
         if (currentQuestionFixed) {
           question.fixed = true;
         }
@@ -147,9 +170,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
           question.fixedOptions = true;
           question.correctOptionLetter = currentCorrectLetter;
         }
-        
+
         result.questions.push(question);
-        console.log('✅ Question saved! Total questions now:', result.questions.length);
+        // console.log(
+        //   "✅ Question saved! Total questions now:",
+        //   result.questions.length
+        // );
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
@@ -157,93 +183,96 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentCorrectLetter = undefined;
         currentSeparatePage = false;
         inOptionBlock = false;
-        currentOptionText = '';
+        currentOptionText = "";
       }
-      
+
       enumerateDepth--;
-      
+
       if (enumerateDepth === 0) {
         inQuestionEnumerate = false;
       }
       continue;
     }
-    
+
     // Process both inside enumerate blocks and standalone question blocks
     const shouldProcess = inQuestionEnumerate || inQuestionBlock;
-    
+
     // Handle fixed marker
-    if (shouldProcess && trimmed === '%{#fixed}') {
-      console.log('Found fixed marker at line:', i + 1);
+    if (shouldProcess && trimmed === "%{#fixed}") {
+      // console.log("Found fixed marker at line:", i + 1);
       currentQuestionFixed = true;
       continue;
     }
-    
+
     // Handle fixed-options marker
-    if (shouldProcess && trimmed.includes('%{#fixed-options:')) {
+    if (shouldProcess && trimmed.includes("%{#fixed-options:")) {
       const fixedOptionsMatch = trimmed.match(/%\{#fixed-options:([A-E])\}/);
       if (fixedOptionsMatch) {
-        console.log('Found fixed-options marker at line:', i + 1, 'correct answer:', fixedOptionsMatch[1]);
+        // console.log(
+        //   "Found fixed-options marker at line:",
+        //   i + 1,
+        //   "correct answer:",
+        //   fixedOptionsMatch[1]
+        // );
         currentQuestionFixedOptions = true;
         currentCorrectLetter = fixedOptionsMatch[1];
         continue;
       }
     }
-    
+
     // Handle separate-page marker
-    if (shouldProcess && trimmed === '%{#separate-page}') {
-      console.log('Found separate-page marker at line:', i + 1);
+    if (shouldProcess && trimmed === "%{#separate-page}") {
+      // console.log("Found separate-page marker at line:", i + 1);
       currentSeparatePage = true;
       continue;
     }
-    
+
     // Handle question start marker (process even outside enumerate blocks)
-    if (trimmed.includes('%{#q}')) {
-      console.log('Found question start marker at line:', i + 1);
-      
+    if (trimmed.includes("%{#q}")) {
+      // console.log("Found question start marker at line:", i + 1);
+
       inQuestionBlock = true;
-      
+
       // Check if question is on same line
       const sameLineMatch = trimmed.match(/%\{#q\}(.*?)%\{\/q\}/);
       if (sameLineMatch) {
         currentQuestion = sameLineMatch[1].trim();
-        console.log('Found complete inline question:', currentQuestion);
+        // console.log("Found complete inline question:", currentQuestion);
         inQuestionBlock = false;
       } else {
         // Extract any text after the opening tag
-        const afterTag = trimmed.replace('%{#q}', '').trim();
-        currentQuestion = afterTag || '';
+        const afterTag = trimmed.replace("%{#q}", "").trim();
+        currentQuestion = afterTag || "";
       }
       continue;
     }
-    
+
     // Handle question end marker
-    if (trimmed.includes('%{/q}') && inQuestionBlock) {
-      console.log('Found question end marker at line:', i + 1);
-      const beforeTag = trimmed.replace('%{/q}', '').trim();
+    if (trimmed.includes("%{/q}") && inQuestionBlock) {
+      // console.log("Found question end marker at line:", i + 1);
+      const beforeTag = trimmed.replace("%{/q}", "").trim();
       if (beforeTag) {
-        currentQuestion = currentQuestion ? currentQuestion + ' ' + beforeTag : beforeTag;
+        currentQuestion = currentQuestion
+          ? currentQuestion + " " + beforeTag
+          : beforeTag;
       }
-      console.log('Complete question text:', currentQuestion);
+      // console.log("Complete question text:", currentQuestion);
       inQuestionBlock = false;
-      
+
       // If not in enumerate block, save question immediately (for open-ended questions)
       if (!inQuestionEnumerate && currentQuestion !== null) {
-        console.log('🔥 SAVING OPEN-ENDED QUESTION:', {
-          questionText: currentQuestion,
-          questionNumber: result.questions.length + 1,
-          fixed: currentQuestionFixed,
-          line: i + 1
-        });
+        // console.log("🔥 SAVING OPEN-ENDED QUESTION:", {
+        //   questionText: currentQuestion,
+        //   questionNumber: result.questions.length + 1,
+        //   fixed: currentQuestionFixed,
+        //   line: i + 1,
+        // });
         const question: any = {
           text: currentQuestion,
-          choices: [
-            [],
-            0,
-            null
-          ],
-          keepOnSeparatePage: currentSeparatePage
+          choices: [[], 0, null],
+          keepOnSeparatePage: currentSeparatePage,
         };
-        
+
         if (currentQuestionFixed) {
           question.fixed = true;
         }
@@ -251,9 +280,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
           question.fixedOptions = true;
           question.correctOptionLetter = currentCorrectLetter;
         }
-        
+
         result.questions.push(question);
-        console.log('✅ Open-ended question saved! Total questions now:', result.questions.length);
+        // console.log(
+        //   "✅ Open-ended question saved! Total questions now:",
+        //   result.questions.length
+        // );
         currentQuestion = null;
         currentOptions = [];
         currentQuestionFixed = false;
@@ -263,74 +295,98 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
       continue;
     }
-    
+
     // Collect question text between markers (including LaTeX commands)
-    if (inQuestionBlock && trimmed && !trimmed.startsWith('%{')) {
-      currentQuestion = currentQuestion ? currentQuestion + '\n' + line : line;
-      console.log('Collecting question text:', trimmed);
+    if (inQuestionBlock && trimmed && !trimmed.startsWith("%{")) {
+      currentQuestion = currentQuestion ? currentQuestion + "\n" + line : line;
+      // console.log("Collecting question text:", trimmed);
       continue;
     }
-    
+
     // Handle option start marker
-    if (currentQuestion && trimmed.includes('%{#o}')) {
-      console.log('Found option start marker at line:', i + 1, 'current options count:', currentOptions.length);
+    if (currentQuestion && trimmed.includes("%{#o}")) {
+      // console.log(
+      //   "Found option start marker at line:",
+      //   i + 1,
+      //   "current options count:",
+      //   currentOptions.length
+      // );
       inOptionBlock = true;
-      
+
       // Check if option is on same line
       const sameLineMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
       if (sameLineMatch) {
         const optionText = sameLineMatch[1].trim();
-        console.log('Found complete inline option:', optionText, 'total options now:', currentOptions.length + 1);
+        // console.log(
+        //   "Found complete inline option:",
+        //   optionText,
+        //   "total options now:",
+        //   currentOptions.length + 1
+        // );
         currentOptions.push(optionText);
         inOptionBlock = false;
       } else {
         // Extract any text after the opening tag
-        const afterTag = trimmed.replace('%{#o}', '').trim();
-        currentOptionText = afterTag || '';
+        const afterTag = trimmed.replace("%{#o}", "").trim();
+        currentOptionText = afterTag || "";
       }
       continue;
     }
-    
+
     // Handle option end marker
-    if (trimmed.includes('%{/o}') && inOptionBlock) {
-      console.log('Found option end marker at line:', i + 1);
-      const beforeTag = trimmed.replace('%{/o}', '').trim();
+    if (trimmed.includes("%{/o}") && inOptionBlock) {
+      // console.log("Found option end marker at line:", i + 1);
+      const beforeTag = trimmed.replace("%{/o}", "").trim();
       if (beforeTag) {
-        currentOptionText = currentOptionText ? currentOptionText + ' ' + beforeTag : beforeTag;
+        currentOptionText = currentOptionText
+          ? currentOptionText + " " + beforeTag
+          : beforeTag;
       }
-      console.log('Complete option text:', currentOptionText, 'total options now:', currentOptions.length + 1);
+      // console.log(
+      //   "Complete option text:",
+      //   currentOptionText,
+      //   "total options now:",
+      //   currentOptions.length + 1
+      // );
       currentOptions.push(currentOptionText);
-      currentOptionText = '';
+      currentOptionText = "";
       inOptionBlock = false;
       continue;
     }
-    
+
     // Collect option text between markers
-    if (inOptionBlock && trimmed && !trimmed.startsWith('\\') && !trimmed.startsWith('%')) {
-      currentOptionText = currentOptionText ? currentOptionText + ' ' + trimmed : trimmed;
-      console.log('Collecting option text:', trimmed);
+    if (
+      inOptionBlock &&
+      trimmed &&
+      !trimmed.startsWith("\\") &&
+      !trimmed.startsWith("%")
+    ) {
+      currentOptionText = currentOptionText
+        ? currentOptionText + " " + trimmed
+        : trimmed;
+      // console.log("Collecting option text:", trimmed);
       continue;
     }
   }
-  
+
   // Save the last question if exists and complete
   if (currentQuestion !== null) {
-    console.log('🔥 SAVING FINAL QUESTION:', {
-      questionText: currentQuestion,
-      optionsCount: currentOptions.length,
-      questionNumber: result.questions.length + 1,
-      fixed: currentQuestionFixed
-    });
+    // console.log("🔥 SAVING FINAL QUESTION:", {
+    //   questionText: currentQuestion,
+    //   optionsCount: currentOptions.length,
+    //   questionNumber: result.questions.length + 1,
+    //   fixed: currentQuestionFixed,
+    // });
     const question: any = {
       text: currentQuestion,
       choices: [
-        currentOptions.map(text => ({ text })),
+        currentOptions.map((text) => ({ text })),
         currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
-        null
+        null,
       ],
-      keepOnSeparatePage: currentSeparatePage
+      keepOnSeparatePage: currentSeparatePage,
     };
-    
+
     if (currentQuestionFixed) {
       question.fixed = true;
     }
@@ -338,39 +394,51 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       question.fixedOptions = true;
       question.correctOptionLetter = currentCorrectLetter;
     }
-    
+
     result.questions.push(question);
-    console.log('✅ Final question saved! Total questions now:', result.questions.length);
+    // console.log(
+    //   "✅ Final question saved! Total questions now:",
+    //   result.questions.length
+    // );
   }
 
-  console.log('==== PARSING COMPLETE ====');
-  console.log('Final question count:', result.questions.length);
-  console.log('Questions:', result.questions.map((q, i) => `${i+1}. "${q.text.substring(0, 50)}..."`));
+  // console.log("==== PARSING COMPLETE ====");
+  // console.log("Final question count:", result.questions.length);
+  // console.log(
+  //   "Questions:",
+  //   result.questions.map((q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`)
+  // );
   return result;
 }
 
 export function validateParsedTemplate(parsed: ParsedLatexTemplate): string[] {
   const errors: string[] = [];
-  
+
   if (parsed.questions.length === 0) {
-    errors.push('No questions found in the template');
+    errors.push("No questions found in the template");
   }
-  
+
   parsed.questions.forEach((question, index) => {
     if (!question.text.trim()) {
       errors.push(`Question ${index + 1} has empty text`);
     }
-    
+
     if (question.choices[0].length > 5) {
-      errors.push(`Question ${index + 1} cannot have more than 5 options, found ${question.choices[0].length}`);
+      errors.push(
+        `Question ${index + 1} cannot have more than 5 options, found ${
+          question.choices[0].length
+        }`
+      );
     }
-    
+
     question.choices[0].forEach((choice, choiceIndex) => {
       if (!choice.text.trim()) {
-        errors.push(`Question ${index + 1}, option ${choiceIndex + 1} is empty`);
+        errors.push(
+          `Question ${index + 1}, option ${choiceIndex + 1} is empty`
+        );
       }
     });
   });
-  
+
   return errors;
 }

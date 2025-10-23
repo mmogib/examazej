@@ -938,7 +938,7 @@ ${SEPARATOR_COMMANDS}
 %%
 %% --------------------------------- YOUR OWN PACKAGES AND COMMANDS  ----------------------------
 %{#preamble}
-
+${exam.preamble || ""}
 %{/preamble}
 %% --------------------------------- END OF YOUR PACKAGES AND COMMANDS ---------------------------
 %%
