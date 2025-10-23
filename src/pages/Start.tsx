@@ -171,14 +171,14 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
-    console.log("🔥 CREATING EXAM FROM TEMPLATE");
-    console.log("Template questions count:", template.questions.length);
-    console.log(
-      "Template questions:",
-      template.questions.map(
-        (q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`
-      )
-    );
+    // console.log("🔥 CREATING EXAM FROM TEMPLATE");
+    // console.log("Template questions count:", template.questions.length);
+    // console.log(
+    //   "Template questions:",
+    //   template.questions.map(
+    //     (q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`
+    //   )
+    // );
 
     const defaults = getDefaultSettings();
     const settings = { ...defaults, ...template.settings };
@@ -189,11 +189,11 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       order: index + 1,
     }));
 
-    console.log("Final exam questions count:", examQuestions.length);
-    console.log(
-      "Final exam questions:",
-      examQuestions.map((q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`)
-    );
+    // console.log("Final exam questions count:", examQuestions.length);
+    // console.log(
+    //   "Final exam questions:",
+    //   examQuestions.map((q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`)
+    // );
 
     const result = {
       setting: settings as ExamSettings,
@@ -207,10 +207,10 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       options_order: {},
     };
 
-    console.log(
-      "✅ EXAM CREATED - Final questions count:",
-      result.exam.questions.length
-    );
+    // console.log(
+    //   "✅ EXAM CREATED - Final questions count:",
+    //   result.exam.questions.length
+    // );
     return result;
   };
 
@@ -228,7 +228,6 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       } else if (file.name.endsWith(".tex")) {
         const parsed = parseLatexTemplate(content);
         const errors = validateParsedTemplate(parsed);
-
         if (errors.length > 0) {
           setError(`Template validation failed:\n${errors.join("\n")}`);
         } else {
