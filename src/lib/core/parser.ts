@@ -113,7 +113,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     const trimmed = line.trim();
 
     // Skip LaTeX comment lines (but not our special markers that start with %)
-    if (trimmed.startsWith("%") && !trimmed.startsWith("%{")) {
+    if (
+      trimmed.startsWith("%") &&
+      !trimmed.startsWith("%{") &&
+      !inOptionBlock &&
+      !inQuestionBlock
+    ) {
       continue;
     }
 
@@ -295,76 +300,58 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
       }
       continue;
     }
+    // ===== OPTION HANDLING (VERBATIM) =====
 
+    // Start of an option (may be inline or start of multi-line block)
+    if (currentQuestion && line.includes("%{#o}")) {
+      const openTag = "%{#o}";
+      const closeTag = "%{/o}";
+      const startIdx = line.indexOf(openTag) + openTag.length;
+
+      // Case 1: opening and closing on the SAME line
+      const endIdxSame = line.indexOf(closeTag, startIdx);
+      if (endIdxSame !== -1) {
+        const exactInner = line.slice(startIdx, endIdxSame); // keep verbatim (no trim)
+        currentOptions.push(exactInner);
+        inOptionBlock = false;
+      } else {
+        // Case 2: multi-line block begins here
+        inOptionBlock = true;
+        currentOptionText = line.slice(startIdx); // remainder after %{#o}, verbatim
+      }
+      continue;
+    }
+
+    // Inside a multi-line option block
+    if (inOptionBlock) {
+      const closeTag = "%{/o}";
+      const endIdx = line.indexOf(closeTag);
+
+      if (endIdx !== -1) {
+        // Found closing tag on this line; capture everything BEFORE it
+        const beforeTagRaw = line.slice(0, endIdx); // verbatim
+        if (currentOptionText === "") {
+          currentOptionText = beforeTagRaw;
+        } else {
+          currentOptionText += "\n" + beforeTagRaw;
+        }
+        currentOptions.push(currentOptionText);
+        currentOptionText = "";
+        inOptionBlock = false;
+      } else {
+        // Regular line inside option block; append FULL line verbatim
+        if (currentOptionText === "") {
+          currentOptionText = line;
+        } else {
+          currentOptionText += "\n" + line;
+        }
+      }
+      continue;
+    }
     // Collect question text between markers (including LaTeX commands)
     if (inQuestionBlock && trimmed && !trimmed.startsWith("%{")) {
       currentQuestion = currentQuestion ? currentQuestion + "\n" + line : line;
       // console.log("Collecting question text:", trimmed);
-      continue;
-    }
-
-    // Handle option start marker
-    if (currentQuestion && trimmed.includes("%{#o}")) {
-      // console.log(
-      //   "Found option start marker at line:",
-      //   i + 1,
-      //   "current options count:",
-      //   currentOptions.length
-      // );
-      inOptionBlock = true;
-
-      // Check if option is on same line
-      const sameLineMatch = trimmed.match(/%\{#o\}(.*?)%\{\/o\}/);
-      if (sameLineMatch) {
-        const optionText = sameLineMatch[1].trim();
-        // console.log(
-        //   "Found complete inline option:",
-        //   optionText,
-        //   "total options now:",
-        //   currentOptions.length + 1
-        // );
-        currentOptions.push(optionText);
-        inOptionBlock = false;
-      } else {
-        // Extract any text after the opening tag
-        const afterTag = trimmed.replace("%{#o}", "").trim();
-        currentOptionText = afterTag || "";
-      }
-      continue;
-    }
-
-    // Handle option end marker
-    if (trimmed.includes("%{/o}") && inOptionBlock) {
-      // console.log("Found option end marker at line:", i + 1);
-      const beforeTag = trimmed.replace("%{/o}", "").trim();
-      if (beforeTag) {
-        currentOptionText = currentOptionText
-          ? currentOptionText + " " + beforeTag
-          : beforeTag;
-      }
-      // console.log(
-      //   "Complete option text:",
-      //   currentOptionText,
-      //   "total options now:",
-      //   currentOptions.length + 1
-      // );
-      currentOptions.push(currentOptionText);
-      currentOptionText = "";
-      inOptionBlock = false;
-      continue;
-    }
-
-    // Collect option text between markers
-    if (
-      inOptionBlock &&
-      trimmed &&
-      !trimmed.startsWith("\\") &&
-      !trimmed.startsWith("%")
-    ) {
-      currentOptionText = currentOptionText
-        ? currentOptionText + " " + trimmed
-        : trimmed;
-      // console.log("Collecting option text:", trimmed);
       continue;
     }
   }
