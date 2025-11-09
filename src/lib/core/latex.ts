@@ -960,7 +960,8 @@ ${templateQuestions}
 %% Use %{#fixed} when you want a question to appear in the same position 
 %% in all versions with the same option order
 %
-% \\item %{#fixed}
+% \\item 
+% %{#fixed}
 % %{#q}
 % This question will always appear in the same position in all exam versions.
 % The option order will also remain the same across all versions.
