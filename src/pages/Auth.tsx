@@ -4,38 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
 import { Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { verifyCode, isAuthenticated } from '@/lib/auth';
 
 const Auth = () => {
   const [code, setCode] = useState('');
   const [showCode, setShowCode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/app');
-      }
-    };
-    
-    checkUser();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/app');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    if (isAuthenticated()) {
+      navigate('/app');
+    }
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,49 +29,23 @@ const Auth = () => {
 
     setLoading(true);
     setError('');
-    setMessage('');
 
     try {
-      // Call our edge function to verify code in Airtable
-      const { data, error } = await supabase.functions.invoke('verify-shuffler-user', {
-        body: { code }
+      const data = await verifyCode(code);
+      
+      toast({
+        title: `Welcome${data.user.name ? `, ${data.user.name}` : ''}!`,
+        description: `Logged in as ${data.user.email}`,
       });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.error) {
-        // Check if it's a code verification error
-        if (data.error.includes('not authorized') || data.error.includes('not found')) {
-          setError('Please verify that you entered the correct code. If this issue persists, contact admin (mshahrani@kfupm.edu.sa).');
-        } else {
-          setError(data.error);
-        }
-      } else if (data.success && data.user) {
-        // Airtable validation passed - sign in directly with provided password
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.user.email,
-          password: data.user.tempPassword
-        });
-        
-        if (signInError) {
-          setError('Authentication failed: ' + signInError.message);
-        } else {
-          // Store user data in localStorage for header display
-          localStorage.setItem('userFullName', data.user.fullName || '');
-          localStorage.setItem('userEmail', data.user.email || '');
-          
-          toast({
-            title: `Welcome${data.user.fullName ? `, ${data.user.fullName}` : ''}!`,
-            description: `Logged in as ${data.user.email}`,
-          });
-          // Auth state listener will handle redirect
-        }
-      }
+      
+      // Navigate to app
+      navigate('/app');
     } catch (err: any) {
       console.error('Auth error:', err);
-      setError('Please verify that you entered the correct code. If this issue persists, contact admin (mshahrani@kfupm.edu.sa).');
+      setError(
+        err.message || 
+        'Please verify that you entered the correct code. If this issue persists, contact admin (mshahrani@kfupm.edu.sa).'
+      );
     } finally {
       setLoading(false);
     }
@@ -130,13 +89,6 @@ const Auth = () => {
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {message && (
-              <Alert>
-                <Mail className="h-4 w-4" />
-                <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
 

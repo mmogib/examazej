@@ -6,45 +6,32 @@ import { StartPage } from './Start';
 import { DetailsPage } from './Details';
 import { ResultsPage } from './Results';
 import { DocumentationPage } from './Documentation';
-import { supabase } from '@/integrations/supabase/client';
+import { getCurrentUser, signOut, type User } from '@/lib/auth';
 import type { ExamJSON } from '@/lib/types';
-import type { User, Session } from '@supabase/supabase-js';
 
 const Index = () => {
   const [examData, setExamData] = useState<ExamJSON | null>(null);
   const [currentStep, setCurrentStep] = useState<'start' | 'details' | 'results' | 'docs'>('start');
   const [generationSeed, setGenerationSeed] = useState<string>('');
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        if (!session) {
-          navigate('/auth');
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    // Check authentication on mount
+    const checkAuth = async () => {
+      const currentUser = await getCurrentUser();
       
-      if (!session) {
+      if (!currentUser) {
         navigate('/auth');
+      } else {
+        setUser(currentUser);
       }
-    });
+      
+      setLoading(false);
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, [navigate]);
 
   const handleDataLoaded = (data: ExamJSON) => {
@@ -83,8 +70,9 @@ const Index = () => {
     setCurrentStep('start');
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  const handleSignOut = () => {
+    signOut();
+    navigate('/auth');
   };
 
   if (loading) {
