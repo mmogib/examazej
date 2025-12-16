@@ -66,6 +66,7 @@ The following secrets must be configured in your Supabase project:
 ### Airtable Setup
 
 Your Airtable base should have a "users" table with the following fields:
+
 - `Code` - Unique access code for each user
 - `Email` - User's email address
 - `FullName` - User's full name
@@ -134,12 +135,6 @@ exam-shuffler/
 
 ## 🚀 Deployment
 
-### Via Lovable
-
-1. Open [Lovable Project](https://lovable.dev/projects/fd004b8b-7165-467a-a9d1-1f1e593e64c0)
-2. Click Share → Publish
-3. Configure custom domain if needed
-
 ### Manual Deployment
 
 ```sh
@@ -155,6 +150,7 @@ npm run preview
 ## 🤝 Contributing
 
 This project is actively maintained. For questions or suggestions:
+
 1. Open an issue in the repository
 2. Contact the development team
 3. Submit a pull request with improvements
@@ -170,13 +166,6 @@ npm run preview  # Preview production build
 npm run lint     # Run ESLint
 ```
 
-### With Lovable
-
-- Changes made in Lovable automatically sync to GitHub
-- Changes pushed to GitHub automatically sync to Lovable
-- Use Lovable's visual editor for rapid UI development
-- Use your IDE for complex logic and refactoring
-
 ## 📄 License
 
 This project is proprietary software for academic use.
@@ -184,6 +173,7 @@ This project is proprietary software for academic use.
 ## 🆘 Support
 
 For technical support or questions:
+
 - Review the in-app Documentation page
 - Check the troubleshooting section
 - Contact your administrator
