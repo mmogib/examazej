@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Shuffle, Users, Clock, Shield, CheckCircle, ArrowRight, LogIn } from 'lucide-react';
+import { Shuffle, Users, Clock, Shield, CheckCircle, ArrowRight, LogIn, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 const Landing = () => {
   return <div className="relative min-h-screen bg-gradient-academic">
@@ -106,6 +106,60 @@ const Landing = () => {
                 <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Instant preview</li>
                 <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Multiple formats</li>
               </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Regrade Tool Section */}
+      <section className="container px-4 py-16">
+        <div className="relative mx-auto max-w-4xl">
+          <Card className="group relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/5 shadow-elegant transition hover:shadow-2xl hover:border-primary/60">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-primary opacity-30 blur-3xl transition group-hover:opacity-40" />
+            <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-gradient-to-r from-secondary to-primary opacity-20 blur-3xl" />
+
+            <CardHeader className="relative pb-4 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-glow">
+                <BarChart3 className="h-8 w-8" />
+              </div>
+              <CardTitle className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Already Graded Your Exam?
+              </CardTitle>
+              <CardDescription className="mt-3 text-lg text-foreground/80">
+                Complete your exam workflow with our companion tool for MCQ re-grading and comprehensive item analysis.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="relative text-center">
+              <div className="mb-6 grid gap-3 sm:grid-cols-2 text-left mx-auto max-w-2xl">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-base text-foreground/90">Re-grade MCQ exams efficiently</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-base text-foreground/90">Perform detailed item analysis</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-base text-foreground/90">Process results from grading center</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-base text-foreground/90">100% client-side processing</span>
+                </div>
+              </div>
+
+              <a href="https://regrade.mshahrani.website/" target="_blank" rel="noopener noreferrer">
+                <Button size="lg" className="group h-14 gap-3 rounded-xl px-10 text-lg font-semibold shadow-elegant ring-2 ring-primary/30 hover:ring-primary/50">
+                  Go to Regrade Tool
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </a>
+
+              <p className="mt-4 text-sm text-muted-foreground">
+                Analyze results after receiving them from KFUPM ITC grading center
+              </p>
             </CardContent>
           </Card>
         </div>

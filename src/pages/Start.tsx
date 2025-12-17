@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Download, Upload, ArrowRight } from "lucide-react";
+import { FileText, Download, Upload, ArrowRight, BarChart3, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -356,6 +356,54 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Regrade Tool Section */}
+      <div className="mt-8">
+        <Card className="group relative overflow-hidden border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/5 shadow-card transition hover:shadow-elegant hover:border-primary/60">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-gradient-primary opacity-30 blur-3xl transition group-hover:opacity-40" />
+          <div className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-gradient-to-r from-secondary to-primary opacity-20 blur-3xl" />
+
+          <CardHeader className="relative text-center pb-3">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-glow">
+              <BarChart3 className="h-7 w-7" />
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Next Step: Re-grade & Analyze
+            </CardTitle>
+            <CardDescription className="text-base text-foreground/80 mt-2">
+              After receiving exam results from the grading center, use our companion tool for efficient re-grading and comprehensive item analysis.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="relative text-center">
+            <div className="mb-5 grid gap-2 sm:grid-cols-2 text-left mx-auto max-w-xl">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-sm text-foreground/90">Re-grade MCQ exams efficiently</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-sm text-foreground/90">Perform detailed item analysis</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-sm text-foreground/90">Process KFUPM ITC results</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-sm text-foreground/90">100% client-side processing</span>
+              </div>
+            </div>
+
+            <a href="https://regrade.mshahrani.website/" target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="group h-12 gap-2 rounded-xl px-8 text-base font-semibold shadow-elegant ring-2 ring-primary/30 hover:ring-primary/50">
+                Go to Regrade Tool
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-6 mt-8">

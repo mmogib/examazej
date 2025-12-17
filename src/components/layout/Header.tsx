@@ -1,4 +1,4 @@
-import { Shield, FileText, Home, BookOpen, LogOut, User as UserIcon } from 'lucide-react';
+import { Shield, FileText, Home, BookOpen, LogOut, User as UserIcon, BarChart3 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -38,7 +38,18 @@ export function Header({ onStartOver, onShowDocs, showStartOver = false, current
               <BookOpen className="h-4 w-4" />
               Documentation
             </Button>
-            
+
+            <a href="https://regrade.mshahrani.website/" target="_blank" rel="noopener noreferrer">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 border-primary/40 hover:bg-primary/10 hover:border-primary/60"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Regrade Tool
+              </Button>
+            </a>
+
             {showStartOver && onStartOver && (
               <Button 
                 onClick={onStartOver}
