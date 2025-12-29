@@ -7,6 +7,19 @@
 
 ## 📋 Recent Changes (Dec 2025)
 
+### NEW FEATURE: Safe Logger Utility (Dec 30, 2025)
+- **ADDED**: Environment-based logging utility (`src/lib/utils/logger.ts`)
+- **DEV ONLY**: All debug/info/warn logs only show in development
+- **PRODUCTION SAFE**: Logs automatically removed by Vite tree-shaking
+- **FEATURES**: Scoped loggers, grouped logs, table view, performance timing
+- **INTEGRATED**: Template dialog, settings, and Start page now have comprehensive logging
+
+### Files Modified (Logger Implementation)
+1. `src/lib/utils/logger.ts` - **NEW** - Safe logger utility with scoped loggers
+2. `src/components/ui/template-dialog.tsx` - Added logging for form events and validation
+3. `src/lib/core/settings.ts` - Added logging for seed generation and settings
+4. `src/pages/Start.tsx` - Added comprehensive logging with performance timing
+
 ### NEW FEATURE: Enhanced Template Dialog (Dec 30, 2025)
 - **ADDED**: User-provided exam metadata in template generation dialog
 - **NEW FIELDS**: Course Code, Exam Name, Exam Date, Term (all required)
@@ -80,6 +93,17 @@
   - `getDefaultSettings()` - Returns default exam settings
   - `generateTemplateSettings(config)` - Creates settings for template generation (uses config object)
   - `generateSettingsBlock(settings)` - Generates LaTeX settings block
+
+### Utilities (`src/lib/utils/`)
+- **`logger.ts`** - Safe development-only logging utility
+  - `logger.debug(...)` - Debug logs (dev only)
+  - `logger.info(...)` - Info logs (dev only)
+  - `logger.warn(...)` - Warning logs (dev only)
+  - `logger.error(...)` - Error logs (always shown, even in production)
+  - `logger.group(label, fn)` - Grouped logs with auto-cleanup
+  - `logger.table(data)` - Table view for arrays/objects
+  - `logger.time(label, fn)` - Performance timing
+  - `createLogger(prefix)` - Create scoped logger (e.g., "SETTINGS", "START_PAGE")
 
 ### Authentication (`src/lib/`)
 - **`auth.ts`** - JWT auth client (replaces Supabase)
@@ -201,6 +225,8 @@ generateTemplateSettings({
 - ❌ Modify core RNG algorithm (reproducibility requirement)
 - ❌ Use hardcoded exam metadata in `generateTemplateSettings()` (use user input)
 - ❌ Change `generateTemplateSettings()` back to positional parameters (use config object)
+- ❌ Use `console.log()` directly for debugging (use logger utility instead)
+- ❌ Log sensitive data (passwords, tokens, personal info)
 
 ### DO:
 - ✅ Use `src/lib/auth.ts` for all authentication
@@ -212,6 +238,9 @@ generateTemplateSettings({
 - ✅ Generate seed from user-provided metadata (coursecode, examname, term, examdate)
 - ✅ Use config object pattern for functions with 5+ parameters
 - ✅ Validate required fields in template dialog (UX best practice)
+- ✅ Use logger utility for all debugging (`import { createLogger } from '@/lib/utils/logger'`)
+- ✅ Create scoped loggers for modules (`const logger = createLogger('MODULE_NAME')`)
+- ✅ Use appropriate log levels: debug for verbose, info for important, warn for issues, error for critical
 
 ### Code Style
 - TypeScript with strict mode
@@ -290,9 +319,11 @@ npm run lint         # Run ESLint
 - **Modify template dialog**: Update `src/components/ui/template-dialog.tsx`
 - **Change template generation**: Update `generateTemplate()` in `src/pages/Start.tsx`
 - **Modify seed generation**: Check `generateTemplateSettings()` in `src/lib/core/settings.ts`
+- **Add debugging/logging**: Use logger utility (see examples below)
 
 **Common File Locations**:
 - Auth logic: `src/lib/auth.ts`
+- Logger utility: `src/lib/utils/logger.ts`
 - Exam generation: `src/lib/core/*.ts`
 - Template dialog: `src/components/ui/template-dialog.tsx`
 - UI components: `src/components/ui/*.tsx`
@@ -306,6 +337,66 @@ npm run lint         # Run ESLint
 4. Click "Generate Template" → Calls `generateTemplate()` in `Start.tsx`
 5. `generateTemplateSettings()` creates settings → Generates seed from metadata
 6. `generateLatexTemplate()` creates .tex file → Downloads to user
+
+---
+
+## 🔍 Logger Usage Examples
+
+The logger utility (`src/lib/utils/logger.ts`) provides safe, production-ready logging.
+
+### Basic Usage:
+
+```typescript
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('MY_MODULE');
+
+// Different log levels (dev only, except error)
+logger.debug('Detailed debug info', { data });
+logger.info('Important milestone reached');
+logger.warn('Something unexpected happened');
+logger.error('Critical error!'); // Always shown, even in production
+```
+
+### Grouped Logs:
+
+```typescript
+logger.group('Processing Data', () => {
+  logger.debug('Step 1: Loading data');
+  logger.debug('Step 2: Validating data');
+  logger.info('Processing complete');
+});
+```
+
+### Performance Timing:
+
+```typescript
+logger.time('Expensive Operation', () => {
+  // ... complex operation
+});
+// Output: Expensive Operation: 125.43ms
+```
+
+### Table View:
+
+```typescript
+logger.table([
+  { id: 1, name: 'Question 1', type: 'MCQ' },
+  { id: 2, name: 'Question 2', type: 'Fixed' }
+]);
+```
+
+### Production Behavior:
+
+- **Development** (`npm run dev`): All logs visible
+- **Production** (`npm run build`): Only `error()` logs visible, all others removed by tree-shaking
+- **Zero runtime cost**: Debug logs don't exist in production bundle
+
+### Current Implementations:
+
+- **Template Dialog**: Form validation, dialog events
+- **Settings**: Seed generation, configuration
+- **Start Page**: Template generation with timing
 
 ---
 

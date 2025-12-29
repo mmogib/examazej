@@ -32,6 +32,9 @@ import type {
   ExamData,
 } from "@/lib/types";
 import { generateLatexTemplate } from "@/lib/core/latex";
+import { createLogger } from "@/lib/utils/logger";
+
+const logger = createLogger("START_PAGE");
 
 interface StartPageProps {
   onDataLoaded: (data: ExamJSON) => void;
@@ -178,15 +181,6 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
-    // console.log("🔥 CREATING EXAM FROM TEMPLATE");
-    // console.log("Template questions count:", template.questions.length);
-    // console.log(
-    //   "Template questions:",
-    //   template.questions.map(
-    //     (q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`
-    //   )
-    // );
-
     const defaults = getDefaultSettings();
     const settings = { ...defaults, ...template.settings };
 
@@ -195,12 +189,6 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       group: 1,
       order: index + 1,
     }));
-
-    // console.log("Final exam questions count:", examQuestions.length);
-    // console.log(
-    //   "Final exam questions:",
-    //   examQuestions.map((q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`)
-    // );
 
     const result = {
       setting: settings as ExamSettings,
@@ -262,41 +250,68 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     includeImageQuestion: boolean,
     includeCoverPage: boolean
   ) => {
-    // Create mock exam data with example questions
-    const mockExam: ExamData = {
-      name: "master",
-      ordering: null,
-      preamble: "",
-      questions: createExampleQuestions(numQuestions, includeImageQuestion),
-      kept_in_one_page: [],
-    };
+    logger.time('Template Generation', () => {
+      logger.group('Generating LaTeX Template', () => {
+        logger.debug('Parameters', {
+          coursecode,
+          examname,
+          examdate,
+          term,
+          numQuestions,
+          includeImageQuestion,
+          includeCoverPage,
+        });
 
-    const mockSettings = generateTemplateSettings({
-      coursecode,
-      examname,
-      examdate,
-      term,
-      numQuestions,
-      includeCoverPage,
+        // Create mock exam data with example questions
+        const mockExam: ExamData = {
+          name: "master",
+          ordering: null,
+          preamble: "",
+          questions: createExampleQuestions(numQuestions, includeImageQuestion),
+          kept_in_one_page: [],
+        };
+
+        logger.debug('Example questions created', {
+          count: mockExam.questions.length,
+        });
+
+        const mockSettings = generateTemplateSettings({
+          coursecode,
+          examname,
+          examdate,
+          term,
+          numQuestions,
+          includeCoverPage,
+        });
+
+        logger.debug('Settings generated, seed:', mockSettings.seed);
+
+        // Use the shared function from latex.ts
+        const template = generateLatexTemplate(
+          mockSettings,
+          mockExam,
+          mockSettings.numberofvestions
+        );
+
+        logger.info('LaTeX template generated', {
+          size: `${(template.length / 1024).toFixed(2)} KB`,
+          filename: `exam-template-${numQuestions}-questions.tex`,
+        });
+
+        // Download the template
+        const blob = new Blob([template], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `exam-template-${numQuestions}-questions.tex`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        logger.info('Template downloaded successfully');
+      });
     });
-
-    // Use the shared function from latex.ts
-    const template = generateLatexTemplate(
-      mockSettings,
-      mockExam,
-      mockSettings.numberofvestions
-    );
-
-    // Download the template
-    const blob = new Blob([template], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `exam-template-${numQuestions}-questions.tex`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (

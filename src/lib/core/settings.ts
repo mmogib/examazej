@@ -1,5 +1,8 @@
 import type { ExamSettings } from "../types";
 import { generateDynamicSeed } from "@/lib/utils/seed-generator";
+import { createLogger } from "@/lib/utils/logger";
+
+const logger = createLogger("SETTINGS");
 
 export function getFormattedCurrentDate(): string {
   const currentDate = new Date();
@@ -148,6 +151,8 @@ export function generateTemplateSettings(config: {
   numQuestions: number;
   includeCoverPage?: boolean;
 }): ExamSettings {
+  logger.debug("Generating template settings", config);
+
   const defaults = getDefaultSettings();
 
   const baseSettings = {
@@ -175,6 +180,9 @@ export function generateTemplateSettings(config: {
     term: config.term,
     examdate: config.examdate,
   });
+
+  logger.info("Seed generated", { seed });
+  logger.debug("Final settings", { ...baseSettings, seed });
 
   return {
     ...baseSettings,

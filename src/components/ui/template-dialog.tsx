@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { FileText, Download } from 'lucide-react';
 import { getFormattedCurrentDate, getCurrentTerm } from '@/lib/core/settings';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('TEMPLATE_DIALOG');
 
 interface TemplateDialogProps {
   onTemplateGenerate: (
@@ -36,6 +39,8 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
   });
 
   const handleGenerate = () => {
+    logger.debug('Generate button clicked');
+
     // Mark all fields as touched
     setTouched({
       coursecode: true,
@@ -53,6 +58,21 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
       numQuestions <= 100;
 
     if (isValid) {
+      logger.group('Template Generation Request', () => {
+        logger.info('Form validated successfully');
+        logger.debug('Exam metadata', {
+          coursecode,
+          examname,
+          examdate,
+          term,
+        });
+        logger.debug('Template options', {
+          numQuestions,
+          includeImageQuestion,
+          includeCoverPage,
+        });
+      });
+
       onTemplateGenerate(
         coursecode,
         examname,
@@ -77,10 +97,20 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
         examdate: false,
         term: false,
       });
+      logger.debug('Form reset after successful generation');
+    } else {
+      logger.warn('Form validation failed', {
+        hasCoursecode: coursecode.trim() !== "",
+        hasExamname: examname.trim() !== "",
+        hasExamdate: examdate.trim() !== "",
+        hasTerm: term.trim() !== "",
+        validQuestionCount: numQuestions > 0 && numQuestions <= 100,
+      });
     }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
+    logger.debug(`Dialog ${newOpen ? 'opened' : 'closed'}`);
     setOpen(newOpen);
     if (!newOpen) {
       // Reset form when closing
@@ -97,6 +127,7 @@ export function TemplateDialog({ onTemplateGenerate }: TemplateDialogProps) {
         examdate: false,
         term: false,
       });
+      logger.debug('Form reset on dialog close');
     }
   };
 
