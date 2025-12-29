@@ -1,7 +1,29 @@
 import type { ExamSettings } from "../types";
 import { generateDynamicSeed } from "@/lib/utils/seed-generator";
 
-function getCurrentTerm(date = new Date()) {
+export function getFormattedCurrentDate(): string {
+  const currentDate = new Date();
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  return `${monthNames[currentDate.getMonth()]} ${currentDate
+    .getDate()
+    .toString()
+    .padStart(2, "0")}, ${currentDate.getFullYear()}`;
+}
+
+export function getCurrentTerm(date = new Date()) {
   const y = date.getFullYear();
   const m = date.getMonth() + 1; // 1..12
   const d = date.getDate();
@@ -118,32 +140,40 @@ ${settings.instructions
 %{/instructions}`;
 }
 
-export function generateTemplateSettings(numQuestions: number): ExamSettings {
+export function generateTemplateSettings(config: {
+  coursecode: string;
+  examname: string;
+  examdate: string;
+  term: string;
+  numQuestions: number;
+  includeCoverPage?: boolean;
+}): ExamSettings {
   const defaults = getDefaultSettings();
 
   const baseSettings = {
     university: defaults.university!,
     department: defaults.department!,
-    term: defaults.term!,
-    coursecode: defaults.coursecode!,
-    examname: defaults.examname!,
-    examdate: defaults.examdate!,
+    term: config.term,
+    coursecode: config.coursecode,
+    examname: config.examname,
+    examdate: config.examdate,
     timeallowed: defaults.timeallowed!,
-    numberofvestions: defaults.numberofvestions!,
-    groups: numQuestions.toString(), // Full randomization for template
+    numberofvestions: 4, // Hardcoded - user can change in template
+    groups: config.numQuestions.toString(), // Full randomization for template
     examtype: defaults.examtype!,
     code_name: defaults.code_name!,
     code_numbering: "NUMERIC" as const, // Use numeric numbering for sample templates
     paper_size: defaults.paper_size!,
     instructions: defaults.instructions!,
-    includeCoverPage: defaults.includeCoverPage!,
+    includeCoverPage: config.includeCoverPage ?? true,
   };
+
   // Generate seed based on exam metadata
   const seed = generateDynamicSeed({
-    coursecode: baseSettings.coursecode,
-    examname: baseSettings.examname,
-    term: baseSettings.term,
-    examdate: baseSettings.examdate,
+    coursecode: config.coursecode,
+    examname: config.examname,
+    term: config.term,
+    examdate: config.examdate,
   });
 
   return {

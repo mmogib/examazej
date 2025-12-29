@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { FileText, Download, Upload, ArrowRight, BarChart3, CheckCircle } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Upload,
+  ArrowRight,
+  BarChart3,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,7 +89,7 @@ const createExampleQuestions = (
     const orderNumber = questions.length + 1;
 
     // First non-image question is fixed as an example
-    const isFixed = orderNumber === (includeImageQuestion ? 2 : 1);
+    const isFixed = false; // orderNumber === (includeImageQuestion ? 2 : 1);
 
     // Question 2 (or 3 if image included) is a calculus question
     const isMathQuestion = questionNumber === (includeImageQuestion ? 3 : 2);
@@ -247,8 +254,13 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   };
 
   const generateTemplate = (
+    coursecode: string,
+    examname: string,
+    examdate: string,
+    term: string,
     numQuestions: number,
-    includeImageQuestion = false
+    includeImageQuestion: boolean,
+    includeCoverPage: boolean
   ) => {
     // Create mock exam data with example questions
     const mockExam: ExamData = {
@@ -259,7 +271,14 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       kept_in_one_page: [],
     };
 
-    const mockSettings = generateTemplateSettings(numQuestions);
+    const mockSettings = generateTemplateSettings({
+      coursecode,
+      examname,
+      examdate,
+      term,
+      numQuestions,
+      includeCoverPage,
+    });
 
     // Use the shared function from latex.ts
     const template = generateLatexTemplate(
@@ -297,6 +316,23 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Download Template
+              </CardTitle>
+              <CardDescription>
+                Download our sample LaTeX template to get started
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <TemplateDialog onTemplateGenerate={generateTemplate} />
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -339,23 +375,6 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             </CardContent>
           </Card>
         </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                Download Template
-              </CardTitle>
-              <CardDescription>
-                Download our sample LaTeX template to get started
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <TemplateDialog onTemplateGenerate={generateTemplate} />
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Regrade Tool Section */}
@@ -372,7 +391,9 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
               Next Step: Re-grade & Analyze
             </CardTitle>
             <CardDescription className="text-base text-foreground/80 mt-2">
-              After receiving exam results from the grading center, use our companion tool for efficient re-grading and comprehensive item analysis.
+              After receiving exam results from the grading center, use our
+              companion tool for efficient re-grading and comprehensive item
+              analysis.
             </CardDescription>
           </CardHeader>
 
@@ -380,24 +401,39 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             <div className="mb-5 grid gap-2 sm:grid-cols-2 text-left mx-auto max-w-xl">
               <div className="flex items-start gap-2">
                 <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
-                <span className="text-sm text-foreground/90">Re-grade MCQ exams efficiently</span>
+                <span className="text-sm text-foreground/90">
+                  Re-grade MCQ exams efficiently
+                </span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
-                <span className="text-sm text-foreground/90">Perform detailed item analysis</span>
+                <span className="text-sm text-foreground/90">
+                  Perform detailed item analysis
+                </span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
-                <span className="text-sm text-foreground/90">Process KFUPM ITC results</span>
+                <span className="text-sm text-foreground/90">
+                  Process KFUPM ITC results
+                </span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
-                <span className="text-sm text-foreground/90">100% client-side processing</span>
+                <span className="text-sm text-foreground/90">
+                  100% client-side processing
+                </span>
               </div>
             </div>
 
-            <a href="https://regrade.mshahrani.website/" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="group h-12 gap-2 rounded-xl px-8 text-base font-semibold shadow-elegant ring-2 ring-primary/30 hover:ring-primary/50">
+            <a
+              href="https://regrade.mshahrani.website/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button
+                size="lg"
+                className="group h-12 gap-2 rounded-xl px-8 text-base font-semibold shadow-elegant ring-2 ring-primary/30 hover:ring-primary/50"
+              >
                 Go to Regrade Tool
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>

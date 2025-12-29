@@ -13,7 +13,7 @@ A professional exam generation tool that creates multiple randomized versions of
 - **Multiple Question Types**: Support for regular, fixed, fixed-options, open-ended, separate-page, and image questions
 - **Cover Pages**: Optional individual or master cover pages
 - **Version Tracking**: CSV mapping of question distribution across versions
-- **Airtable Integration**: Secure user authentication and access control
+- **Secure Authentication**: JWT-based access control via custom auth API
 - **Overleaf Compatible**: Direct import to Overleaf for compilation
 
 ## 🚀 Quick Start
@@ -21,8 +21,8 @@ A professional exam generation tool that creates multiple randomized versions of
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account (for backend)
-- Airtable account (for user management)
+- Access to auth API (https://shuffler-auth.mshahrani.website)
+- Valid access code from administrator
 
 ### Installation
 
@@ -44,34 +44,22 @@ Visit `http://localhost:8080` to access the application.
 
 ## ⚙️ Configuration
 
-### Required Environment Variables
+### Authentication
 
-Create a `.env` file in the root directory:
+The application uses a custom JWT-based authentication system:
 
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
-```
+- **Auth API**: `https://shuffler-auth.mshahrani.website`
+- **Storage**: JWT tokens stored in browser localStorage
+- **Access Control**: User validation via Airtable backend
+- **No Environment Variables Required**: Auth API URL is built into the application
 
-### Supabase Secrets
+### User Access
 
-The following secrets must be configured in your Supabase project:
+Users need a valid access code provided by the administrator. Access codes are managed through:
 
-- `AIRTABLE_API_KEY` - Your Airtable API key
-- `AIRTABLE_BASE_ID` - Your Airtable base ID
-- `AIRTABLE_TABLE_NAME` - Name of the users table (default: "users")
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
-- `SUPABASE_ANON_KEY` - Supabase anonymous key
-
-### Airtable Setup
-
-Your Airtable base should have a "users" table with the following fields:
-
-- `Code` - Unique access code for each user
-- `Email` - User's email address
-- `FullName` - User's full name
-- `Status` - User status (should be "active" for access)
-- `ExpirationDate` - Optional expiration date
+- Airtable base with user records
+- Fields: Code, Email, FullName, Status, ExpirationDate
+- Only users with `Status: "active"` and valid (non-expired) codes can access the application
 
 ## 📖 How to Use
 
@@ -104,9 +92,12 @@ See the in-app documentation for complete template format details.
 
 - **Frontend**: React 18, TypeScript, Vite
 - **UI**: shadcn/ui, Tailwind CSS, Radix UI
-- **Backend**: Supabase (Auth, Edge Functions)
+- **Authentication**: Custom JWT-based auth via Hono API
 - **User Management**: Airtable API
 - **Document Processing**: Custom LaTeX parser
+- **State Management**: TanStack Query (React Query)
+- **Form Handling**: React Hook Form + Zod validation
+- **Rich Text**: TipTap editor with KaTeX math rendering
 - **Routing**: React Router v6
 
 ## 📁 Project Structure
@@ -115,23 +106,27 @@ See the in-app documentation for complete template format details.
 exam-shuffler/
 ├── src/
 │   ├── components/        # Reusable UI components
+│   │   ├── layout/       # Header, Footer
+│   │   └── ui/           # shadcn/ui components
 │   ├── pages/            # Page components (Landing, Auth, Start, etc.)
-│   ├── lib/              # Core logic (parser, LaTeX, RNG)
+│   ├── lib/              # Core logic
+│   │   ├── core/         # Exam generation (parser, LaTeX, RNG)
+│   │   ├── auth.ts       # JWT authentication client
+│   │   ├── types.ts      # TypeScript definitions
+│   │   └── utils/        # Utility functions
 │   ├── hooks/            # Custom React hooks
-│   └── integrations/     # Supabase client
-├── supabase/
-│   ├── functions/        # Edge functions (user verification)
-│   └── config.toml       # Supabase configuration
-└── public/               # Static assets
+│   └── assets/           # Bundled static assets
+└── public/               # Static files (served at /)
 ```
 
 ## 🔐 Security Features
 
-- Airtable-based access control
-- User status and expiration validation
-- Supabase authentication
-- Service-role key protection in edge functions
-- CORS-enabled API endpoints
+- **JWT-based Authentication**: Secure token-based auth system
+- **Access Control**: Airtable-based user management
+- **User Validation**: Status and expiration date checking
+- **Client-side Processing**: All exam generation happens in browser (privacy-focused)
+- **HTTPS Only**: Secure communication with auth API
+- **Token Expiration**: 30-day JWT token lifetime
 
 ## 🚀 Deployment
 

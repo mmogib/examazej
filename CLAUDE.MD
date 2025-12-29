@@ -1,0 +1,312 @@
+# CLAUDE.MD - AI Assistant Context
+
+**Last Updated**: 2025-12-30
+**Purpose**: Provide context for AI assistants working on this project
+
+---
+
+## 📋 Recent Changes (Dec 2025)
+
+### NEW FEATURE: Enhanced Template Dialog (Dec 30, 2025)
+- **ADDED**: User-provided exam metadata in template generation dialog
+- **NEW FIELDS**: Course Code, Exam Name, Exam Date, Term (all required)
+- **NEW TOGGLE**: Include Cover Page option (default: true)
+- **IMPROVED**: Seed generation now uses user input instead of hardcoded defaults
+- **UX**: Form validation, error messages, auto-populated defaults, mobile-friendly
+
+### Files Modified (Template Feature)
+1. `src/lib/core/settings.ts` - Added `getFormattedCurrentDate()`, updated `generateTemplateSettings()` to use config object
+2. `src/components/ui/template-dialog.tsx` - Enhanced dialog with 4 required fields + cover page toggle
+3. `src/pages/Start.tsx` - Updated `generateTemplate()` function signature
+
+### Migration Complete: Supabase → Hono Auth
+- **REMOVED**: Supabase authentication entirely
+- **ADDED**: Custom JWT-based auth via Hono API
+- **Auth API**: `https://shuffler-auth.mshahrani.website`
+- **Storage**: JWT tokens in localStorage
+- **Files Deleted**: `MIGRATION.MD`, `MIGRATION_SUMMARY.MD`, `AGENTS.MD`, `src/integrations/supabase/`
+
+### Key Changes (Auth Migration)
+1. Created `src/lib/auth.ts` - Custom auth client replacing Supabase
+2. Updated `src/pages/Auth.tsx` - Direct Hono API integration
+3. Updated `src/pages/Index.tsx` - JWT token verification
+4. Updated `src/components/layout/Header.tsx` - Custom User type
+5. Updated `README.md` - Removed all Supabase references
+
+**⚠️ IMPORTANT**: This app NO LONGER uses Supabase. Don't suggest adding it back!
+
+---
+
+## 🏗️ Architecture Overview
+
+### What This App Does
+**MC Exam Randomizer** generates multiple versions of multiple-choice exams from LaTeX templates. Questions and answer options are shuffled deterministically using seed-based randomization for reproducibility.
+
+### Tech Stack
+- **Frontend**: React 18 + TypeScript + Vite (port 8080)
+- **UI**: shadcn/ui + Radix UI + Tailwind CSS
+- **State**: TanStack Query (React Query)
+- **Forms**: React Hook Form + Zod validation
+- **Rich Text**: TipTap editor + KaTeX (LaTeX math rendering)
+- **Auth**: Custom JWT via Hono API (Airtable backend)
+- **Routing**: React Router v6
+
+### Authentication Flow
+1. User enters access code on `/auth`
+2. `POST https://shuffler-auth.mshahrani.website/api/auth/verify`
+3. Receives JWT token + user data
+4. Token stored in `localStorage` (`auth_token`, `user_data`)
+5. Protected routes verify token via `/api/auth/me`
+6. Token expires after 30 days
+
+### Core Architecture
+- **Client-side only**: All exam generation happens in browser (privacy-focused)
+- **No backend**: Auth API is external, no app backend needed
+- **Deterministic RNG**: Linear Congruential Generator for reproducible shuffling
+- **LaTeX Processing**: Custom parser + generator (no external deps)
+
+---
+
+## 📂 Important Files & Their Purpose
+
+### Core Exam Generation (`src/lib/core/`)
+- **`parser.ts`** - Parses LaTeX templates with special markers (`%{#q}`, `%{#o}`)
+- **`latex.ts`** - Generates complete LaTeX documents with all versions
+- **`versioning.ts`** - Creates exam versions, handles shuffling logic
+- **`rng.ts`** - Deterministic Random Number Generator (seed-based)
+- **`settings.ts`** - Exam settings management
+  - `getFormattedCurrentDate()` - Returns formatted date (e.g., "December 30, 2025")
+  - `getCurrentTerm()` - Calculates current term code (e.g., "251")
+  - `getDefaultSettings()` - Returns default exam settings
+  - `generateTemplateSettings(config)` - Creates settings for template generation (uses config object)
+  - `generateSettingsBlock(settings)` - Generates LaTeX settings block
+
+### Authentication (`src/lib/`)
+- **`auth.ts`** - JWT auth client (replaces Supabase)
+  - `verifyCode(code)` - Login
+  - `getCurrentUser()` - Get user from token
+  - `signOut()` - Clear localStorage
+  - `isAuthenticated()` - Check token validity
+
+### Pages (`src/pages/`)
+- **`Landing.tsx`** - Public marketing page
+- **`Auth.tsx`** - Login page (access code entry)
+- **`Index.tsx`** - Main app container (protected route)
+- **`Start.tsx`** - Upload template or generate sample
+  - `generateTemplate()` - Creates and downloads LaTeX template file
+  - `createExampleQuestions()` - Generates placeholder questions with math examples
+- **`Details.tsx`** - Configure exam settings
+- **`Results.tsx`** - Download generated files
+- **`Documentation.tsx`** - User guide
+
+### UI Components (`src/components/ui/`)
+- **`template-dialog.tsx`** - Template generation modal (NEW FEATURE)
+  - Collects exam metadata: coursecode, examname, examdate, term
+  - Configures options: numQuestions, includeImageQuestion, includeCoverPage
+  - Form validation with touch-based error display
+  - Auto-populated defaults for date and term
+  - Mobile-responsive with scroll support
+
+### Types (`src/lib/types.ts`)
+- `Question`, `QuestionType`, `Option`
+- `ExamSettings`, `ExamVersion`, `QuestionMapping`
+- `User`, `ParsedTemplate`
+
+---
+
+## 🎯 Key Concepts
+
+### Question Types
+1. **Regular** - Normal MCQ with shuffled options
+2. **Fixed** - Question stays in same position (no shuffle)
+3. **FixedOptions** - Options don't shuffle
+4. **OpenEnded** - No options (written answer)
+5. **SeparatePage** - Each question on own page
+6. **Image** - Contains image (uses minipage)
+
+### Question Groups
+Users configure groups like `"5,10,15"` or `"(5),10,(15)"`
+- Numbers in parentheses `(5)` → Don't shuffle this group
+- Regular numbers `10` → Shuffle this group
+- Creates balanced exam sections
+
+### LaTeX Markers
+```latex
+%% Question: Regular
+What is 2 + 2?
+%% Option:
+Three
+%% Option: *
+Four (asterisk marks correct answer)
+%% Option:
+Five
+%% End Question
+```
+
+### Deterministic Shuffling
+- Seed-based RNG ensures reproducibility
+- Same seed = same exam version
+- Fisher-Yates shuffle with LCG
+- All randomization happens in `src/lib/core/rng.ts`
+
+### Template Generation Dialog
+**Location**: `src/components/ui/template-dialog.tsx`
+
+**User Flow**:
+1. Click "Download Sample Template" button
+2. Fill required fields:
+   - **Course Code** (empty, placeholder: "e.g., MATH 101, CS 201")
+   - **Exam Name** (empty, placeholder: "e.g., First Major Exam")
+   - **Exam Date** (pre-filled with current date)
+   - **Term** (pre-filled with current term, e.g., "Term 251")
+3. Configure template options:
+   - Number of Questions (1-100, default: 10)
+   - Include Image Question toggle (default: false)
+   - Include Cover Page toggle (default: true)
+4. Click "Generate Template"
+
+**Validation**:
+- All 4 metadata fields are required
+- Shows error messages on touched invalid fields
+- Button disabled until form is valid
+- Touch-based validation (user-friendly)
+
+**Seed Generation**:
+- Seed is generated from user-provided metadata: `generateDynamicSeed({ coursecode, examname, term, examdate })`
+- This ensures each template has a unique, reproducible seed
+- **Changed from**: Hardcoded "MATH XXX", "EXAM NAME" defaults
+- **Changed to**: User-provided real exam metadata
+
+**Function Signature**:
+```typescript
+generateTemplateSettings({
+  coursecode: string,
+  examname: string,
+  examdate: string,
+  term: string,
+  numQuestions: number,
+  includeCoverPage?: boolean
+}): ExamSettings
+```
+
+---
+
+## 🚨 Important Conventions & Rules
+
+### DO NOT:
+- ❌ Add Supabase back (we migrated away from it)
+- ❌ Create backend endpoints (client-side only)
+- ❌ Add environment variables for auth (hardcoded API URL)
+- ❌ Store sensitive data in localStorage beyond JWT
+- ❌ Modify core RNG algorithm (reproducibility requirement)
+- ❌ Use hardcoded exam metadata in `generateTemplateSettings()` (use user input)
+- ❌ Change `generateTemplateSettings()` back to positional parameters (use config object)
+
+### DO:
+- ✅ Use `src/lib/auth.ts` for all authentication
+- ✅ Keep exam generation client-side
+- ✅ Maintain deterministic RNG behavior
+- ✅ Follow existing LaTeX marker format
+- ✅ Use shadcn/ui components for UI
+- ✅ Validate with Zod schemas
+- ✅ Generate seed from user-provided metadata (coursecode, examname, term, examdate)
+- ✅ Use config object pattern for functions with 5+ parameters
+- ✅ Validate required fields in template dialog (UX best practice)
+
+### Code Style
+- TypeScript with strict mode
+- 2-space indentation
+- PascalCase for components
+- camelCase for functions/variables
+- Named exports preferred
+- Tailwind CSS for styling (use `cn` helper)
+
+---
+
+## 🔄 Development Workflow
+
+### Local Development
+```bash
+npm install          # Install dependencies
+npm run dev          # Start dev server (http://localhost:8080)
+npm run build        # Production build
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+```
+
+### Git Branches
+- `main` - Production branch
+- `new-feat` - Current feature branch (modified `Start.tsx`)
+
+### Testing Flow
+1. Go to `/auth`
+2. Enter valid access code
+3. Verify redirect to `/app`
+4. Upload/generate template
+5. Configure settings
+6. Generate and download
+
+---
+
+## 🎯 Future Work & Known Issues
+
+### Potential Enhancements
+1. **Token Refresh** - Auto-refresh JWT before expiration
+2. **Remember Me** - Persistent login option
+3. **Session Timeout** - Auto logout after inactivity
+4. **Auth Context** - React Context for auth state
+5. **Protected Route Component** - Reusable wrapper
+6. **Offline Mode** - Service worker for offline exam generation
+7. **Template Library** - Save/load custom templates
+8. **Bulk Export** - Export individual PDFs per version
+
+### Known Patterns
+- All auth state in `localStorage` (no Context yet)
+- Page transitions managed by React Router
+- Forms use React Hook Form + Zod
+- Math rendering via KaTeX (not MathJax)
+
+---
+
+## 📞 Support & Contact
+
+- **Auth API Issues**: mshahrani@kfupm.edu.sa
+- **Access Codes**: Contact administrator
+- **Technical Issues**: Check browser console, verify auth API is accessible
+
+---
+
+## 🧠 Quick Reference for AI Assistants
+
+**When user asks to...**
+
+- **Add authentication**: Use `src/lib/auth.ts`, NOT Supabase
+- **Modify exam generation**: Check `src/lib/core/` files
+- **Add UI components**: Use shadcn/ui pattern, Tailwind CSS
+- **Change LaTeX format**: Update `src/lib/core/latex.ts`
+- **Add question types**: Update `QuestionType` in `src/lib/types.ts`
+- **Fix auth issues**: Check JWT token in localStorage, verify API
+- **Deploy**: Build with `npm run build`, deploy `dist/` folder
+- **Modify template dialog**: Update `src/components/ui/template-dialog.tsx`
+- **Change template generation**: Update `generateTemplate()` in `src/pages/Start.tsx`
+- **Modify seed generation**: Check `generateTemplateSettings()` in `src/lib/core/settings.ts`
+
+**Common File Locations**:
+- Auth logic: `src/lib/auth.ts`
+- Exam generation: `src/lib/core/*.ts`
+- Template dialog: `src/components/ui/template-dialog.tsx`
+- UI components: `src/components/ui/*.tsx`
+- Page routes: `src/pages/*.tsx`
+- Type definitions: `src/lib/types.ts`
+
+**Template Generation Flow**:
+1. User clicks "Download Sample Template" → Opens `TemplateDialog`
+2. User fills: coursecode, examname, examdate, term → Required fields
+3. User configures: numQuestions, includeImageQuestion, includeCoverPage → Optional settings
+4. Click "Generate Template" → Calls `generateTemplate()` in `Start.tsx`
+5. `generateTemplateSettings()` creates settings → Generates seed from metadata
+6. `generateLatexTemplate()` creates .tex file → Downloads to user
+
+---
+
+**End of CLAUDE.MD**
