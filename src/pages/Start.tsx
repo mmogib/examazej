@@ -250,68 +250,66 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     includeImageQuestion: boolean,
     includeCoverPage: boolean
   ) => {
-    logger.time('Template Generation', () => {
-      logger.group('Generating LaTeX Template', () => {
-        logger.debug('Parameters', {
-          coursecode,
-          examname,
-          examdate,
-          term,
-          numQuestions,
-          includeImageQuestion,
-          includeCoverPage,
-        });
-
-        // Create mock exam data with example questions
-        const mockExam: ExamData = {
-          name: "master",
-          ordering: null,
-          preamble: "",
-          questions: createExampleQuestions(numQuestions, includeImageQuestion),
-          kept_in_one_page: [],
-        };
-
-        logger.debug('Example questions created', {
-          count: mockExam.questions.length,
-        });
-
-        const mockSettings = generateTemplateSettings({
-          coursecode,
-          examname,
-          examdate,
-          term,
-          numQuestions,
-          includeCoverPage,
-        });
-
-        logger.debug('Settings generated, seed:', mockSettings.seed);
-
-        // Use the shared function from latex.ts
-        const template = generateLatexTemplate(
-          mockSettings,
-          mockExam,
-          mockSettings.numberofvestions
-        );
-
-        logger.info('LaTeX template generated', {
-          size: `${(template.length / 1024).toFixed(2)} KB`,
-          filename: `exam-template-${numQuestions}-questions.tex`,
-        });
-
-        // Download the template
-        const blob = new Blob([template], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `exam-template-${numQuestions}-questions.tex`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        logger.info('Template downloaded successfully');
+    logger.group('Generating LaTeX Template', () => {
+      logger.debug('Parameters', {
+        coursecode,
+        examname,
+        examdate,
+        term,
+        numQuestions,
+        includeImageQuestion,
+        includeCoverPage,
       });
     });
+
+    // Create mock exam data with example questions
+    const mockExam: ExamData = {
+      name: "master",
+      ordering: null,
+      preamble: "",
+      questions: createExampleQuestions(numQuestions, includeImageQuestion),
+      kept_in_one_page: [],
+    };
+
+    logger.debug('Example questions created', {
+      count: mockExam.questions.length,
+    });
+
+    const mockSettings = generateTemplateSettings({
+      coursecode,
+      examname,
+      examdate,
+      term,
+      numQuestions,
+      includeCoverPage,
+    });
+
+    logger.debug('Settings generated, seed:', mockSettings.seed);
+
+    // Use the shared function from latex.ts
+    const template = generateLatexTemplate(
+      mockSettings,
+      mockExam,
+      mockSettings.numberofvestions
+    );
+
+    logger.info('LaTeX template generated', {
+      size: `${(template.length / 1024).toFixed(2)} KB`,
+      filename: `exam-template-${numQuestions}-questions.tex`,
+    });
+
+    // Download the template
+    const blob = new Blob([template], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `exam-template-${numQuestions}-questions.tex`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    logger.info('Template downloaded successfully');
   };
 
   return (

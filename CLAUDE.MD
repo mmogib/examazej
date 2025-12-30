@@ -227,6 +227,7 @@ generateTemplateSettings({
 - ❌ Change `generateTemplateSettings()` back to positional parameters (use config object)
 - ❌ Use `console.log()` directly for debugging (use logger utility instead)
 - ❌ Log sensitive data (passwords, tokens, personal info)
+- ❌ **CRITICAL**: Put business logic inside logger callbacks (`logger.group()`, `logger.time()`) - they get removed in production!
 
 ### DO:
 - ✅ Use `src/lib/auth.ts` for all authentication
@@ -421,6 +422,34 @@ logger.info('Important milestone reached');
 logger.warn('Something unexpected happened');
 logger.error('Critical error!'); // Always shown, even in production
 ```
+
+### ⚠️ CRITICAL: Never Put Business Logic Inside Logger Callbacks
+
+**WRONG** - Business logic inside callbacks (breaks in production):
+```typescript
+const generateTemplate = () => {
+  logger.time('Template Generation', () => {
+    // ❌ ALL THIS CODE DISAPPEARS IN PRODUCTION!
+    const template = createTemplate();
+    downloadFile(template);
+  });
+};
+```
+
+**CORRECT** - Business logic outside, only logging inside:
+```typescript
+const generateTemplate = () => {
+  logger.debug('Starting template generation');
+
+  // ✅ Business logic at function scope
+  const template = createTemplate();
+  downloadFile(template);
+
+  logger.info('Template generated successfully');
+};
+```
+
+**Rule**: Logger callbacks (`logger.group()`, `logger.time()`) should **ONLY** contain logger statements, never business logic. In production, everything inside these callbacks is removed by tree-shaking.
 
 ### Grouped Logs:
 

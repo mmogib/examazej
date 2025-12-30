@@ -70,6 +70,9 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
       "getting-started": {
         content: [
           "Quick Start Guide getting started create upload template configure settings generate download",
+          "Template dialog Course Code Exam Name Exam Date Term interactive form metadata",
+          "Include Cover Page toggle number of questions image question sample",
+          "Auto-generated seeds reproducibility unique randomization",
           "What This App Does",
           "Creates multiple randomized versions",
           "Shuffles question order",
@@ -477,9 +480,18 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {highlightText(
-                          "Download our sample template (with optional image question sample) and customize it with your questions, or upload an existing LaTeX file."
+                          "Generate a customized template by filling in your exam details (Course Code, Exam Name, Date, Term) in our interactive dialog, with options for cover pages and image questions. Or upload an existing LaTeX file."
                         )}
                       </p>
+                      <Alert className="mt-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          <strong>New!</strong> The template generator now
+                          includes an interactive form that collects your exam
+                          metadata and auto-generates unique seeds for
+                          reproducibility.
+                        </AlertDescription>
+                      </Alert>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -1528,6 +1540,16 @@ Which is largest?
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800 dark:text-blue-200">
+                      <strong>New!</strong> When generating a sample template,
+                      you can now toggle the "Include Cover Page" option
+                      directly in the template generation dialog (enabled by
+                      default).
+                    </AlertDescription>
+                  </Alert>
+
                   <p className="text-sm">
                     The exam generator creates two types of cover pages that
                     serve different purposes:
