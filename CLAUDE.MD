@@ -277,6 +277,63 @@ npm run lint         # Run ESLint
 
 ---
 
+## 🧪 Testing
+
+### Test Coverage (Dec 30, 2025)
+
+**Location**: `src/lib/core/__tests__/`
+
+#### ✅ `versioning.test.ts` (16 tests)
+- Group shuffling behavior (standard, parentheses, mixed formats)
+- Question ordering within groups
+- Option shuffling (respects `fixedOptions`)
+- Mapping generation
+- Deterministic RNG behavior
+- Edge cases (single group, all parentheses)
+
+#### ✅ `settings.test.ts` (51 tests) **NEW**
+- **`getFormattedCurrentDate()`** (5 tests)
+  - Date formatting for various months/days
+  - Zero-padding for single-digit days
+- **`getCurrentTerm()`** (17 tests)
+  - Fall term (Aug 15 - Jan 31): suffix `1`
+  - Spring term (Feb 1 - Jun 14): suffix `2`
+  - Summer term (Jun 15 - Aug 14): suffix `3`
+  - Year transitions and edge cases
+- **`getDefaultSettings()`** (6 tests)
+  - Required fields presence
+  - Default values correctness
+  - Dynamic date/term generation
+  - Instructions text inclusion
+- **`generateSettingsBlock()`** (7 tests)
+  - LaTeX format correctness
+  - `actualVersions` parameter handling
+  - `includeCoverPage` flag (yes/no)
+  - Seed inclusion/omission
+  - Multi-line instructions formatting
+- **`generateTemplateSettings()`** (16 tests)
+  - User-provided metadata handling
+  - Default university/department
+  - Group configuration from `numQuestions`
+  - `includeCoverPage` default and override
+  - Hardcoded defaults (numbering, versions, etc.)
+  - Seed generation (deterministic, unique)
+  - Complete `ExamSettings` object structure
+
+### Running Tests
+```bash
+npm test                    # Run all tests
+npm test -- settings.test   # Run settings tests only
+npm test -- versioning.test # Run versioning tests only
+```
+
+### Test Framework
+- **Vitest** - Fast, ESM-first test runner
+- **vi.useFakeTimers()** - Time-based testing for date/term functions
+- **Snapshot testing** - Not currently used, but available if needed
+
+---
+
 ## 🎯 Future Work & Known Issues
 
 ### Potential Enhancements
@@ -288,6 +345,13 @@ npm run lint         # Run ESLint
 6. **Offline Mode** - Service worker for offline exam generation
 7. **Template Library** - Save/load custom templates
 8. **Bulk Export** - Export individual PDFs per version
+
+### Test Coverage Gaps (Future Work)
+- ❌ **Template Dialog** - UI component tests (form validation, touch-based errors)
+- ❌ **Start.tsx** - `generateTemplate()` function and integration
+- ❌ **LaTeX Generation** - `generateLatexTemplate()` output validation
+- ❌ **Parser** - LaTeX template parsing edge cases
+- ❌ **Separate-Page** - `keepOnSeparatePage` pagination logic
 
 ### Known Patterns
 - All auth state in `localStorage` (no Context yet)

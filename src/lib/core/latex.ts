@@ -352,7 +352,7 @@ ${(() => {
     if (question.keepOnSeparatePage) {
       // If current page has questions, add separator before starting new page
       if (questionsOnCurrentPage > 0) {
-        questionsLatex += "\\eogseparator\n";
+        questionsLatex += "\n\\eogseparator\n";
       }
       // Add the question on its own page
       questionsLatex += `
@@ -387,7 +387,7 @@ ${
     } else {
       // Regular question handling
       if (questionsOnCurrentPage >= 2) {
-        questionsLatex += "\\eogseparator\n";
+        questionsLatex += "\n\\eogseparator\n";
         questionsOnCurrentPage = 0;
       }
 
@@ -486,7 +486,7 @@ ${(() => {
     if (question.keepOnSeparatePage) {
       // If current page has questions, add separator before starting new page
       if (questionsOnCurrentPage > 0) {
-        versionQuestionsLatex += "\\eogseparator\n";
+        versionQuestionsLatex += "\n\\eogseparator\n";
       }
       // Add the question on its own page
       versionQuestionsLatex += `
@@ -517,7 +517,7 @@ ${
     } else {
       // Regular question handling
       if (questionsOnCurrentPage >= 2) {
-        versionQuestionsLatex += "\\eogseparator\n";
+        versionQuestionsLatex += "\n\\eogseparator\n";
         questionsOnCurrentPage = 0;
       }
 
