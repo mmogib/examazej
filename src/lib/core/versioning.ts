@@ -73,7 +73,12 @@ export function generateQuestionOptionMapping(state, master) {
 
             // Map the option using the perm string
             if (mapping.perm && mapping.perm.length > optIdx) {
-              row.push(mapping.perm[optIdx]);
+              const masterOptionIndex = mapping.perm.indexOf(optionLetter);
+              const mappedOptionLetter =
+                masterOptionIndex !== -1
+                  ? String.fromCharCode(65 + masterOptionIndex)
+                  : "";
+              row.push(mappedOptionLetter);
             } else {
               row.push("");
             }
