@@ -6,8 +6,10 @@ A professional exam generation tool that creates multiple randomized versions of
 
 ## 🎯 Key Features
 
+- **Multiple Input Formats**: Support for LaTeX, Excel (.xlsx), and CSV formats - choose what works best for you
 - **Smart Randomization**: Generate unlimited exam versions with shuffled questions and options
 - **LaTeX Integration**: Professional typesetting with full LaTeX support including mathematical notation
+- **Excel/CSV Support**: Easy-to-use templates with LaTeX math ($...$) support in cells
 - **Answer Keys**: Automatic generation of answer keys for each version
 - **Question Groups**: Organize questions into balanced groups for structured randomization
 - **Multiple Question Types**: Support for regular, fixed, fixed-options, open-ended, separate-page, and image questions
@@ -64,14 +66,17 @@ Users need a valid access code provided by the administrator. Access codes are m
 ## 📖 How to Use
 
 1. **Sign In**: Use your access code to authenticate
-2. **Upload Template**: Upload a LaTeX template file with specially formatted questions
-3. **Configure Settings**: Set exam details (course name, date, number of versions, etc.)
-4. **Generate Exams**: Click generate to create randomized versions
-5. **Download**: Get a complete LaTeX document with all versions and answer keys
-6. **Compile**: Open in Overleaf or compile locally with LaTeX
+2. **Choose Format & Download Template**: Select LaTeX, Excel, or CSV format and download a pre-filled template
+3. **Edit Template**: Add your questions using your preferred editor (Overleaf, Excel, VS Code, etc.)
+4. **Upload Template**: Upload your completed template file (.tex, .xlsx, or .csv)
+5. **Configure Settings**: Set exam details (course name, date, number of versions, etc.)
+6. **Generate Exams**: Click generate to create randomized versions
+7. **Download**: Get a complete LaTeX document with all versions and answer keys
+8. **Compile**: Open in Overleaf or compile locally with LaTeX
 
-### Template Format
+### Template Formats
 
+#### LaTeX Format (Advanced)
 Questions should be marked with special tags:
 
 ```latex
@@ -86,6 +91,18 @@ Five
 %% End Question
 ```
 
+#### Excel Format
+Four sheets: Settings, Instructions, Preamble, Questions
+- Easy to edit in Excel or Google Sheets
+- Supports LaTeX math in cells: `$x^2 + y^2 = z^2$`
+- Questions sheet has columns: Question Text, Option A-E, Correct, Type, Tags
+
+#### CSV Format
+Four sections marked with `# settings`, `# instructions`, `# preamble`, `# questions`
+- Plain text format for version control
+- Supports LaTeX math: `$\int x dx$`
+- Easy to edit in any text editor
+
 See the in-app documentation for complete template format details.
 
 ## 🛠️ Technology Stack
@@ -94,7 +111,7 @@ See the in-app documentation for complete template format details.
 - **UI**: shadcn/ui, Tailwind CSS, Radix UI
 - **Authentication**: Custom JWT-based auth via Hono API
 - **User Management**: Airtable API
-- **Document Processing**: Custom LaTeX parser
+- **Document Processing**: Custom LaTeX/CSV/Excel parsers (xlsx library)
 - **State Management**: TanStack Query (React Query)
 - **Form Handling**: React Hook Form + Zod validation
 - **Rich Text**: TipTap editor with KaTeX math rendering
@@ -111,9 +128,11 @@ exam-shuffler/
 │   ├── pages/            # Page components (Landing, Auth, Start, etc.)
 │   ├── lib/              # Core logic
 │   │   ├── core/         # Exam generation (parser, LaTeX, RNG)
+│   │   ├── parsers/      # CSV & Excel parsers
+│   │   ├── generators/   # Template generators (LaTeX, CSV, Excel)
 │   │   ├── auth.ts       # JWT authentication client
 │   │   ├── types.ts      # TypeScript definitions
-│   │   └── utils/        # Utility functions
+│   │   └── utils/        # Utility functions (logger, etc.)
 │   ├── hooks/            # Custom React hooks
 │   └── assets/           # Bundled static assets
 └── public/               # Static files (served at /)

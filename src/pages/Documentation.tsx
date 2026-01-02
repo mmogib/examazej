@@ -92,6 +92,13 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
           "Complete Question Example",
           "university department term coursecode examname examdate timeallowed numberofvestions groups",
           "examtype code_name code_numbering includeCoverPage paper_size seed",
+          "CSV Format excel spreadsheet table simple text editor version control",
+          "CSV sections settings instructions preamble questions required",
+          "CSV columns Question Text Option Correct Type Tags",
+          "Excel Format xlsx spreadsheet Microsoft Google Sheets",
+          "Excel sheets Settings Instructions Preamble Questions",
+          "Math support LaTeX equations dollar signs inline display",
+          "Download template pre-filled examples formatting",
         ],
         count: 0,
         hasMatches: false,
@@ -725,6 +732,237 @@ What is the capital of France?
                       label="Complete question example"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* CSV Format */}
+          {shouldShowContent("CSV Format excel spreadsheet table simple") && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TableIcon className="h-5 w-5 text-green-500" />
+                  CSV Format
+                </CardTitle>
+                <CardDescription>
+                  Plain text format - easy to edit and version control
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    CSV format is useful for users who prefer text editors or
+                    want to version control their exams with Git.
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Structure</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    CSV files have 4 sections marked with <code>#</code> headers.
+                    Only the <code># questions</code> section is required.
+                  </p>
+                  <CodeBlock
+                    code={`# settings
+university,King Fahd University
+coursecode,MATH 101
+examname,Midterm Exam
+term,Term 251
+
+# instructions
+Read all questions carefully
+Show your work for partial credit
+
+# preamble
+\\usepackage{amsmath}
+\\usepackage{tikz}
+
+# questions
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
+"What is $2+2$?",Three,Four,Five,,,B,regular,
+"Find $\\int x dx$","$x$","$\\frac{x^2}{2}+C$","$2x$",,,B,regular,`}
+                    label="CSV template structure"
+                  />
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Question Columns</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">Question Text</Badge>
+                      <span className="text-muted-foreground">
+                        The question content (supports LaTeX math)
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">Option A-E</Badge>
+                      <span className="text-muted-foreground">
+                        Answer choices (use quotes for LaTeX)
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">Correct</Badge>
+                      <span className="text-muted-foreground">
+                        Letter of correct answer (A, B, C, D, or E)
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">Type</Badge>
+                      <span className="text-muted-foreground">
+                        regular, fixed, fixed-options, or open-ended
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary">Tags</Badge>
+                      <span className="text-muted-foreground">
+                        Use "separate-page" for full-page questions
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Alert className="bg-blue-50 dark:bg-blue-950">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Math Support:</strong> Use <code>$...$</code> for
+                    inline math or <code>$$...$$</code> for display math.
+                    Example: <code>"What is $x^2 + y^2$?"</code>
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Excel Format */}
+          {shouldShowContent("Excel Format xlsx spreadsheet table") && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TableIcon className="h-5 w-5 text-blue-500" />
+                  Excel Format
+                </CardTitle>
+                <CardDescription>
+                  Easy to edit in Excel or Google Sheets
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Excel format is useful for users who prefer working with
+                    spreadsheets in Microsoft Excel or Google Sheets.
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Structure</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Excel files have 4 sheets. Only the <strong>Questions</strong>{" "}
+                    sheet is required. Sheet names are case-insensitive.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="border rounded p-3">
+                      <h5 className="font-medium mb-1">1. Settings Sheet</h5>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Key-value pairs for exam metadata
+                      </p>
+                      <div className="bg-muted p-2 rounded text-xs font-mono">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="text-left pr-4">Key</th>
+                              <th className="text-left">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>university</td>
+                              <td>King Fahd University</td>
+                            </tr>
+                            <tr>
+                              <td>coursecode</td>
+                              <td>MATH 101</td>
+                            </tr>
+                            <tr>
+                              <td>examname</td>
+                              <td>Midterm Exam</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="border rounded p-3">
+                      <h5 className="font-medium mb-1">2. Instructions Sheet</h5>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        One instruction per row
+                      </p>
+                      <div className="bg-muted p-2 rounded text-xs">
+                        • Read all questions carefully<br />
+                        • Show your work for partial credit
+                      </div>
+                    </div>
+
+                    <div className="border rounded p-3">
+                      <h5 className="font-medium mb-1">3. Preamble Sheet</h5>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        LaTeX packages and custom commands
+                      </p>
+                      <div className="bg-muted p-2 rounded text-xs font-mono">
+                        \usepackage{"{amsmath}"}<br />
+                        \usepackage{"{tikz}"}
+                      </div>
+                    </div>
+
+                    <div className="border rounded p-3">
+                      <h5 className="font-medium mb-1">4. Questions Sheet</h5>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Table with 9 columns (same as CSV format)
+                      </p>
+                      <div className="bg-muted p-2 rounded text-xs overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="text-left pr-2">Question Text</th>
+                              <th className="text-left pr-2">Option A</th>
+                              <th className="text-left pr-2">Option B</th>
+                              <th className="text-left pr-2">...</th>
+                              <th className="text-left pr-2">Correct</th>
+                              <th className="text-left pr-2">Type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>What is $2+2$?</td>
+                              <td>Three</td>
+                              <td>Four</td>
+                              <td>...</td>
+                              <td>B</td>
+                              <td>regular</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Alert className="bg-blue-50 dark:bg-blue-950">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Math Support:</strong> Type LaTeX math directly in
+                    cells: <code>$x^2 + y^2$</code> or <code>$$\int x dx$$</code>
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Download Template</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Click "Download Excel Template" on the Start page to get a
+                    pre-filled template with examples and proper formatting.
+                  </p>
                 </div>
               </CardContent>
             </Card>

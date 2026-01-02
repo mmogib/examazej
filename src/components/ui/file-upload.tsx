@@ -93,7 +93,13 @@ export function FileUpload({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onFileRemove}
+                  onClick={() => {
+                    // Reset the file input value so selecting the same file again triggers onChange
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                    onFileRemove();
+                  }}
                   className="h-8 w-8 p-0"
                 >
                   <X className="h-4 w-4" />

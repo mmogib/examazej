@@ -6,6 +6,8 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle,
+  FileSpreadsheet,
+  Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +17,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PrivacyNotice } from "@/components/ui/privacy-notice";
 import { TemplateDialog } from "@/components/ui/template-dialog";
@@ -32,6 +36,14 @@ import type {
   ExamData,
 } from "@/lib/types";
 import { generateLatexTemplate } from "@/lib/core/latex";
+import { parseCSV } from "@/lib/parsers/csv-parser";
+import { parseExcel } from "@/lib/parsers/excel-parser";
+import {
+  convertToLatexFormat,
+  validateGroupsMatchQuestions,
+} from "@/lib/parsers/adapter";
+import { generateCSVTemplate } from "@/lib/generators/csv-template";
+import { generateExcelTemplate } from "@/lib/generators/excel-template";
 import { createLogger } from "@/lib/utils/logger";
 
 const logger = createLogger("START_PAGE");
@@ -179,6 +191,12 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [parsedPreview, setParsedPreview] = useState<{
+    settings: Partial<ExamSettings>;
+    questionsCount: number;
+    hasInstructions: boolean;
+    hasPreamble: boolean;
+  } | null>(null);
 
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
     const defaults = getDefaultSettings();
@@ -212,36 +230,108 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   const handleFileSelected = async (file: File) => {
     setSelectedFile(file);
     setError(null);
+    setParsedPreview(null);
     setLoading(true);
 
     try {
-      const content = await file.text();
+      const extension = file.name.split(".").pop()?.toLowerCase();
 
-      if (file.name.endsWith(".json")) {
+      if (extension === "json") {
+        const content = await file.text();
         const jsonData = JSON.parse(content) as ExamJSON;
         onDataLoaded(jsonData);
-      } else if (file.name.endsWith(".tex")) {
+      } else if (extension === "tex") {
+        // Existing LaTeX flow - UNCHANGED
+        const content = await file.text();
         const parsed = parseLatexTemplate(content);
         const errors = validateParsedTemplate(parsed);
+
         if (errors.length > 0) {
           setError(`Template validation failed:\n${errors.join("\n")}`);
         } else {
+          // Show preview
+          setParsedPreview({
+            settings: parsed.settings,
+            questionsCount: parsed.questions.length,
+            hasInstructions: !!parsed.settings.instructions,
+            hasPreamble: !!parsed.preamble,
+          });
+
           const examData = createExamFromTemplate(parsed);
           onDataLoaded(examData);
         }
+      } else if (extension === "csv") {
+        // NEW: CSV parsing
+        const content = await file.text();
+        const parsed = parseCSV(content);
+
+        // Validate groups if present
+        if (parsed.settings.groups && parsed.questions.length > 0) {
+          validateGroupsMatchQuestions(
+            parsed.settings.groups,
+            parsed.questions.length
+          );
+        }
+
+        // Convert to LaTeX format
+        const latexFormat = convertToLatexFormat(parsed);
+
+        // Show preview
+        setParsedPreview({
+          settings: latexFormat.settings,
+          questionsCount: latexFormat.questions.length,
+          hasInstructions: !!latexFormat.settings.instructions,
+          hasPreamble: !!latexFormat.preamble,
+        });
+
+        // Create exam data
+        const examData = createExamFromTemplate(latexFormat);
+        onDataLoaded(examData);
+      } else if (extension === "xlsx") {
+        // NEW: Excel parsing
+        const parsed = await parseExcel(file);
+
+        // Validate groups if present
+        if (parsed.settings.groups && parsed.questions.length > 0) {
+          validateGroupsMatchQuestions(
+            parsed.settings.groups,
+            parsed.questions.length
+          );
+        }
+
+        // Convert to LaTeX format
+        const latexFormat = convertToLatexFormat(parsed);
+
+        // Show preview
+        setParsedPreview({
+          settings: latexFormat.settings,
+          questionsCount: latexFormat.questions.length,
+          hasInstructions: !!latexFormat.settings.instructions,
+          hasPreamble: !!latexFormat.preamble,
+        });
+
+        // Create exam data
+        const examData = createExamFromTemplate(latexFormat);
+        onDataLoaded(examData);
       } else {
-        setError("Unsupported file type. Please upload a .tex or .json file.");
+        setError(
+          "Unsupported file type. Please upload a .tex, .csv, .xlsx, or .json file."
+        );
       }
     } catch (err) {
       setError(
-        "Failed to process file. Please check the format and try again."
+        err instanceof Error
+          ? err.message
+          : "Failed to process file. Please check the format and try again."
       );
+      setParsedPreview(null);
     } finally {
       setLoading(false);
     }
   };
 
   const generateTemplate = (
+    format: "tex" | "csv" | "xlsx",
     coursecode: string,
     examname: string,
     examdate: string,
@@ -250,8 +340,9 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     includeImageQuestion: boolean,
     includeCoverPage: boolean
   ) => {
-    logger.group('Generating LaTeX Template', () => {
-      logger.debug('Parameters', {
+    logger.group(`Generating ${format.toUpperCase()} Template`, () => {
+      logger.debug("Parameters", {
+        format,
         coursecode,
         examname,
         examdate,
@@ -271,7 +362,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       kept_in_one_page: [],
     };
 
-    logger.debug('Example questions created', {
+    logger.debug("Example questions created", {
       count: mockExam.questions.length,
     });
 
@@ -283,33 +374,67 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       numQuestions,
       includeCoverPage,
     });
+    const filename = `exam-${coursecode}-${examname}-${numQuestions}-questions.${format}`;
+    logger.debug("Settings generated, seed:", mockSettings.seed);
 
-    logger.debug('Settings generated, seed:', mockSettings.seed);
+    // Generate based on format
+    if (format === "tex") {
+      const template = generateLatexTemplate(
+        mockSettings,
+        mockExam,
+        mockSettings.numberofvestions
+      );
 
-    // Use the shared function from latex.ts
-    const template = generateLatexTemplate(
-      mockSettings,
-      mockExam,
-      mockSettings.numberofvestions
-    );
+      logger.info("LaTeX template generated", {
+        size: `${(template.length / 1024).toFixed(2)} KB`,
+        filename: filename,
+      });
 
-    logger.info('LaTeX template generated', {
-      size: `${(template.length / 1024).toFixed(2)} KB`,
-      filename: `exam-template-${numQuestions}-questions.tex`,
-    });
+      const blob = new Blob([template], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (format === "csv") {
+      const csvContent = generateCSVTemplate(mockSettings, mockExam);
 
-    // Download the template
-    const blob = new Blob([template], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `exam-template-${numQuestions}-questions.tex`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      logger.info("CSV template generated", {
+        size: `${(csvContent.length / 1024).toFixed(2)} KB`,
+        filename: filename,
+      });
 
-    logger.info('Template downloaded successfully');
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (format === "xlsx") {
+      const blob = generateExcelTemplate(mockSettings, mockExam);
+
+      logger.info("Excel template generated", {
+        size: `${(blob.size / 1024).toFixed(2)} KB`,
+        filename: filename,
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    logger.info("Template downloaded successfully");
   };
 
   return (
@@ -337,11 +462,58 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
                 Download Template
               </CardTitle>
               <CardDescription>
-                Download our sample LaTeX template to get started
+                Choose your preferred format to get started
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <TemplateDialog onTemplateGenerate={generateTemplate} />
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold mb-2">
+                  LaTeX Format (Advanced)
+                </h3>
+                <TemplateDialog
+                  format="tex"
+                  onTemplateGenerate={generateTemplate}
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-2">
+                  Excel Format
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Easy to edit in Excel or Google Sheets. Supports LaTeX math in
+                  cells.
+                </p>
+                <TemplateDialog
+                  format="xlsx"
+                  onTemplateGenerate={generateTemplate}
+                  triggerButton={
+                    <Button variant="outline" className="w-full">
+                      <Table2 className="h-4 w-4 mr-2" />
+                      Download Excel Template (.xlsx)
+                    </Button>
+                  }
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-2">
+                  CSV Format
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Plain text format. Easy to version control and edit.
+                </p>
+                <TemplateDialog
+                  format="csv"
+                  onTemplateGenerate={generateTemplate}
+                  triggerButton={
+                    <Button variant="outline" className="w-full">
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Download CSV Template (.csv)
+                    </Button>
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -354,27 +526,92 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
                 Upload Existing Exam
               </CardTitle>
               <CardDescription>
-                Upload a LaTeX template (.tex) or existing exam JSON file to
-                continue working
+                Upload LaTeX (.tex), Excel (.xlsx), CSV (.csv), or JSON file
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FileUpload
-                accept=".tex,.json"
+                accept=".tex,.csv,.xlsx,.json"
                 onFileSelect={handleFileSelected}
                 selectedFile={selectedFile}
-                onFileRemove={() => setSelectedFile(null)}
+                onFileRemove={() => {
+                  setSelectedFile(null);
+                  setParsedPreview(null);
+                  setError(null);
+                }}
               />
 
               {error && (
-                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                  <p className="text-sm text-destructive whitespace-pre-line">
+                <Alert variant="destructive">
+                  <AlertTitle>Error parsing file</AlertTitle>
+                  <AlertDescription className="whitespace-pre-line text-sm">
                     {error}
-                  </p>
-                </div>
+                  </AlertDescription>
+                </Alert>
               )}
 
-              {selectedFile && !error && !loading && (
+              {parsedPreview && !error && !loading && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertTitle>File uploaded successfully</AlertTitle>
+                  <AlertDescription>
+                    <div className="mt-2 space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">
+                          Questions:
+                        </span>
+                        <Badge variant="secondary">
+                          {parsedPreview.questionsCount}
+                        </Badge>
+                      </div>
+                      {parsedPreview.settings.coursecode && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Course:</span>
+                          <span className="font-medium">
+                            {parsedPreview.settings.coursecode}
+                          </span>
+                        </div>
+                      )}
+                      {parsedPreview.settings.examname && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Exam:</span>
+                          <span className="font-medium">
+                            {parsedPreview.settings.examname}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">
+                          Instructions:
+                        </span>
+                        <Badge
+                          variant={
+                            parsedPreview.hasInstructions
+                              ? "default"
+                              : "outline"
+                          }
+                        >
+                          {parsedPreview.hasInstructions
+                            ? "Included"
+                            : "Using defaults"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Preamble:</span>
+                        <Badge
+                          variant={
+                            parsedPreview.hasPreamble ? "default" : "outline"
+                          }
+                        >
+                          {parsedPreview.hasPreamble ? "Custom" : "None"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {selectedFile && !error && !loading && !parsedPreview && (
                 <div className="flex items-center justify-between p-3 rounded-md border border-success/20 bg-success/10">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-success" />
@@ -468,8 +705,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
                 </div>
                 <h3 className="font-medium mb-2">1. Prepare Your Exam</h3>
                 <p className="text-sm text-muted-foreground">
-                  Write questions in our LaTeX template format or upload an
-                  existing file
+                  Write questions in LaTeX, Excel, or CSV format. Choose what
+                  works best for you.
                 </p>
               </div>
               <div className="text-center">

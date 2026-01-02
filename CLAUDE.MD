@@ -1,11 +1,51 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2025-12-30
+**Last Updated**: 2026-01-02
 **Purpose**: Provide context for AI assistants working on this project
 
 ---
 
-## 📋 Recent Changes (Dec 2025)
+## 📋 Recent Changes (Jan 2026)
+
+### NEW FEATURE: CSV & Excel Input Formats (Jan 2, 2026)
+- **ADDED**: CSV and Excel (.xlsx) as alternative input formats alongside LaTeX
+- **PARSERS**: New parsers for CSV and Excel formats (`src/lib/parsers/`)
+  - `csv-parser.ts` - Parses CSV with 4 sections (settings, instructions, preamble, questions)
+  - `excel-parser.ts` - Parses Excel with 4 sheets (Settings, Instructions, Preamble, Questions)
+  - `adapter.ts` - Converts CSV/Excel data to LaTeX format for seamless integration
+- **GENERATORS**: Template generators for all formats (`src/lib/generators/`)
+  - `csv-template.ts` - Generates CSV templates with user metadata
+  - `excel-template.ts` - Generates Excel templates with 4 sheets
+- **TEMPLATE DIALOG**: Enhanced to support all three formats (LaTeX, CSV, Excel)
+  - Same metadata collection for all formats (coursecode, examname, etc.)
+  - Format-specific help text and options
+  - Image question toggle only for LaTeX format
+- **FILE UPLOAD**: Now supports .tex, .csv, .xlsx, .json
+  - Automatic format detection
+  - Preview card showing parsed data
+  - Strict validation with clear error messages
+- **MATH SUPPORT**: LaTeX math equations ($...$, $$...$$) in CSV/Excel cells
+- **ZERO IMPACT**: No changes to existing LaTeX functionality or business logic
+
+### Files Created (CSV/Excel Feature)
+1. `src/lib/parsers/csv-parser.ts` - CSV parsing with section markers
+2. `src/lib/parsers/excel-parser.ts` - Excel parsing with sheet validation
+3. `src/lib/parsers/adapter.ts` - Conversion layer to LaTeX format
+4. `src/lib/generators/csv-template.ts` - CSV template generation
+5. `src/lib/generators/excel-template.ts` - Excel template generation
+
+### Files Modified (CSV/Excel Feature)
+1. `src/pages/Start.tsx` - File upload with format detection, preview, template generation
+2. `src/components/ui/template-dialog.tsx` - Multi-format support, conditional rendering
+3. `src/components/ui/file-upload.tsx` - Fixed file input reset on remove
+
+### Bug Fixes (Jan 2, 2026)
+1. **Fixed**: Image question toggle now only shows for LaTeX format
+2. **Fixed**: Template generators use requested question count (not hardcoded examples)
+3. **Fixed**: Error state clears when file is removed
+4. **Fixed**: Same filename can be re-uploaded after fixing errors (input value reset)
+
+## 📋 Previous Changes (Dec 2025)
 
 ### NEW FEATURE: Safe Logger Utility (Dec 30, 2025)
 - **ADDED**: Environment-based logging utility (`src/lib/utils/logger.ts`)
@@ -94,6 +134,33 @@
   - `generateTemplateSettings(config)` - Creates settings for template generation (uses config object)
   - `generateSettingsBlock(settings)` - Generates LaTeX settings block
 
+### Input Format Parsers (`src/lib/parsers/`)
+- **`csv-parser.ts`** - Parses CSV files with 4 sections
+  - `parseCSV(content)` - Main parser, returns settings/instructions/preamble/questions
+  - `splitIntoSections()` - Splits CSV by `# settings`, `# instructions`, etc.
+  - `parseSettingsSection()` - Validates and converts settings (type checking)
+  - `parseQuestionsSection()` - Parses question table with columns
+  - Strict validation with line numbers in error messages
+- **`excel-parser.ts`** - Parses Excel (.xlsx) files with 4 sheets
+  - `parseExcel(file)` - Main parser using xlsx library
+  - `parseSettingsSheet()` - Reads key-value pairs from Settings sheet
+  - `parseQuestionsSheet()` - Reads question table from Questions sheet
+  - Sheet names are case-insensitive
+- **`adapter.ts`** - Converts CSV/Excel data to LaTeX format
+  - `convertToLatexFormat()` - Adapter pattern for seamless integration
+  - `validateGroupsMatchQuestions()` - Validates group partition matches question count
+  - Zero impact on existing LaTeX flow
+
+### Template Generators (`src/lib/generators/`)
+- **`csv-template.ts`** - Generates CSV templates
+  - `generateCSVTemplate(settings, exam)` - Creates CSV with user metadata
+  - `convertMultilineFieldsToEscapedNewlines()` - Escapes newlines in CSV fields
+  - Generates questions from actual exam data (not hardcoded)
+- **`excel-template.ts`** - Generates Excel templates
+  - `generateExcelTemplate(settings, exam)` - Creates .xlsx with 4 sheets
+  - Uses xlsx library to write workbook
+  - Returns Blob for download
+
 ### Utilities (`src/lib/utils/`)
 - **`logger.ts`** - Safe development-only logging utility
   - `logger.debug(...)` - Debug logs (dev only)
@@ -166,6 +233,74 @@ Four (asterisk marks correct answer)
 Five
 %% End Question
 ```
+
+### CSV Format
+**Structure**: 4 sections marked with `#` headers
+```csv
+# settings
+university,King Fahd University
+department,Mathematics
+coursecode,MATH 101
+examname,Midterm Exam
+...
+
+# instructions
+Read all questions carefully
+Show your work for partial credit
+
+# preamble
+\usepackage{amsmath}
+\usepackage{tikz}
+
+# questions
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
+"What is $x^2 + y^2$?","Answer 1","Answer 2","Answer 3","","",B,regular,
+```
+
+**Key Features**:
+- Sections are optional except `# questions` (required)
+- Settings: key-value pairs (e.g., `coursecode,MATH 101`)
+- Questions: CSV table with 9 columns
+- Math support: Use `$...$` or `$$...$$` in any field
+- Multiline fields: Use quotes and literal `\n` for newlines
+- Type column: `regular`, `fixed`, `fixed-options`, `open-ended`
+- Tags column: `separate-page` for full-page questions
+
+### Excel Format
+**Structure**: 4 sheets (Settings, Instructions, Preamble, Questions)
+
+**Settings Sheet** (key-value table):
+| Key | Value |
+|-----|-------|
+| university | King Fahd University |
+| coursecode | MATH 101 |
+| examname | Midterm Exam |
+| ... | ... |
+
+**Instructions Sheet** (one instruction per row):
+| Instruction |
+|-------------|
+| Read all questions carefully |
+| Show your work |
+
+**Preamble Sheet** (one command per row):
+| LaTeX Preamble |
+|----------------|
+| \usepackage{amsmath} |
+| \usepackage{tikz} |
+
+**Questions Sheet** (table format):
+| Question Text | Option A | Option B | Option C | Option D | Option E | Correct | Type | Tags |
+|---------------|----------|----------|----------|----------|----------|---------|------|------|
+| What is $2+2$? | Three | Four | Five | | | B | regular | |
+
+**Key Features**:
+- Sheet names are case-insensitive
+- Only Questions sheet is required
+- Math support: Use `$...$` in any cell
+- Empty cells are allowed (optional columns)
+- Type: `regular`, `fixed`, `fixed-options`, `open-ended`
+- Tags: `separate-page` for full-page questions
 
 ### Deterministic Shuffling
 - Seed-based RNG ensures reproducibility
@@ -378,6 +513,8 @@ npm test -- versioning.test # Run versioning tests only
 - **Modify exam generation**: Check `src/lib/core/` files
 - **Add UI components**: Use shadcn/ui pattern, Tailwind CSS
 - **Change LaTeX format**: Update `src/lib/core/latex.ts`
+- **Add CSV/Excel parsing**: Check `src/lib/parsers/` files
+- **Add template generators**: Check `src/lib/generators/` files
 - **Add question types**: Update `QuestionType` in `src/lib/types.ts`
 - **Fix auth issues**: Check JWT token in localStorage, verify API
 - **Deploy**: Build with `npm run build`, deploy `dist/` folder
@@ -390,18 +527,36 @@ npm test -- versioning.test # Run versioning tests only
 - Auth logic: `src/lib/auth.ts`
 - Logger utility: `src/lib/utils/logger.ts`
 - Exam generation: `src/lib/core/*.ts`
+- Input parsers: `src/lib/parsers/*.ts`
+- Template generators: `src/lib/generators/*.ts`
 - Template dialog: `src/components/ui/template-dialog.tsx`
 - UI components: `src/components/ui/*.tsx`
 - Page routes: `src/pages/*.tsx`
 - Type definitions: `src/lib/types.ts`
 
 **Template Generation Flow**:
-1. User clicks "Download Sample Template" → Opens `TemplateDialog`
+1. User clicks "Download LaTeX/CSV/Excel Template" → Opens `TemplateDialog`
 2. User fills: coursecode, examname, examdate, term → Required fields
-3. User configures: numQuestions, includeImageQuestion, includeCoverPage → Optional settings
-4. Click "Generate Template" → Calls `generateTemplate()` in `Start.tsx`
+3. User configures: numQuestions, includeImageQuestion (LaTeX only), includeCoverPage → Optional settings
+4. Click "Generate Template" → Calls `generateTemplate(format, ...)` in `Start.tsx`
 5. `generateTemplateSettings()` creates settings → Generates seed from metadata
-6. `generateLatexTemplate()` creates .tex file → Downloads to user
+6. Routes to correct generator based on format:
+   - LaTeX: `generateLatexTemplate()` creates .tex file
+   - CSV: `generateCSVTemplate()` creates .csv file
+   - Excel: `generateExcelTemplate()` creates .xlsx blob
+7. Downloads to user
+
+**File Upload Flow** (CSV/Excel):
+1. User uploads .csv or .xlsx file → `handleFileSelected()` in `Start.tsx`
+2. Format detected by file extension
+3. Routes to correct parser:
+   - CSV: `parseCSV()` → Returns `ParsedCSVData`
+   - Excel: `parseExcel()` → Returns `ParsedExcelData`
+4. `convertToLatexFormat()` adapter converts to `ParsedLatexTemplate`
+5. Groups validation if present: `validateGroupsMatchQuestions()`
+6. `createExamFromTemplate()` creates `ExamJSON`
+7. Preview card shows parsed data
+8. User proceeds to Details page
 
 ---
 
