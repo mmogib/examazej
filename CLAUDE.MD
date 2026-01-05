@@ -1,11 +1,71 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-01-05
 **Purpose**: Provide context for AI assistants working on this project
 
 ---
 
+## 📅 Next Session Agenda (Jan 6, 2026)
+
+### Priority 1: Revisit Question Groupings & Enhancements
+- Review current grouping syntax (`"5,10,15"` and `"(5),10,(15)"`)
+- Discuss potential improvements or pain points
+- Consider enhancements:
+  - More flexible grouping syntax?
+  - Better validation and error messages?
+  - UI improvements for group configuration?
+  - Edge case handling?
+
+### Priority 2: Write Tests
+- **Tag Validation Tests** (`tag-validator.test.ts`)
+  - Valid/invalid tags, conflict detection, normalization
+  - Context in error messages
+- **Page Count Analyzer Tests** (`page-count-analyzer.test.ts`)
+  - Detection logic, recommendations, edge cases
+- **Parser Tag Handling Tests** (update `parser.test.ts`)
+  - Tag regex correctness, multiple tags, error handling
+
+### Priority 3: End-to-End Testing (If Time)
+- Test tag system across all input formats
+- Verify warning UI behavior
+- Integration testing
+
+---
+
 ## 📋 Recent Changes (Jan 2026)
+
+### NEW FEATURE: Page Count Variation Detection & Warnings (Jan 5, 2026)
+- **PROBLEM SOLVED**: Different exam versions can have different total page counts when regular questions shuffle before separate-page questions
+- **PER-VERSION CALCULATION**: Each shuffled version now calculates its own total page count (not just master)
+- **WARNING SYSTEM**: Detects page count variations and warns users with actionable recommendations
+- **3-LAYER WARNINGS**:
+  1. **LaTeX Comment Block** - Warning added at top of .tex file with distribution and recommendations
+  2. **Results Page Banner** - Prominent alert banner showing affected versions and suggestions
+  3. **Download Modal** - Confirmation dialog before download requiring user acknowledgment
+- **SMART RECOMMENDATIONS**: Analyzes exam structure and suggests fixes (add 'fixed' tag, regroup questions, etc.)
+- **FILES CREATED**:
+  - `src/lib/utils/page-count-analyzer.ts` - Page count detection and recommendation generator
+- **FILES MODIFIED**:
+  - `src/lib/core/latex.ts` - Per-version page count calculation, warning comment blocks, new return type `GenerateLatexResult`
+  - `src/pages/Results.tsx` - Warning banner, modal dialog, updated download flow
+- **BUG FIX**: Fixed parser tag regex that was incorrectly matching question markers (`%{#q}`) as tags, causing "No questions found" error
+
+### BREAKING CHANGE: Tag System Refactor (Jan 5, 2026)
+- **UNIFIED TAG SYSTEM**: Question types are now INFERRED, tags are behavioral modifiers
+- **REMOVED**: Type column from CSV/Excel formats (BREAKING CHANGE)
+- **TAG VALIDATION**: Shared validator across all parsers with conflict detection
+- **3 TAGS**: `fixed`, `fixed-options`, `separate-page` (cannot combine fixed + fixed-options)
+- **INFERRED TYPES**: MCQ (has options) vs Open-Ended (no options) - no need to declare
+- **FILES CREATED**:
+  - `src/lib/utils/tag-validator.ts` - Shared tag validation utility
+- **FILES MODIFIED**:
+  - `src/lib/core/parser.ts` - LaTeX parser with tag validation and error collection
+  - `src/lib/parsers/csv-parser.ts` - Removed Type column, uses Tags only
+  - `src/lib/parsers/excel-parser.ts` - Removed Type column, uses Tags only
+  - `src/lib/generators/csv-template.ts` - Removed Type column from output
+  - `src/lib/generators/excel-template.ts` - Removed Type column from output
+  - `src/pages/Documentation.tsx` - Updated to reflect tag system
+  - `CLAUDE.md` - This file, updated documentation
 
 ### NEW FEATURE: CSV & Excel Input Formats (Jan 2, 2026)
 - **ADDED**: CSV and Excel (.xlsx) as alternative input formats alongside LaTeX
@@ -124,7 +184,12 @@
 
 ### Core Exam Generation (`src/lib/core/`)
 - **`parser.ts`** - Parses LaTeX templates with special markers (`%{#q}`, `%{#o}`)
+  - Tag regex uses negative lookahead to avoid matching question/option markers
+  - Collects tag validation errors and throws at end with all errors
 - **`latex.ts`** - Generates complete LaTeX documents with all versions
+  - `generateLatexDocument()` - Returns `GenerateLatexResult` with content and `pageCountWarning`
+  - Calculates page count **per version** (not just master) for accurate "Page X of Y" headers
+  - Adds warning comment block at top of .tex file if page count variation detected
 - **`versioning.ts`** - Creates exam versions, handles shuffling logic
 - **`rng.ts`** - Deterministic Random Number Generator (seed-based)
 - **`settings.ts`** - Exam settings management
@@ -171,6 +236,16 @@
   - `logger.table(data)` - Table view for arrays/objects
   - `logger.time(label, fn)` - Performance timing
   - `createLogger(prefix)` - Create scoped logger (e.g., "SETTINGS", "START_PAGE")
+- **`tag-validator.ts`** - Shared tag validation across all input formats
+  - `validateQuestionTags(tags, context)` - Validates and parses question tags
+  - `VALID_TAGS` - Array of valid tags: 'fixed', 'fixed-options', 'separate-page'
+  - Detects conflicts (e.g., fixed + fixed-options)
+  - Returns normalized `QuestionTags` object
+- **`page-count-analyzer.ts`** - Page count variation detection and recommendations (NEW!)
+  - `detectPageCountVariations(masterExam, versions)` - Detects when versions have different page counts
+  - `formatPageCountWarning(warning)` - Formats warning message for display
+  - Returns `PageCountWarning` with distributions and smart recommendations
+  - Analyzes exam structure to suggest fixes (add 'fixed' tag, regroup, etc.)
 
 ### Authentication (`src/lib/`)
 - **`auth.ts`** - JWT auth client (replaces Supabase)
@@ -188,6 +263,9 @@
   - `createExampleQuestions()` - Generates placeholder questions with math examples
 - **`Details.tsx`** - Configure exam settings
 - **`Results.tsx`** - Download generated files
+  - Page count warning banner (always visible if variation detected)
+  - Page count warning modal (before download if variation detected)
+  - Handles `GenerateLatexResult` return type from `generateLatexDocument()`
 - **`Documentation.tsx`** - User guide
 
 ### UI Components (`src/components/ui/`)
@@ -207,13 +285,23 @@
 
 ## 🎯 Key Concepts
 
-### Question Types
-1. **Regular** - Normal MCQ with shuffled options
-2. **Fixed** - Question stays in same position (no shuffle)
-3. **FixedOptions** - Options don't shuffle
-4. **OpenEnded** - No options (written answer)
-5. **SeparatePage** - Each question on own page
-6. **Image** - Contains image (uses minipage)
+### Question Types (Inferred - Not Declared!)
+Question types are **automatically detected** based on question structure. You don't specify a type!
+
+1. **Multiple Choice (MCQ)** - Has 2+ options (automatically detected)
+2. **Open-Ended** - Has 0 options (automatically detected)
+3. **Image Questions** - MCQ/Open-Ended with LaTeX image formatting (documentation concept, not a type)
+
+**IMPORTANT**: There is NO `type` field in CSV/Excel anymore! Types are inferred from whether the question has options.
+
+### Question Tags (Behavioral Modifiers)
+Tags modify question behavior. These ARE explicitly declared in the `Tags` column or LaTeX markers:
+
+1. **`fixed`** - Locks BOTH position AND option order (invalid with fixed-options)
+2. **`fixed-options`** - Locks option order ONLY, position can shuffle (invalid with fixed)
+3. **`separate-page`** - Forces question onto its own page
+
+**Tag Conflicts**: Cannot use `fixed` + `fixed-options` together (validator will error)
 
 ### Question Groups
 Users configure groups like `"5,10,15"` or `"(5),10,(15)"`
@@ -253,18 +341,21 @@ Show your work for partial credit
 \usepackage{tikz}
 
 # questions
-Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
-"What is $x^2 + y^2$?","Answer 1","Answer 2","Answer 3","","",B,regular,
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
+"What is $x^2 + y^2$?","Answer 1","Answer 2","Answer 3","","",B,
+"Student ID?","Enter your ID","","","","",A,fixed
+"Essay: Explain photosynthesis.",""," ","","","",,"separate-page"
+"Which is correct?","Option A","Option B","Option C","","",B,fixed-options
 ```
 
 **Key Features**:
 - Sections are optional except `# questions` (required)
 - Settings: key-value pairs (e.g., `coursecode,MATH 101`)
-- Questions: CSV table with 9 columns
+- Questions: CSV table with **8 columns** (Type column REMOVED in v1.4+)
 - Math support: Use `$...$` or `$$...$$` in any field
 - Multiline fields: Use quotes and literal `\n` for newlines
-- Type column: `regular`, `fixed`, `fixed-options`, `open-ended`
-- Tags column: `separate-page` for full-page questions
+- Tags column: Comma-separated tags (`fixed`, `fixed-options`, `separate-page`)
+- Question types are INFERRED: Has options = MCQ, No options = Open-ended
 
 ### Excel Format
 **Structure**: 4 sheets (Settings, Instructions, Preamble, Questions)
@@ -290,17 +381,20 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
 | \usepackage{tikz} |
 
 **Questions Sheet** (table format):
-| Question Text | Option A | Option B | Option C | Option D | Option E | Correct | Type | Tags |
-|---------------|----------|----------|----------|----------|----------|---------|------|------|
-| What is $2+2$? | Three | Four | Five | | | B | regular | |
+| Question Text | Option A | Option B | Option C | Option D | Option E | Correct | Tags |
+|---------------|----------|----------|----------|----------|----------|---------|------|
+| What is $2+2$? | Three | Four | Five | | | B | |
+| Student ID? | Enter ID | | | | | A | fixed |
+| Essay question? | | | | | | | separate-page |
 
 **Key Features**:
 - Sheet names are case-insensitive
 - Only Questions sheet is required
 - Math support: Use `$...$` in any cell
 - Empty cells are allowed (optional columns)
-- Type: `regular`, `fixed`, `fixed-options`, `open-ended`
-- Tags: `separate-page` for full-page questions
+- **8 columns total** (Type column REMOVED in v1.4+)
+- Tags: Comma-separated (`fixed`, `fixed-options`, `separate-page`)
+- Question types INFERRED from presence of options
 
 ### Deterministic Shuffling
 - Seed-based RNG ensures reproducibility
@@ -515,7 +609,7 @@ npm test -- versioning.test # Run versioning tests only
 - **Change LaTeX format**: Update `src/lib/core/latex.ts`
 - **Add CSV/Excel parsing**: Check `src/lib/parsers/` files
 - **Add template generators**: Check `src/lib/generators/` files
-- **Add question types**: Update `QuestionType` in `src/lib/types.ts`
+- **Add question tags**: Update `VALID_TAGS` in `src/lib/utils/tag-validator.ts` and modify `validateQuestionTags()`
 - **Fix auth issues**: Check JWT token in localStorage, verify API
 - **Deploy**: Build with `npm run build`, deploy `dist/` folder
 - **Modify template dialog**: Update `src/components/ui/template-dialog.tsx`
@@ -526,6 +620,7 @@ npm test -- versioning.test # Run versioning tests only
 **Common File Locations**:
 - Auth logic: `src/lib/auth.ts`
 - Logger utility: `src/lib/utils/logger.ts`
+- Tag validator: `src/lib/utils/tag-validator.ts`
 - Exam generation: `src/lib/core/*.ts`
 - Input parsers: `src/lib/parsers/*.ts`
 - Template generators: `src/lib/generators/*.ts`

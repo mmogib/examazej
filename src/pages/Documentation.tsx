@@ -94,7 +94,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
           "examtype code_name code_numbering includeCoverPage paper_size seed",
           "CSV Format excel spreadsheet table simple text editor version control",
           "CSV sections settings instructions preamble questions required",
-          "CSV columns Question Text Option Correct Type Tags",
+          "CSV columns Question Text Option Correct Tags behavioral modifiers",
           "Excel Format xlsx spreadsheet Microsoft Google Sheets",
           "Excel sheets Settings Instructions Preamble Questions",
           "Math support LaTeX equations dollar signs inline display",
@@ -780,9 +780,11 @@ Show your work for partial credit
 \\usepackage{tikz}
 
 # questions
-Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
-"What is $2+2$?",Three,Four,Five,,,B,regular,
-"Find $\\int x dx$","$x$","$\\frac{x^2}{2}+C$","$2x$",,,B,regular,`}
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
+"What is $2+2$?",Three,Four,Five,,,B,
+"Find $\\int x dx$","$x$","$\\frac{x^2}{2}+C$","$2x$",,,B,
+"Student ID?","Enter ID",,,,,,A,fixed
+"Essay question?",,,,,,,,separate-page`}
                     label="CSV template structure"
                   />
                 </div>
@@ -799,7 +801,7 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
                     <div className="flex gap-2">
                       <Badge variant="secondary">Option A-E</Badge>
                       <span className="text-muted-foreground">
-                        Answer choices (use quotes for LaTeX)
+                        Answer choices (leave empty for open-ended questions)
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -809,18 +811,21 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Badge variant="secondary">Type</Badge>
-                      <span className="text-muted-foreground">
-                        regular, fixed, fixed-options, or open-ended
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
                       <Badge variant="secondary">Tags</Badge>
                       <span className="text-muted-foreground">
-                        Use "separate-page" for full-page questions
+                        Comma-separated: fixed, fixed-options, separate-page
                       </span>
                     </div>
                   </div>
+
+                  <Alert className="mt-4 bg-amber-50 dark:bg-amber-950">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Note:</strong> Question types are inferred automatically.
+                      If a question has options, it's a multiple-choice question.
+                      If it has no options, it's open-ended. No need to specify a type!
+                    </AlertDescription>
+                  </Alert>
                 </div>
 
                 <Alert className="bg-blue-50 dark:bg-blue-950">
@@ -919,7 +924,7 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
                     <div className="border rounded p-3">
                       <h5 className="font-medium mb-1">4. Questions Sheet</h5>
                       <p className="text-sm text-muted-foreground mb-2">
-                        Table with 9 columns (same as CSV format)
+                        Table with 8 columns (same as CSV format)
                       </p>
                       <div className="bg-muted p-2 rounded text-xs overflow-x-auto">
                         <table className="w-full">
@@ -930,7 +935,7 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
                               <th className="text-left pr-2">Option B</th>
                               <th className="text-left pr-2">...</th>
                               <th className="text-left pr-2">Correct</th>
-                              <th className="text-left pr-2">Type</th>
+                              <th className="text-left pr-2">Tags</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -940,7 +945,15 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
                               <td>Four</td>
                               <td>...</td>
                               <td>B</td>
-                              <td>regular</td>
+                              <td></td>
+                            </tr>
+                            <tr>
+                              <td>Student ID?</td>
+                              <td>Enter ID</td>
+                              <td></td>
+                              <td>...</td>
+                              <td>A</td>
+                              <td>fixed</td>
                             </tr>
                           </tbody>
                         </table>
@@ -1099,6 +1112,15 @@ Which letter represents the correct answer?
     %{/o}
   \\end{enumerate}`}
                   </pre>
+                  <Alert className="mt-4 bg-red-50 dark:bg-red-950 border-red-200">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-900 dark:text-red-100">
+                      <strong>Invalid Combination:</strong> Cannot use both <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed</code> and{" "}
+                      <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed-options</code> tags together.
+                      Use <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed</code> to lock position AND options,
+                      or <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed-options</code> to lock options only.
+                    </AlertDescription>
+                  </Alert>
                 </CardContent>
               </Card>
             )}

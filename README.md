@@ -13,6 +13,7 @@ A professional exam generation tool that creates multiple randomized versions of
 - **Answer Keys**: Automatic generation of answer keys for each version
 - **Question Groups**: Organize questions into balanced groups for structured randomization
 - **Multiple Question Types**: Support for regular, fixed, fixed-options, open-ended, separate-page, and image questions
+- **Page Count Variation Warnings**: Smart detection and warnings when different exam versions have different page counts, preventing exam hall confusion
 - **Cover Pages**: Optional individual or master cover pages
 - **Version Tracking**: CSV mapping of question distribution across versions
 - **Secure Authentication**: JWT-based access control via custom auth API

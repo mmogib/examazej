@@ -10,6 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -21,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Download,
   ArrowLeft,
@@ -30,6 +39,7 @@ import {
   Settings2,
   ExternalLink,
   Eye,
+  AlertTriangle,
 } from "lucide-react";
 import { ExamPreviewSheet } from "@/components/ui/exam-preview-dialog";
 import {
@@ -41,8 +51,10 @@ import {
   generateLatexDocument,
   generateMappingCSV,
   generateLatexTemplate,
+  type GenerateLatexResult,
 } from "@/lib/core/latex";
 import { generateSettingsBlock } from "@/lib/core/settings";
+import type { PageCountWarning } from "@/lib/utils/page-count-analyzer";
 import type {
   ExamJSON,
   ExamData,
@@ -61,6 +73,12 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     useState<GenerationState | null>(null);
   const [allowTrustedTex, setAllowTrustedTex] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [pageCountWarning, setPageCountWarning] =
+    useState<PageCountWarning | null>(null);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [pendingDownload, setPendingDownload] = useState<(() => void) | null>(
+    null
+  );
   useEffect(() => {
     // Generate exam versions
     const { versions, mappings } = generateExamVersions(
@@ -139,10 +157,29 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) =>
       (e.currentTarget.style.backgroundColor = "rgb(71, 161, 65)"),
   };
+  const performLatexDownload = () => {
+    if (!generationState) return;
+
+    const { content: latexContent, pageCountWarning: warning } =
+      generateLatexDocument(
+        generationState.settings,
+        examData.exam,
+        generationState.versions,
+        generationState.mappings,
+        allowTrustedTex
+      );
+
+    // Store warning for display in UI banner
+    setPageCountWarning(warning);
+
+    downloadFile(latexContent, `${getBaseFilename()}.tex`);
+  };
+
   const downloadLatex = () => {
     if (!generationState) return;
 
-    const latexContent = generateLatexDocument(
+    // Generate to check for warnings
+    const { pageCountWarning: warning } = generateLatexDocument(
       generationState.settings,
       examData.exam,
       generationState.versions,
@@ -150,7 +187,15 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       allowTrustedTex
     );
 
-    downloadFile(latexContent, `${getBaseFilename()}.tex`);
+    // If there's a page count warning, show dialog first
+    if (warning) {
+      setPageCountWarning(warning);
+      setPendingDownload(() => performLatexDownload);
+      setShowWarningDialog(true);
+    } else {
+      // No warning, download directly
+      performLatexDownload();
+    }
   };
 
   const downloadMappingCSV = () => {
@@ -201,10 +246,29 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     );
   };
 
+  const performOverleafOpen = () => {
+    if (!generationState) return;
+
+    const { content: latexContent, pageCountWarning: warning } =
+      generateLatexDocument(
+        generationState.settings,
+        examData.exam,
+        generationState.versions,
+        generationState.mappings,
+        allowTrustedTex
+      );
+
+    // Store warning for display in UI banner
+    setPageCountWarning(warning);
+
+    submitToOverleaf(latexContent, `${getBaseFilename()}.tex`);
+  };
+
   const openInOverleaf = () => {
     if (!generationState) return;
 
-    const latexContent = generateLatexDocument(
+    // Generate to check for warnings
+    const { pageCountWarning: warning } = generateLatexDocument(
       generationState.settings,
       examData.exam,
       generationState.versions,
@@ -212,7 +276,15 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       allowTrustedTex
     );
 
-    submitToOverleaf(latexContent, `${getBaseFilename()}.tex`);
+    // If there's a page count warning, show dialog first
+    if (warning) {
+      setPageCountWarning(warning);
+      setPendingDownload(() => performOverleafOpen);
+      setShowWarningDialog(true);
+    } else {
+      // No warning, open directly
+      performOverleafOpen();
+    }
   };
 
   const openTemplateInOverleaf = () => {
@@ -278,6 +350,55 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
           </p>
         </div>
       </div>
+
+      {/* Page Count Variation Warning */}
+      {pageCountWarning && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle className="text-lg font-semibold">
+            ⚠️ Page Count Variation Detected
+          </AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-3">
+              <p className="font-medium">
+                Different exam versions have different total page counts. This
+                may cause confusion in the exam hall - proctors might think
+                some exams are incomplete or missing pages.
+              </p>
+
+              <div className="bg-background/50 p-3 rounded border">
+                <p className="font-semibold mb-2">Page Count Distribution:</p>
+                <ul className="space-y-1">
+                  {pageCountWarning.distributions.map((dist) => (
+                    <li key={dist.pageCount} className="flex items-center gap-2">
+                      <Badge variant="outline" className="font-mono">
+                        {dist.pageCount} pages
+                      </Badge>
+                      <span className="text-sm">
+                        {dist.versionCodes.join(", ")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-background/50 p-3 rounded border">
+                <p className="font-semibold mb-2">Recommendations:</p>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  {pageCountWarning.recommendations.map((rec, idx) => (
+                    <li key={idx}>{rec}</li>
+                  ))}
+                </ol>
+              </div>
+
+              <p className="text-sm text-muted-foreground italic">
+                Note: You can still download the exam files. The warning has
+                also been added to the LaTeX file as a comment.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Main Content */}
@@ -731,6 +852,100 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Page Count Warning Dialog */}
+      <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+              Page Count Variation Warning
+            </DialogTitle>
+            <DialogDescription>
+              Please review this important warning before proceeding with the
+              download.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Alert variant="destructive">
+              <AlertDescription>
+                <p className="font-semibold mb-2">
+                  Different exam versions have different total page counts!
+                </p>
+                <p className="text-sm">
+                  This may cause confusion in the exam hall - proctors might
+                  think some exams are incomplete or missing pages.
+                </p>
+              </AlertDescription>
+            </Alert>
+
+            {pageCountWarning && (
+              <>
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="font-semibold mb-2">Page Count Distribution:</p>
+                  <div className="space-y-2">
+                    {pageCountWarning.distributions.map((dist) => (
+                      <div
+                        key={dist.pageCount}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Badge variant="outline" className="font-mono">
+                          {dist.pageCount} pages
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          {dist.versionCodes.join(", ")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="font-semibold mb-2">Recommendations:</p>
+                  <ol className="list-decimal list-inside space-y-2 text-sm">
+                    {pageCountWarning.recommendations.map((rec, idx) => (
+                      <li key={idx} className="text-muted-foreground">
+                        {rec}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <p className="text-sm text-muted-foreground italic">
+                  Note: The warning has been added to the LaTeX file as a
+                  comment at the top. You can still download and use the files,
+                  but be aware of potential confusion during exam distribution.
+                </p>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowWarningDialog(false);
+                setPendingDownload(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowWarningDialog(false);
+                if (pendingDownload) {
+                  pendingDownload();
+                  setPendingDownload(null);
+                }
+              }}
+            >
+              Download Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

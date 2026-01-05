@@ -3,8 +3,14 @@ import type {
   ExamData,
   VersionMapping,
   Question,
+  ExamVersion,
 } from "../types";
 import { generateSettingsBlock } from "./settings";
+import {
+  detectPageCountVariations,
+  formatPageCountWarning,
+  type PageCountWarning,
+} from "../utils/page-count-analyzer";
 
 type BarChartOptions = {
   title?: string;
@@ -148,21 +154,54 @@ export function escapeLatex(text: string): string {
     .replace(/~/g, "\\textasciitilde{}");
 }
 
+export interface GenerateLatexResult {
+  content: string;
+  pageCountWarning: PageCountWarning | null;
+}
+
 export function generateLatexDocument(
   settings: ExamSettings,
   masterExam: ExamData,
   versions: ExamData[],
   mappings: VersionMapping[],
   allowTrustedTex = false
-): string {
+): GenerateLatexResult {
   const processText = allowTrustedTex ? (text: string) => text : escapeLatex;
 
   // Generate settings block (commented) - ensure numberofvestions reflects actual versions count
   const actualVersions = versions.length || settings.numberofvestions;
   const settingsBlock = generateSettingsBlock(settings, actualVersions);
 
-  // Calculate total pages for each section (master, versions all have same page count)
-  const totalPages = calculateQuestionPages(masterExam.questions);
+  // Calculate total pages for master version
+  const masterTotalPages = calculateQuestionPages(masterExam.questions);
+
+  // Detect page count variations across versions
+  const pageCountWarning = detectPageCountVariations(masterExam, versions);
+
+  // Generate warning comment block if variation detected
+  const warningCommentBlock = pageCountWarning
+    ? `
+%% ========================================================================
+%% ⚠️⚠️⚠️ WARNING: PAGE COUNT VARIATION DETECTED ⚠️⚠️⚠️
+%% ========================================================================
+%%
+%% Different exam versions have DIFFERENT total page counts!
+%% This may cause confusion in the exam hall - proctors might think
+%% some exams are incomplete or missing pages.
+%%
+%% Page count distribution:
+${pageCountWarning.distributions
+  .map((dist) => `%%   • ${dist.pageCount} pages: ${dist.versionCodes.join(", ")}`)
+  .join("\n")}
+%%
+%% RECOMMENDATIONS:
+${pageCountWarning.recommendations
+  .map((rec, idx) => `%%   ${idx + 1}. ${rec}`)
+  .join("\n")}
+%%
+%% ========================================================================
+`
+    : "";
 
   // Document preamble
   const documentPreamble = `\\documentclass[leqno,fleqn,12pt]{article}
@@ -334,7 +373,7 @@ ${masterExam.preamble || ""}
     settings.term
   )}, ${processText(settings.coursecode)}, ${processText(
     settings.examname
-  )} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ MASTER }}}
+  )} \\hfill Page {\\bf \\arabic{page} of ${masterTotalPages} } \\hfill {\\bf \\fbox{ MASTER }}}
 \\setcounter{page}{1}
 
  %% questions start here
@@ -440,6 +479,9 @@ ${
     .map((version, versionIndex) => {
       const versionCode = version.name.replace("version_", "").toUpperCase();
 
+      // Calculate total pages for this specific version
+      const versionTotalPages = calculateQuestionPages(version.questions);
+
       // Generate questions for this version
       const studentNameIdHeader = settings.includeCoverPage
         ? ""
@@ -449,7 +491,7 @@ ${
             settings.term
           )}, ${processText(settings.coursecode)}, ${processText(
             settings.examname
-          )} \\hfill Page {\\bf \\arabic{page} of ${totalPages} } \\hfill {\\bf \\fbox{ ${
+          )} \\hfill Page {\\bf \\arabic{page} of ${versionTotalPages} } \\hfill {\\bf \\fbox{ ${
             settings.code_name
           } ${versionCode} }}}`
         : `\\renewcommand{\\thepage}{\\noindent {\\small{${processText(
@@ -670,8 +712,8 @@ Answer Counts \\\\
 \\end{normalsize}
 \\newpage`;
 
-  return `${settingsBlock}
-${documentPreamble}
+  const latexContent = `${settingsBlock}
+${warningCommentBlock}${documentPreamble}
 
 
 \\begin{document}
@@ -684,6 +726,11 @@ ${versionsContent}
 ${answerKeyPage}
 ${answerCountsPage}
 \\end{document}`;
+
+  return {
+    content: latexContent,
+    pageCountWarning,
+  };
 }
 
 export function generateMappingCSV(mappings: VersionMapping[]): string {

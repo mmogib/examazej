@@ -81,7 +81,7 @@ ${extractPlainInstructions(settings.instructions).join("\n")}
 % Example: \\newcommand{\\R}{\\mathbb{R}}
 
 # questions
-Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
 `;
   let questionExamples = ``;
   exam.questions.forEach((q) => {
@@ -90,8 +90,21 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Type,Tags
       options.push("");
     }
     const correct = q.correctOptionLetter || "A";
-    const type = q.fixed ? "fixed" : "regular";
-    questionExamples += `"${q.text}","${options[0]}","${options[1]}","${options[2]}","${options[3]}","${options[4]}","${correct}","${type}"\n`;
+
+    // Build tags array from question properties
+    const tags: string[] = [];
+    if (q.fixed) {
+      tags.push("fixed");
+    }
+    if (q.fixedOptions) {
+      tags.push("fixed-options");
+    }
+    if (q.keepOnSeparatePage) {
+      tags.push("separate-page");
+    }
+    const tagsStr = tags.join(", ");
+
+    questionExamples += `"${q.text}","${options[0]}","${options[1]}","${options[2]}","${options[3]}","${options[4]}","${correct}","${tagsStr}"\n`;
   });
   template += questionExamples;
 

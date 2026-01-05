@@ -17,6 +17,7 @@ export function generateExcelTemplate(
   const workbook = XLSX.utils.book_new();
 
   // Sheet 1: Questions (REQUIRED)
+  // Example format (Type column removed, tags used instead):
   // const questionsData = [
   //   [
   //     "Question Text",
@@ -26,10 +27,9 @@ export function generateExcelTemplate(
   //     "Option D",
   //     "Option E",
   //     "Correct",
-  //     "Type",
   //     "Tags",
   //   ],
-  //   ["What is $2 + 2$?", "3", "4", "5", "6", "", "B", "regular", ""],
+  //   ["What is $2 + 2$?", "3", "4", "5", "6", "", "B", ""],
   //   [
   //     "What is the derivative of $x^2$?",
   //     "$x$",
@@ -38,7 +38,6 @@ export function generateExcelTemplate(
   //     "$2$",
   //     "",
   //     "B",
-  //     "regular",
   //     "",
   //   ],
   //   [
@@ -49,7 +48,6 @@ export function generateExcelTemplate(
   //     "$2x$",
   //     "",
   //     "C",
-  //     "regular",
   //     "",
   //   ],
   //   [
@@ -60,8 +58,7 @@ export function generateExcelTemplate(
   //     "",
   //     "",
   //     "",
-  //     "open-ended",
-  //     "",
+  //     "",  // Open-ended: no options, no tags needed
   //   ],
   //   [
   //     "This question will not shuffle positions",
@@ -72,7 +69,6 @@ export function generateExcelTemplate(
   //     "",
   //     "A",
   //     "fixed",
-  //     "",
   //   ],
   //   [
   //     "Question with fixed option order",
@@ -83,7 +79,6 @@ export function generateExcelTemplate(
   //     "",
   //     "C",
   //     "fixed-options",
-  //     "",
   //   ],
   //   [
   //     "Large question requiring full page (e.g., graph or diagram)",
@@ -93,10 +88,9 @@ export function generateExcelTemplate(
   //     "Also wrong",
   //     "",
   //     "A",
-  //     "regular",
   //     "separate-page",
   //   ],
-  //   ["True or false question", "True", "False", "", "", "", "A", "regular", ""],
+  //   ["True or false question", "True", "False", "", "", "", "A", ""],
   // ];
   const examQuestions = exam.questions.map((q) => {
     const options = q.choices[0].map((choice) => choice.text);
@@ -104,7 +98,20 @@ export function generateExcelTemplate(
       options.push("");
     }
     const correct = q.correctOptionLetter || "A";
-    const type = q.fixed ? "fixed" : "regular";
+
+    // Build tags array from question properties
+    const tags: string[] = [];
+    if (q.fixed) {
+      tags.push("fixed");
+    }
+    if (q.fixedOptions) {
+      tags.push("fixed-options");
+    }
+    if (q.keepOnSeparatePage) {
+      tags.push("separate-page");
+    }
+    const tagsStr = tags.join(", ");
+
     return [
       q.text,
       options[0],
@@ -113,8 +120,7 @@ export function generateExcelTemplate(
       options[3],
       options[4],
       correct,
-      type,
-      "",
+      tagsStr,
     ];
   });
   const questionsData = [
@@ -126,7 +132,6 @@ export function generateExcelTemplate(
       "Option D",
       "Option E",
       "Correct",
-      "Type",
       "Tags",
     ],
     ...examQuestions,

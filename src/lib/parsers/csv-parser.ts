@@ -1,6 +1,7 @@
 import type { Question, ExamSettings } from "../types";
 import { unescapeNewlines } from "../utils";
 import { createLogger } from "../utils/logger";
+import { validateQuestionTags } from "../utils/tag-validator";
 
 const logger = createLogger("CSV_PARSER");
 
@@ -211,7 +212,7 @@ function parseQuestionsSection(
   const headers = parseCSVLine(headerLine);
 
   // Validate required columns
-  const requiredColumns = ["Question Text", "Correct", "Type"];
+  const requiredColumns = ["Question Text", "Correct"];
   const missingColumns = requiredColumns.filter(
     (col) => !headers.some((h) => h.toLowerCase() === col.toLowerCase())
   );
@@ -233,7 +234,6 @@ function parseQuestionsSection(
     optionD: headers.findIndex((h) => h.toLowerCase() === "option d"),
     optionE: headers.findIndex((h) => h.toLowerCase() === "option e"),
     correct: headers.findIndex((h) => h.toLowerCase() === "correct"),
-    type: headers.findIndex((h) => h.toLowerCase() === "type"),
     tags: headers.findIndex((h) => h.toLowerCase() === "tags"),
   };
 
@@ -333,21 +333,17 @@ function parseQuestionRow(
     }
   }
 
-  // Parse type
-  const type = cells[colIndices.type]?.trim().toLowerCase() || "regular";
-  const validTypes = ["regular", "fixed", "fixed-options", "open-ended"];
-
-  if (!validTypes.includes(type)) {
-    throw new Error(
-      `Invalid question type '${type}'. Valid types: ${validTypes.join(", ")}`
-    );
-  }
-
-  // Parse tags
+  // Parse and validate tags
   const tagsStr = cells[colIndices.tags]?.trim() || "";
-  const tags = tagsStr
+  const tagList = tagsStr
     ? tagsStr.split(",").map((t) => t.trim().toLowerCase())
     : [];
+
+  // Validate tags using shared validator
+  const validatedTags = validateQuestionTags(tagList, {
+    questionNumber: rowNumber,
+    format: 'csv',
+  });
 
   return {
     text: unescapeNewlines(questionText),
@@ -356,9 +352,9 @@ function parseQuestionRow(
       correctIndex,
       null,
     ],
-    fixed: type === "fixed",
-    fixedOptions: type === "fixed-options",
-    correctOptionLetter: correctLetter,
-    keepOnSeparatePage: tags.includes("separate-page"),
+    fixed: validatedTags.fixed,
+    fixedOptions: validatedTags.fixedOptions,
+    correctOptionLetter: validatedTags.fixedOptions ? correctLetter : undefined,
+    keepOnSeparatePage: validatedTags.separatePage,
   };
 }

@@ -2,6 +2,84 @@
 
 import { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import { generateDynamicSeed } from "../utils/seed-generator";
+import { validateQuestionTags, QuestionTags } from "../utils/tag-validator";
+import { createLogger } from "@/lib/utils/logger";
+
+const logger = createLogger("PARSER");
+
+/**
+ * Tag with its source line number for better error messages
+ */
+interface TagWithLocation {
+  tag: string;
+  lineNumber: number;
+}
+
+/**
+ * Create a question object from current parsing state
+ * Validates tags and collects errors without throwing immediately
+ *
+ * @param questionText - The question text
+ * @param options - Array of option texts
+ * @param tags - Array of tags with their line numbers
+ * @param correctLetter - Correct answer letter (for fixed-options)
+ * @param questionNumber - Question number (1-indexed)
+ * @param errors - Output array to collect validation errors
+ * @returns Question object (may have invalid tags if errors occurred)
+ */
+function createQuestionObject(
+  questionText: string,
+  options: string[],
+  tags: TagWithLocation[],
+  correctLetter: string | undefined,
+  questionNumber: number,
+  errors: string[]
+): any {
+  // Validate tags (catch errors instead of throwing)
+  let validatedTags: QuestionTags;
+
+  try {
+    const tagNames = tags.map((t) => t.tag);
+    const firstTagLine = tags.length > 0 ? tags[0].lineNumber : undefined;
+
+    validatedTags = validateQuestionTags(tagNames, {
+      questionNumber,
+      lineNumber: firstTagLine,
+    });
+  } catch (error) {
+    // Collect error, continue with best-effort tags
+    errors.push(error instanceof Error ? error.message : String(error));
+
+    // Best-effort: apply tags without validation (allows parsing to continue)
+    const tagNames = tags.map((t) => t.tag);
+    validatedTags = {
+      fixed: tagNames.includes("fixed"),
+      fixedOptions: tagNames.includes("fixed-options"),
+      separatePage: tagNames.includes("separate-page"),
+    };
+  }
+
+  // Create question object
+  const question: any = {
+    text: questionText,
+    choices: [
+      options.map((text) => ({ text })),
+      correctLetter ? correctLetter.charCodeAt(0) - 65 : 0,
+      null,
+    ],
+    keepOnSeparatePage: validatedTags.separatePage,
+  };
+
+  if (validatedTags.fixed) {
+    question.fixed = true;
+  }
+  if (validatedTags.fixedOptions) {
+    question.fixedOptions = true;
+    question.correctOptionLetter = correctLetter;
+  }
+
+  return question;
+}
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // console.log("==== STARTING LATEX PARSING ====");
@@ -96,22 +174,21 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
-  let currentQuestionFixed = false;
-  let currentQuestionFixedOptions = false;
+  let currentTags: TagWithLocation[] = []; // NEW: Track tags with line numbers
   let currentCorrectLetter: string | undefined;
-  let currentSeparatePage = false;
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
   let inOptionBlock = false;
   let currentOptionText = "";
+  const allValidationErrors: string[] = []; // NEW: Collect all tag validation errors
 
   // console.log('Starting question parsing with', lines.length, 'lines');
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
-
+    if (trimmed.startsWith("%{#q}")) logger.debug(`Line ${i + 1}: ${trimmed}`);
     // Skip LaTeX comment lines (but not our special markers that start with %)
     if (
       trimmed.startsWith("%") &&
@@ -155,38 +232,29 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         //   questionText: currentQuestion,
         //   optionsCount: currentOptions.length,
         //   questionNumber: result.questions.length + 1,
-        //   fixed: currentQuestionFixed,
         //   line: i + 1,
         // });
-        const question: any = {
-          text: currentQuestion,
-          choices: [
-            currentOptions.map((text) => ({ text })),
-            currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
-            null,
-          ],
-          keepOnSeparatePage: currentSeparatePage,
-        };
 
-        if (currentQuestionFixed) {
-          question.fixed = true;
-        }
-        if (currentQuestionFixedOptions) {
-          question.fixedOptions = true;
-          question.correctOptionLetter = currentCorrectLetter;
-        }
+        const question = createQuestionObject(
+          currentQuestion,
+          currentOptions,
+          currentTags,
+          currentCorrectLetter,
+          result.questions.length + 1,
+          allValidationErrors
+        );
 
         result.questions.push(question);
         // console.log(
         //   "✅ Question saved! Total questions now:",
         //   result.questions.length
         // );
+
+        // Reset state for next question
         currentQuestion = null;
         currentOptions = [];
-        currentQuestionFixed = false;
-        currentQuestionFixedOptions = false;
+        currentTags = [];
         currentCorrectLetter = undefined;
-        currentSeparatePage = false;
         inOptionBlock = false;
         currentOptionText = "";
       }
@@ -202,37 +270,40 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Process both inside enumerate blocks and standalone question blocks
     const shouldProcess = inQuestionEnumerate || inQuestionBlock;
 
-    // Handle fixed marker
-    if (shouldProcess && trimmed === "%{#fixed}") {
-      // console.log("Found fixed marker at line:", i + 1);
-      currentQuestionFixed = true;
-      continue;
-    }
+    // Generic tag detection: matches %{#tag-name} or %{#tag-name:value}
+    // Excludes question/option markers (q, o) to prevent conflicts
+    if (shouldProcess) {
+      // Match pattern: %{#tag-name} or %{#tag-name:value}
+      // Negative lookahead (?!q\}|o\}|/q\}|/o\}) prevents matching question/option markers
+      const tagMatch = trimmed.match(/^%\{#(?!q\}|o\}|\/q\}|\/o\})([\w-]+)(?::([A-E]))?\}$/);
 
-    // Handle fixed-options marker
-    if (shouldProcess && trimmed.includes("%{#fixed-options:")) {
-      const fixedOptionsMatch = trimmed.match(/%\{#fixed-options:([A-E])\}/);
-      if (fixedOptionsMatch) {
-        // console.log(
-        //   "Found fixed-options marker at line:",
-        //   i + 1,
-        //   "correct answer:",
-        //   fixedOptionsMatch[1]
-        // );
-        currentQuestionFixedOptions = true;
-        currentCorrectLetter = fixedOptionsMatch[1];
+      if (tagMatch) {
+        const tagName = tagMatch[1]; // e.g., "fixed", "fixed-options", "separate-page"
+        const tagValue = tagMatch[2]; // e.g., "B" for fixed-options:B
+
+        // console.log("Found tag marker at line:", i + 1, "tag:", tagName);
+
+        // Special handling for fixed-options (needs correct letter)
+        if (tagName === "fixed-options") {
+          if (tagValue) {
+            currentTags.push({ tag: tagName, lineNumber: i + 1 });
+            currentCorrectLetter = tagValue;
+          } else {
+            // Invalid format: fixed-options without letter - collect error
+            allValidationErrors.push(
+              `Line ${i + 1}: 'fixed-options' tag requires a correct answer letter (e.g., %{#fixed-options:B})`
+            );
+          }
+        } else {
+          // All other tags
+          currentTags.push({ tag: tagName, lineNumber: i + 1 });
+        }
+
         continue;
       }
     }
-
-    // Handle separate-page marker
-    if (shouldProcess && trimmed === "%{#separate-page}") {
-      // console.log("Found separate-page marker at line:", i + 1);
-      currentSeparatePage = true;
-      continue;
-    }
-
     // Handle question start marker (process even outside enumerate blocks)
+
     if (trimmed.includes("%{#q}")) {
       // console.log("Found question start marker at line:", i + 1);
 
@@ -249,9 +320,9 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         const afterTag = trimmed.replace("%{#q}", "").trim();
         currentQuestion = afterTag || "";
       }
+
       continue;
     }
-
     // Handle question end marker
     if (trimmed.includes("%{/q}") && inQuestionBlock) {
       // console.log("Found question end marker at line:", i + 1);
@@ -269,34 +340,29 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         // console.log("🔥 SAVING OPEN-ENDED QUESTION:", {
         //   questionText: currentQuestion,
         //   questionNumber: result.questions.length + 1,
-        //   fixed: currentQuestionFixed,
         //   line: i + 1,
         // });
-        const question: any = {
-          text: currentQuestion,
-          choices: [[], 0, null],
-          keepOnSeparatePage: currentSeparatePage,
-        };
 
-        if (currentQuestionFixed) {
-          question.fixed = true;
-        }
-        if (currentQuestionFixedOptions) {
-          question.fixedOptions = true;
-          question.correctOptionLetter = currentCorrectLetter;
-        }
+        const question = createQuestionObject(
+          currentQuestion,
+          currentOptions, // Empty array for open-ended
+          currentTags,
+          currentCorrectLetter,
+          result.questions.length + 1,
+          allValidationErrors
+        );
 
         result.questions.push(question);
         // console.log(
         //   "✅ Open-ended question saved! Total questions now:",
         //   result.questions.length
         // );
+
+        // Reset state for next question
         currentQuestion = null;
         currentOptions = [];
-        currentQuestionFixed = false;
-        currentQuestionFixedOptions = false;
+        currentTags = [];
         currentCorrectLetter = undefined;
-        currentSeparatePage = false;
       }
       continue;
     }
@@ -362,25 +428,16 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     //   questionText: currentQuestion,
     //   optionsCount: currentOptions.length,
     //   questionNumber: result.questions.length + 1,
-    //   fixed: currentQuestionFixed,
     // });
-    const question: any = {
-      text: currentQuestion,
-      choices: [
-        currentOptions.map((text) => ({ text })),
-        currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : 0,
-        null,
-      ],
-      keepOnSeparatePage: currentSeparatePage,
-    };
 
-    if (currentQuestionFixed) {
-      question.fixed = true;
-    }
-    if (currentQuestionFixedOptions) {
-      question.fixedOptions = true;
-      question.correctOptionLetter = currentCorrectLetter;
-    }
+    const question = createQuestionObject(
+      currentQuestion,
+      currentOptions,
+      currentTags,
+      currentCorrectLetter,
+      result.questions.length + 1,
+      allValidationErrors
+    );
 
     result.questions.push(question);
     // console.log(
@@ -395,6 +452,18 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   //   "Questions:",
   //   result.questions.map((q, i) => `${i + 1}. "${q.text.substring(0, 50)}..."`)
   // );
+
+  // Check for tag validation errors before returning
+  if (allValidationErrors.length > 0) {
+    const errorMessage =
+      `Found ${allValidationErrors.length} tag validation error${
+        allValidationErrors.length > 1 ? "s" : ""
+      }:\n\n` +
+      allValidationErrors.map((err, idx) => `${idx + 1}. ${err}`).join("\n\n");
+
+    throw new Error(errorMessage);
+  }
+
   return result;
 }
 

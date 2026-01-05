@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-05
+
+### Added
+- **Page Count Variation Detection & Warnings**
+  - Per-version page count calculation (each shuffled version calculates its own total pages)
+  - Smart detection when different exam versions have different total page counts
+  - 3-layer warning system:
+    1. LaTeX comment block at top of .tex file with distribution and recommendations
+    2. Prominent alert banner on Results page showing affected versions
+    3. Confirmation modal dialog before download requiring user acknowledgment
+  - Smart recommendation engine that analyzes exam structure and suggests fixes
+  - New utility: `src/lib/utils/page-count-analyzer.ts`
+- **Unified Tag Validation System**
+  - Shared tag validator across all input formats (LaTeX, CSV, Excel)
+  - Conflict detection (prevents combining 'fixed' + 'fixed-options' tags)
+  - Normalized tag handling (lowercase, trim, deduplication)
+  - Context-aware error messages with question numbers and line numbers
+  - New utility: `src/lib/utils/tag-validator.ts`
+  - Valid tags: `fixed`, `fixed-options`, `separate-page`
+- **Enhanced LaTeX Generator**
+  - New return type `GenerateLatexResult` with content and page count warning
+  - Warning comment blocks automatically added to generated .tex files
+  - Results page displays page count warnings with recommendations
+
+### Changed
+- **BREAKING**: Question types are now **inferred** (MCQ vs Open-Ended based on presence of options)
+- **BREAKING**: Removed "Type" column from CSV/Excel formats - use "Tags" column only
+- Parser tag regex now uses negative lookahead to exclude question/option markers
+- CSV/Excel parsers updated to use Tags column exclusively
+- CSV/Excel template generators updated to remove Type column
+- Documentation page updated to reflect tag-based system
+- LaTeX parser collects all tag validation errors and reports them together
+
+### Fixed
+- **Critical**: Parser tag regex was incorrectly matching question markers (`%{#q}`) as tags, causing "No questions found" error
+- Invalid `fixed-options` tag format (without correct answer letter) now shows proper error message
+- Page count headers now show accurate "Page X of Y" for each shuffled version
+- Tag validation errors include helpful context (question number, line number, format)
+
 ## [1.3.0] - 2026-01-02
 
 ### Added
@@ -100,6 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
+[1.4.0]: https://github.com/yourusername/exam-shuffler/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/yourusername/exam-shuffler/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/yourusername/exam-shuffler/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/yourusername/exam-shuffler/compare/v1.1.0...v1.2.0
