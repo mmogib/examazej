@@ -91,8 +91,8 @@ export function validateGroupsMatchQuestions(
 ): void {
   const groupSizes = groups.split(",").map((g) => {
     const trimmed = g.trim();
-    // Remove parentheses if present (for non-shuffle groups)
-    const cleaned = trimmed.replace(/[()]/g, "");
+    // Remove parentheses and square brackets if present
+    const cleaned = trimmed.replace(/[\(\)\[\]]/g, "");
     return parseInt(cleaned, 10);
   });
 

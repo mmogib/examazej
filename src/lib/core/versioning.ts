@@ -170,14 +170,36 @@ export function generateExamVersions(
   // Parse group configurations with shuffle flags
   type GroupConfig = {
     size: number;
-    shuffleGroup: boolean;
+    shuffleGroupPosition: boolean;   // true for (5) and [5]
+    shuffleQuestionsWithin: boolean; // true for 5 and [5], false for (5)
   };
 
   const groupConfigs: GroupConfig[] = settings.groups.split(",").map((g) => {
     const trimmed = g.trim();
+
+    // Check for parentheses: (5)
     const hasParens = trimmed.startsWith("(") && trimmed.endsWith(")");
-    const size = parseInt(hasParens ? trimmed.slice(1, -1) : trimmed);
-    return { size, shuffleGroup: hasParens };
+
+    // Check for square brackets: [5]
+    const hasBrackets = trimmed.startsWith("[") && trimmed.endsWith("]");
+
+    // Extract size
+    let size: number;
+    if (hasParens) {
+      size = parseInt(trimmed.slice(1, -1));
+    } else if (hasBrackets) {
+      size = parseInt(trimmed.slice(1, -1));
+    } else {
+      size = parseInt(trimmed);
+    }
+
+    // Determine shuffling behavior
+    // - shuffleGroupPosition: true for (5) and [5], false for 5
+    // - shuffleQuestionsWithin: false only for (5), true for 5 and [5]
+    const shuffleGroupPosition = hasParens || hasBrackets;
+    const shuffleQuestionsWithin = !hasParens; // false only for (5)
+
+    return { size, shuffleGroupPosition, shuffleQuestionsWithin };
   });
 
   // Use existing partitionQuestions with just the sizes
@@ -205,7 +227,7 @@ export function generateExamVersions(
     const fixedGroupData: Array<{ index: number; position: number }> = [];
 
     groupConfigs.forEach((config, index) => {
-      if (config.shuffleGroup) {
+      if (config.shuffleGroupPosition) {
         shuffleableGroupIndices.push(index);
       } else {
         fixedGroupData.push({ index, position: index });
@@ -236,9 +258,9 @@ export function generateExamVersions(
       const group = questionGroups[groupIndex];
       const config = groupConfigs[groupIndex];
 
-      // If group is shuffleable (has parens), keep questions in order
-      if (config.shuffleGroup) {
-        // No shuffling within group - process questions as-is
+      // Parentheses mode (5): group shuffles position, questions stay in order
+      if (!config.shuffleQuestionsWithin) {
+        // No shuffling within group - process questions in original order
         group.forEach((question) => {
           let shuffledChoices: any[];
           let newCorrectIndex: number;
@@ -291,7 +313,7 @@ export function generateExamVersions(
           questionCounter++;
         });
       } else {
-        // Original behavior: shuffle questions within non-parenthesized groups
+        // Standard mode (5) and bracket mode [5]: shuffle questions within group
         const fixedPositionQuestions = group.filter((q) => q.fixed);
         const fixedOptionsQuestions = group.filter(
           (q) => q.fixedOptions && !q.fixed

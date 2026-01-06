@@ -195,6 +195,150 @@ describe("generateExamVersions - Group Shuffling", () => {
     });
   });
 
+  describe("Bracket Format [5] (group and question shuffling)", () => {
+    it("should shuffle group positions with [5],[5],[5],[5]", () => {
+      baseSettings.groups = "[5],[5],[5],[5]";
+      baseSettings.numberofvestions = 3;
+
+      const { versions } = generateExamVersions(
+        mockQuestions,
+        baseSettings,
+        "test-seed"
+      );
+
+      // Check that groups appear in different positions across versions
+      const firstPositionGroups = versions.map((version) => {
+        const firstQuestionText = version.questions[0].text;
+        const firstQuestionNum = parseInt(
+          firstQuestionText.replace("Question ", "")
+        );
+
+        // Determine which group this question belongs to (by master position)
+        if (firstQuestionNum <= 5) return 1;
+        if (firstQuestionNum <= 10) return 2;
+        if (firstQuestionNum <= 15) return 3;
+        return 4;
+      });
+
+      // At least one version should have a different group first
+      const allSame = firstPositionGroups.every(
+        (g) => g === firstPositionGroups[0]
+      );
+      expect(allSame).toBe(false);
+    });
+
+    it("should shuffle questions within bracket groups", () => {
+      baseSettings.groups = "[5],[5],[5],[5]";
+      baseSettings.numberofvestions = 3;
+
+      const { versions } = generateExamVersions(
+        mockQuestions,
+        baseSettings,
+        "test-seed"
+      );
+
+      // At least one version should have shuffled questions within a group
+      let foundShuffledGroup = false;
+
+      for (const version of versions) {
+        // Find questions from Group 1 (questions 1-5)
+        const group1Questions = version.questions
+          .filter((q) => {
+            const num = parseInt(q.text.replace("Question ", ""));
+            return num >= 1 && num <= 5;
+          })
+          .map((q) => parseInt(q.text.replace("Question ", "")));
+
+        // Check if they are NOT in sequential order
+        let isSequential = true;
+        for (let i = 1; i < group1Questions.length; i++) {
+          if (group1Questions[i] !== group1Questions[i - 1] + 1) {
+            isSequential = false;
+            break;
+          }
+        }
+
+        if (!isSequential) {
+          foundShuffledGroup = true;
+          break;
+        }
+      }
+
+      expect(foundShuffledGroup).toBe(true);
+    });
+
+    it("should still shuffle options within bracket groups", () => {
+      baseSettings.groups = "[20]"; // One bracket group
+      baseSettings.numberofvestions = 2;
+
+      const { versions } = generateExamVersions(
+        mockQuestions,
+        baseSettings,
+        "test-seed"
+      );
+
+      // Check that at least one question has shuffled options
+      let foundShuffledOptions = false;
+
+      for (const version of versions) {
+        const firstQuestion = version.questions[0];
+        const optionTexts = firstQuestion.choices[0].map((c: any) => c.text);
+
+        // Original order is A, B, C, D, E
+        const originalOrder = [
+          "Option A",
+          "Option B",
+          "Option C",
+          "Option D",
+          "Option E",
+        ];
+
+        if (JSON.stringify(optionTexts) !== JSON.stringify(originalOrder)) {
+          foundShuffledOptions = true;
+          break;
+        }
+      }
+
+      expect(foundShuffledOptions).toBe(true);
+    });
+
+    it("should respect fixed tag in bracket groups", () => {
+      // Mark first question as fixed
+      mockQuestions[0].fixed = true;
+
+      baseSettings.groups = "[5],[15]";
+      baseSettings.numberofvestions = 2;
+
+      const { versions } = generateExamVersions(
+        mockQuestions,
+        baseSettings,
+        "test-seed"
+      );
+
+      // First question should stay in first position within its group
+      versions.forEach((version) => {
+        // Find which group contains Question 1
+        const question1Index = version.questions.findIndex(
+          (q) => q.text === "Question 1"
+        );
+
+        // Check if it's in the first group (first 5 positions)
+        if (question1Index < 5) {
+          // Question 1 should be first in the group
+          const firstGroupQuestions = version.questions.slice(0, 5);
+          expect(firstGroupQuestions[0].text).toBe("Question 1");
+        } else {
+          // If group 1 is not first, Question 1 should still be first within its group
+          const group1Start = version.questions.findIndex((q) => {
+            const num = parseInt(q.text.replace("Question ", ""));
+            return num >= 1 && num <= 5;
+          });
+          expect(version.questions[group1Start].text).toBe("Question 1");
+        }
+      });
+    });
+  });
+
   describe("Mixed Format", () => {
     it("should handle 5,(10),(5) correctly", () => {
       baseSettings.groups = "5,(10),(5)";
@@ -357,6 +501,109 @@ describe("generateExamVersions - Group Shuffling", () => {
         );
         expect(group2Nums).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
       }
+    });
+
+    it("should handle 5,(5),[5],5 correctly (all three modes)", () => {
+      baseSettings.groups = "5,(5),[5],5";
+      baseSettings.numberofvestions = 3;
+
+      const { versions } = generateExamVersions(
+        mockQuestions,
+        baseSettings,
+        "test-seed"
+      );
+
+      versions.forEach((version) => {
+        // Group 1 (questions 1-5): Fixed position, should be first
+        const firstFiveQuestions = version.questions.slice(0, 5);
+        firstFiveQuestions.forEach((q) => {
+          const num = parseInt(q.text.replace("Question ", ""));
+          expect(num).toBeGreaterThanOrEqual(1);
+          expect(num).toBeLessThanOrEqual(5);
+        });
+
+        // Group 4 (questions 16-20): Fixed position, should be last
+        const lastFiveQuestions = version.questions.slice(15, 20);
+        lastFiveQuestions.forEach((q) => {
+          const num = parseInt(q.text.replace("Question ", ""));
+          expect(num).toBeGreaterThanOrEqual(16);
+          expect(num).toBeLessThanOrEqual(20);
+        });
+
+        // Groups 2 and 3 (questions 6-15): Can swap positions
+        const middleTen = version.questions.slice(5, 15);
+        const middleNums = middleTen.map((q) =>
+          parseInt(q.text.replace("Question ", ""))
+        );
+
+        // All should be from questions 6-15
+        middleNums.forEach((num) => {
+          expect(num).toBeGreaterThanOrEqual(6);
+          expect(num).toBeLessThanOrEqual(15);
+        });
+      });
+
+      // Check behaviors differ between groups
+      let foundShuffledInGroup1 = false;
+      let foundShuffledInGroup3 = false;
+      let foundSequentialInGroup2 = false;
+
+      for (const version of versions) {
+        // Group 1 (standard): questions should shuffle
+        const group1 = version.questions.slice(0, 5);
+        const group1Nums = group1.map((q) =>
+          parseInt(q.text.replace("Question ", ""))
+        );
+        let isSequential = true;
+        for (let i = 1; i < group1Nums.length; i++) {
+          if (group1Nums[i] !== group1Nums[i - 1] + 1) {
+            isSequential = false;
+            foundShuffledInGroup1 = true;
+            break;
+          }
+        }
+
+        // Group 2 (parentheses): questions should stay in order
+        const group2Questions = version.questions
+          .filter((q) => {
+            const num = parseInt(q.text.replace("Question ", ""));
+            return num >= 6 && num <= 10;
+          })
+          .map((q) => parseInt(q.text.replace("Question ", "")));
+
+        let group2Sequential = true;
+        for (let i = 1; i < group2Questions.length; i++) {
+          if (group2Questions[i] !== group2Questions[i - 1] + 1) {
+            group2Sequential = false;
+            break;
+          }
+        }
+        if (group2Sequential) {
+          foundSequentialInGroup2 = true;
+        }
+
+        // Group 3 (brackets): questions should shuffle
+        const group3Questions = version.questions
+          .filter((q) => {
+            const num = parseInt(q.text.replace("Question ", ""));
+            return num >= 11 && num <= 15;
+          })
+          .map((q) => parseInt(q.text.replace("Question ", "")));
+
+        let group3Sequential = true;
+        for (let i = 1; i < group3Questions.length; i++) {
+          if (group3Questions[i] !== group3Questions[i - 1] + 1) {
+            group3Sequential = false;
+            foundShuffledInGroup3 = true;
+            break;
+          }
+        }
+      }
+
+      // At least one version should show the different behaviors
+      expect(foundShuffledInGroup1).toBe(true); // Standard groups shuffle questions
+      expect(foundSequentialInGroup2).toBe(true); // Parentheses groups keep order
+      expect(foundShuffledInGroup3).toBe(true); // Bracket groups shuffle questions
     });
   });
 

@@ -1589,10 +1589,10 @@ Which is largest?
 
                   <div className="space-y-3">
                     <h4 className="font-medium">
-                      {highlightText("Two Shuffling Modes")}
+                      {highlightText("Three Shuffling Modes")}
                     </h4>
 
-                    <div className="grid md:grid-cols-2 gap-3">
+                    <div className="grid md:grid-cols-3 gap-3">
                       <div className="bg-muted/50 p-3 rounded-lg border">
                         <p className="font-semibold text-primary mb-2">
                           Standard Format
@@ -1602,8 +1602,8 @@ Which is largest?
                         </code>
                         <ul className="text-sm mt-2 space-y-1">
                           <li>• Groups stay in order</li>
-                          <li>• Questions shuffle within groups</li>
-                          <li>• Options shuffle (unless fixed)</li>
+                          <li>• Questions shuffle within</li>
+                          <li>• Options shuffle</li>
                         </ul>
                       </div>
 
@@ -1616,8 +1616,22 @@ Which is largest?
                         </code>
                         <ul className="text-sm mt-2 space-y-1">
                           <li>• Groups shuffle positions</li>
-                          <li>• Questions keep order within groups</li>
-                          <li>• Options still shuffle (unless fixed)</li>
+                          <li>• Questions keep order</li>
+                          <li>• Options shuffle</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                        <p className="font-semibold text-green-600 dark:text-green-400 mb-2">
+                          Bracket Format
+                        </p>
+                        <code className="text-sm bg-background px-2 py-1 rounded">
+                          [5],[5],[5],[5]
+                        </code>
+                        <ul className="text-sm mt-2 space-y-1">
+                          <li>• Groups shuffle positions</li>
+                          <li>• Questions shuffle within</li>
+                          <li>• Options shuffle</li>
                         </ul>
                       </div>
                     </div>
@@ -1631,15 +1645,15 @@ Which is largest?
                     </h4>
                     <p className="text-sm text-muted-foreground">
                       {highlightText(
-                        "You can mix both formats to have fine-grained control:"
+                        "You can mix all three formats to have fine-grained control:"
                       )}
                     </p>
 
                     <div className="bg-muted p-3 rounded-lg">
-                      <code className="text-sm">5,(10),(5)</code>
+                      <code className="text-sm">5,(10),[15],20</code>
                       <ul className="text-sm mt-2 space-y-1 text-muted-foreground">
                         <li>
-                          • Group 1 (5 questions): Stays first, questions
+                          • Group 1 (5 questions): Fixed at position 1, questions
                           shuffle within
                         </li>
                         <li>
@@ -1647,8 +1661,12 @@ Which is largest?
                           questions keep order
                         </li>
                         <li>
-                          • Group 3 (5 questions): Can swap with Group 2,
-                          questions keep order
+                          • Group 3 (15 questions): Can swap with Group 2,
+                          questions shuffle within
+                        </li>
+                        <li>
+                          • Group 4 (20 questions): Fixed at position 4, questions
+                          shuffle within
                         </li>
                       </ul>
                     </div>
@@ -1690,12 +1708,32 @@ Which is largest?
                       <li className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="font-medium">Thematic units:</span>
+                          <span className="font-medium">Thematic units (parentheses):</span>
                           <span className="text-muted-foreground">
                             {" "}
-                            Shuffle entire topic blocks (e.g., "Calculus",
+                            Use{" "}
+                            <code className="bg-muted px-1 rounded">
+                              (5),(5),(5)
+                            </code>{" "}
+                            to shuffle entire topic blocks (e.g., "Calculus",
                             "Algebra", "Geometry") while maintaining question
                             progression within each topic
+                          </span>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium">Topic randomization (brackets):</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            Use{" "}
+                            <code className="bg-muted px-1 rounded">
+                              [10],[10],[10]
+                            </code>{" "}
+                            to shuffle topic blocks AND randomize questions within
+                            each topic for maximum variation (e.g., chemistry chapters
+                            where question order doesn't matter)
                           </span>
                         </div>
                       </li>

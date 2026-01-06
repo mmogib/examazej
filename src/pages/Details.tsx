@@ -103,38 +103,54 @@ export function DetailsPage({
   const validateSettings = () => {
     const errors: string[] = [];
 
-    // Parse group partition - handle parentheses
+    // Parse group partition - handle parentheses and square brackets
     const groupTokens = groupPartition.split(",").map((g) => g.trim());
     const groups: number[] = [];
 
     for (const token of groupTokens) {
-      // Check for malformed parentheses
-      const openCount = (token.match(/\(/g) || []).length;
-      const closeCount = (token.match(/\)/g) || []).length;
+      // Check for bracket types
+      const openParens = (token.match(/\(/g) || []).length;
+      const closeParens = (token.match(/\)/g) || []).length;
+      const openBrackets = (token.match(/\[/g) || []).length;
+      const closeBrackets = (token.match(/\]/g) || []).length;
 
-      if (openCount !== closeCount) {
+      // Mismatched brackets
+      if (openParens !== closeParens) {
         errors.push(`Mismatched parentheses in: "${token}"`);
         continue;
       }
-
-      if (openCount > 1 || closeCount > 1) {
-        errors.push(`Multiple or nested parentheses not allowed: "${token}"`);
+      if (openBrackets !== closeBrackets) {
+        errors.push(`Mismatched square brackets in: "${token}"`);
         continue;
       }
 
-      // Check for invalid formats like "(5,10)" or mixed content
-      if (openCount === 1) {
+      // Multiple or nested brackets
+      if (openParens > 1 || openBrackets > 1) {
+        errors.push(`Multiple or nested brackets not allowed: "${token}"`);
+        continue;
+      }
+
+      // Cannot mix parentheses and brackets
+      if (openParens > 0 && openBrackets > 0) {
+        errors.push(
+          `Cannot mix parentheses and brackets: "${token}". Use one or the other`
+        );
+        continue;
+      }
+
+      // Check for invalid formats like "(5,10)" or "[5,10]" or mixed content
+      if (openParens === 1 || openBrackets === 1) {
         const innerContent = token.slice(1, -1).trim();
         if (innerContent.includes(",")) {
           errors.push(
-            `Comma inside parentheses not allowed: "${token}". Use separate groups like "(5),(10)" instead`
+            `Comma inside brackets not allowed: "${token}". Use separate groups instead`
           );
           continue;
         }
       }
 
-      // Remove parentheses if present and parse number
-      const cleaned = token.replace(/[()]/g, "");
+      // Remove parentheses and brackets if present and parse number
+      const cleaned = token.replace(/[\(\)\[\]]/g, "");
       const num = parseInt(cleaned);
 
       if (isNaN(num)) {
@@ -209,7 +225,7 @@ export function DetailsPage({
   const groupSizes = groupPartition
     .split(",")
     .map((g) => {
-      const cleaned = g.trim().replace(/[()]/g, "");
+      const cleaned = g.trim().replace(/[\(\)\[\]]/g, "");
       return parseInt(cleaned);
     })
     .filter((n) => !isNaN(n));
@@ -395,7 +411,7 @@ export function DetailsPage({
                   id="groups"
                   value={groupPartition}
                   onChange={(e) => setGroupPartition(e.target.value)}
-                  placeholder="5,10,5"
+                  placeholder="5,(10),[15]"
                   className="font-mono"
                 />
                 <p className="text-sm text-muted-foreground">
@@ -412,8 +428,17 @@ export function DetailsPage({
                         .split(",")
                         .map((g) => g.trim());
                       const token = tokens[index] || "";
-                      const isShuffleable =
+                      const hasParens =
                         token.startsWith("(") && token.endsWith(")");
+                      const hasBrackets =
+                        token.startsWith("[") && token.endsWith("]");
+
+                      let modeLabel = "";
+                      if (hasParens) {
+                        modeLabel = "(group shuffles, questions keep order)";
+                      } else if (hasBrackets) {
+                        modeLabel = "(group shuffles, questions shuffle)";
+                      }
 
                       return (
                         <Badge
@@ -422,9 +447,9 @@ export function DetailsPage({
                           className="font-mono"
                         >
                           Group {index + 1}: {size} questions
-                          {isShuffleable && (
+                          {modeLabel && (
                             <span className="ml-1 text-xs text-muted-foreground">
-                              (group shuffles, questions keeps order)
+                              {modeLabel}
                             </span>
                           )}
                         </Badge>
