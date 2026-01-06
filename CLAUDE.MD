@@ -1,36 +1,85 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-06
 **Purpose**: Provide context for AI assistants working on this project
 
 ---
 
-## 📅 Next Session Agenda (Jan 6, 2026)
+## 📅 Next Session Agenda (Jan 7, 2026)
 
-### Priority 1: Revisit Question Groupings & Enhancements
-- Review current grouping syntax (`"5,10,15"` and `"(5),10,(15)"`)
-- Discuss potential improvements or pain points
-- Consider enhancements:
-  - More flexible grouping syntax?
-  - Better validation and error messages?
-  - UI improvements for group configuration?
-  - Edge case handling?
-
-### Priority 2: Write Tests
+### Priority 1: Additional Testing (Optional)
 - **Tag Validation Tests** (`tag-validator.test.ts`)
   - Valid/invalid tags, conflict detection, normalization
   - Context in error messages
 - **Page Count Analyzer Tests** (`page-count-analyzer.test.ts`)
   - Detection logic, recommendations, edge cases
-- **Parser Tag Handling Tests** (update `parser.test.ts`)
-  - Tag regex correctness, multiple tags, error handling
+- **CSV/Excel Parser Tests** (if needed)
+  - Section parsing, validation, error messages
+  - Adapter conversion logic
 
-### Priority 3: End-to-End Testing (If Time)
-- Test tag system across all input formats
-- Verify warning UI behavior
-- Integration testing
+### Priority 2: UI Component Testing (Optional)
+- Template Dialog component tests
+- File Upload component tests
+- Details page group preview tests
+
+### Priority 3: Future Enhancements
+- To be discussed with user
 
 ---
+
+## 📋 Recent Changes (Jan 2026)
+
+### NEW FEATURE: Square Bracket [5] Grouping Syntax (Jan 6, 2026)
+- **FEATURE ADDED**: Three-mode grouping system for flexible question organization
+- **THREE GROUPING MODES**:
+  1. **Standard `5`**: Group position fixed, questions shuffle within, options shuffle
+  2. **Parentheses `(5)`**: Group shuffles position, questions keep order (for dependent questions), options shuffle
+  3. **Square Brackets `[5]`**: Group shuffles position, questions shuffle within (for topic-based grouping), options shuffle
+- **USE CASES**:
+  - Use `(5)` when questions are related and answers depend on previous questions
+  - Use `[5]` for topic/chapter/concept grouping where questions should shuffle but stay in same section
+  - Use standard `5` for normal grouping with fixed position
+- **MIXED GROUPING**: Supports all combinations like `5,(10),[15],20`
+- **FILES MODIFIED**:
+  - `src/lib/core/versioning.ts` - Added `GroupConfig` type with `shuffleGroupPosition` and `shuffleQuestionsWithin` flags
+  - `src/pages/Details.tsx` - Group preview now shows mode labels, fixed regex to handle square brackets (line 228)
+  - `src/lib/parsers/adapter.ts` - Fixed validation regex to handle square brackets (line 95)
+  - `src/pages/Documentation.tsx` - Updated to "Three Shuffling Modes" section
+  - `src/lib/core/__tests__/versioning.test.ts` - Added bracket format tests (21 total tests)
+
+### COMPREHENSIVE TEST SUITE: Priority 1 Complete (Jan 6, 2026)
+- **ACHIEVEMENT**: 138/138 tests passing (100%), core business logic coverage: 77.99%
+- **NEW TEST FILES CREATED**:
+  - `src/lib/core/__tests__/rng.test.ts` (33 tests)
+    - Deterministic behavior (reproducibility with same seed)
+    - Shuffle function correctness (no loss, no duplicates, preserves elements)
+    - Statistical properties (uniform distribution, independence, range validation)
+    - Edge cases (empty arrays, single elements, large arrays, duplicates)
+    - Real-world use cases (exam question shuffling, option shuffling)
+  - `src/lib/core/__tests__/parser.test.ts` (15 tests)
+    - Valid template parsing (MCQ, open-ended, settings, preamble)
+    - Tag parsing (`fixed`, `fixed-options`, `separate-page`)
+    - Tag validation (conflicts, invalid tags, missing correct answer)
+    - Edge cases (LaTeX math, multiline text, multiple questions)
+  - `src/lib/core/__tests__/latex.test.ts` (22 tests)
+    - Document generation (complete LaTeX output, version inclusion, syntax validation)
+    - Cover page generation (with/without cover page setting)
+    - Page count calculation per version
+    - Page count variation detection and warnings
+    - Separate-page question handling (`\newpage` insertion)
+    - Edge cases (empty questions, large exams, preamble commands, math equations)
+- **COVERAGE BREAKDOWN**:
+  - `rng.ts`: 94.73% statements, 100% branches, 80% functions
+  - `parser.ts`: 81.29% statements, 83.75% branches, 66.66% functions
+  - `latex.ts`: 75.46% statements, 88.42% branches, 75% functions
+  - `settings.ts`: 100% statements, 100% branches, 100% functions (51 tests)
+  - `versioning.ts`: 66.85% statements, 85.96% branches, 60% functions (21 tests)
+- **BUGS FIXED DURING TESTING**:
+  - Parser tests: Corrected LaTeX format to use `\begin{enumerate}` blocks
+  - Parser tests: Fixed tag placement (must be on separate lines after `\item`)
+  - Latex tests: Fixed parameter order (settings, masterExam, versions, mappings)
+  - Latex tests: Fixed version name assertions (`"CODE A"` not `"version_A"`)
+  - RNG tests: Added numeric comparator for array sorting
 
 ## 📋 Recent Changes (Jan 2026)
 
@@ -304,10 +353,14 @@ Tags modify question behavior. These ARE explicitly declared in the `Tags` colum
 **Tag Conflicts**: Cannot use `fixed` + `fixed-options` together (validator will error)
 
 ### Question Groups
-Users configure groups like `"5,10,15"` or `"(5),10,(15)"`
-- Numbers in parentheses `(5)` → Don't shuffle this group
-- Regular numbers `10` → Shuffle this group
-- Creates balanced exam sections
+Users configure groups like `"5,10,15"`, `"(5),10,(15)"`, or `"5,(10),[15],20"`
+
+**Three Grouping Modes**:
+1. **Standard `5`**: Group position fixed, questions shuffle within, options shuffle
+2. **Parentheses `(5)`**: Group shuffles position, questions keep order, options shuffle (use for dependent questions)
+3. **Square Brackets `[5]`**: Group shuffles position, questions shuffle within, options shuffle (use for topic-based grouping)
+
+Creates balanced exam sections with flexible control over question and group ordering.
 
 ### LaTeX Markers
 ```latex
@@ -509,58 +562,142 @@ npm run lint         # Run ESLint
 
 ## 🧪 Testing
 
-### Test Coverage (Dec 30, 2025)
+### Test Coverage (Jan 6, 2026)
 
 **Location**: `src/lib/core/__tests__/`
 
-#### ✅ `versioning.test.ts` (16 tests)
-- Group shuffling behavior (standard, parentheses, mixed formats)
-- Question ordering within groups
-- Option shuffling (respects `fixedOptions`)
-- Mapping generation
-- Deterministic RNG behavior
-- Edge cases (single group, all parentheses)
+**Overall**: 138/138 tests passing (100%), Core business logic: **77.99% coverage**
 
-#### ✅ `settings.test.ts` (51 tests) **NEW**
+#### ✅ `rng.test.ts` (33 tests) **NEW**
+- **Deterministic Behavior** (4 tests)
+  - Same seed produces same sequence
+  - Different seeds produce different sequences
+  - Reproducible shuffle across multiple calls
+  - Consistent sequence after reset
+- **Shuffle Function** (7 tests)
+  - Array elements shuffled
+  - All elements preserved (no loss)
+  - No duplicates created
+  - Handles strings, objects, arrays
+  - Statistical bias test (no position favoring)
+- **Invalid Inputs** (4 tests)
+  - Empty arrays, single elements, two elements
+  - Empty string seeds
+- **Edge Cases** (6 tests)
+  - Very long seeds, special characters, Unicode
+  - Large arrays (1000+ elements)
+  - Arrays with duplicate values
+  - Numeric seed-like strings
+- **Statistical Properties** (5 tests)
+  - Values in [0, 1) range
+  - Full range generation, uniform distribution
+  - No sequential patterns, independence
+- **Real-World Use Cases** (4 tests)
+  - Exam question shuffling, option shuffling
+  - Group shuffling, version consistency
+- **Coverage**: 94.73% statements, 100% branches, 80% functions
+
+#### ✅ `parser.test.ts` (15 tests) **NEW**
+- **Valid Templates** (5 tests)
+  - Simple MCQ with options
+  - Open-ended questions (no options)
+  - Settings block parsing
+  - Preamble block parsing
+- **Tag Parsing** (4 tests)
+  - `fixed` tag
+  - `fixed-options:B` with correct answer
+  - `separate-page` tag
+  - Multiple tags combined
+- **Tag Validation** (3 tests)
+  - Conflicting tags (fixed + fixed-options) error
+  - Invalid tag name error
+  - Missing correct answer letter for fixed-options
+- **Edge Cases** (3 tests)
+  - LaTeX math in question text
+  - Multiple questions parsing
+  - Multiline question text
+- **Coverage**: 81.29% statements, 83.75% branches, 66.66% functions
+
+#### ✅ `latex.test.ts` (22 tests) **NEW**
+- **Valid Document Generation** (5 tests)
+  - Complete LaTeX document structure
+  - All versions included in output
+  - Master exam included
+  - Valid LaTeX syntax (begin/end pairs)
+  - Exam settings in document
+- **Cover Page** (3 tests)
+  - Generate when includeCoverPage=true
+  - Skip when includeCoverPage=false
+  - Correct metadata in cover page
+- **Page Count Calculation** (3 tests)
+  - Page count per version
+  - Detect page count variations
+  - Add warning comment when variation detected
+  - Return pageCountWarning in result
+- **Separate-Page Questions** (2 tests)
+  - Handle separate-page tag
+  - Add \newpage before separate-page questions
+- **Invalid Inputs** (2 tests)
+  - Empty questions array
+  - Empty versions array
+- **Edge Cases** (7 tests)
+  - Single version, large exams (20+ questions)
+  - All open-ended questions
+  - Preamble commands
+  - Questions with LaTeX math
+  - Many versions (10+)
+- **Coverage**: 75.46% statements, 88.42% branches, 75% functions
+
+#### ✅ `versioning.test.ts` (21 tests)
+- **Standard Format** (5 tests)
+  - Group shuffling behavior (standard grouping)
+  - Question ordering within groups
+  - Option shuffling (respects `fixedOptions`)
+- **Parentheses Format (5)** (5 tests)
+  - Group position shuffling
+  - Questions keep order within group
+  - Options shuffle within questions
+  - Respects fixed tag
+- **Bracket Format [5]** (4 tests) **NEW**
+  - Group position shuffling
+  - Questions shuffle within group
+  - Options shuffle within questions
+  - Respects fixed tag
+- **Mixed Formats** (3 tests)
+  - Standard + parentheses mix
+  - Standard + brackets mix **NEW**
+  - All three formats mixed **NEW**
+- **Edge Cases** (4 tests)
+  - Single group, all parentheses
+  - Deterministic RNG behavior
+  - Mapping generation
+- **Coverage**: 66.85% statements, 85.96% branches, 60% functions
+
+#### ✅ `settings.test.ts` (51 tests)
 - **`getFormattedCurrentDate()`** (5 tests)
-  - Date formatting for various months/days
-  - Zero-padding for single-digit days
 - **`getCurrentTerm()`** (17 tests)
-  - Fall term (Aug 15 - Jan 31): suffix `1`
-  - Spring term (Feb 1 - Jun 14): suffix `2`
-  - Summer term (Jun 15 - Aug 14): suffix `3`
-  - Year transitions and edge cases
 - **`getDefaultSettings()`** (6 tests)
-  - Required fields presence
-  - Default values correctness
-  - Dynamic date/term generation
-  - Instructions text inclusion
 - **`generateSettingsBlock()`** (7 tests)
-  - LaTeX format correctness
-  - `actualVersions` parameter handling
-  - `includeCoverPage` flag (yes/no)
-  - Seed inclusion/omission
-  - Multi-line instructions formatting
 - **`generateTemplateSettings()`** (16 tests)
-  - User-provided metadata handling
-  - Default university/department
-  - Group configuration from `numQuestions`
-  - `includeCoverPage` default and override
-  - Hardcoded defaults (numbering, versions, etc.)
-  - Seed generation (deterministic, unique)
-  - Complete `ExamSettings` object structure
+- **Coverage**: 100% statements, 100% branches, 100% functions
 
 ### Running Tests
 ```bash
-npm test                    # Run all tests
-npm test -- settings.test   # Run settings tests only
-npm test -- versioning.test # Run versioning tests only
+npm test                    # Run all tests (138 tests)
+npm test -- settings        # Run settings tests only (51 tests)
+npm test -- versioning      # Run versioning tests only (21 tests)
+npm test -- rng             # Run RNG tests only (33 tests)
+npm test -- parser          # Run parser tests only (15 tests)
+npm test -- latex           # Run LaTeX tests only (22 tests)
+npm test -- --coverage      # Run with coverage report
 ```
 
 ### Test Framework
 - **Vitest** - Fast, ESM-first test runner
 - **vi.useFakeTimers()** - Time-based testing for date/term functions
-- **Snapshot testing** - Not currently used, but available if needed
+- **beforeEach()** - Setup mock data for each test
+- **describe/it** blocks - Organized test structure
+- **AAA Pattern** - Arrange, Act, Assert
 
 ---
 
@@ -577,11 +714,18 @@ npm test -- versioning.test # Run versioning tests only
 8. **Bulk Export** - Export individual PDFs per version
 
 ### Test Coverage Gaps (Future Work)
-- ❌ **Template Dialog** - UI component tests (form validation, touch-based errors)
-- ❌ **Start.tsx** - `generateTemplate()` function and integration
-- ❌ **LaTeX Generation** - `generateLatexTemplate()` output validation
-- ❌ **Parser** - LaTeX template parsing edge cases
-- ❌ **Separate-Page** - `keepOnSeparatePage` pagination logic
+- ✅ ~~**Core Business Logic**~~ - **COMPLETED** (77.99% coverage, 138 tests)
+  - ✅ RNG - 94.73% coverage (33 tests)
+  - ✅ Parser - 81.29% coverage (15 tests)
+  - ✅ LaTeX - 75.46% coverage (22 tests)
+  - ✅ Settings - 100% coverage (51 tests)
+  - ✅ Versioning - 66.85% coverage (21 tests)
+- ❌ **Tag Validator** - `tag-validator.ts` utility tests
+- ❌ **Page Count Analyzer** - `page-count-analyzer.ts` utility tests
+- ❌ **CSV/Excel Parsers** - `csv-parser.ts`, `excel-parser.ts`, `adapter.ts` tests
+- ❌ **Template Generators** - `csv-template.ts`, `excel-template.ts` tests
+- ❌ **UI Components** - Template Dialog, File Upload, Details page tests
+- ❌ **Integration Tests** - End-to-end user flows
 
 ### Known Patterns
 - All auth state in `localStorage` (no Context yet)

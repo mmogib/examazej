@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-06
+
+### Added
+- **Square Bracket [5] Grouping Syntax**
+  - New grouping mode: `[5]` shuffles group position AND questions within the group
+  - Three distinct grouping modes now available:
+    1. Standard `5`: Group position fixed, questions shuffle within, options shuffle
+    2. Parentheses `(5)`: Group shuffles position, questions keep order, options shuffle
+    3. Square Brackets `[5]`: Group shuffles position, questions shuffle within, options shuffle
+  - Full support for mixed grouping: `5,(10),[15],20` - all combinations work together
+  - Use cases: `(5)` for dependent questions, `[5]` for topic-based grouping with question shuffling
+  - UI preview shows mode labels for each group type
+  - Documentation updated with three-mode system
+- **Comprehensive Test Suite (Priority 1)**
+  - New test files created:
+    - `src/lib/core/__tests__/rng.test.ts` (33 tests): Deterministic RNG, shuffle correctness, statistical properties
+    - `src/lib/core/__tests__/parser.test.ts` (15 tests): LaTeX parsing, tag validation, edge cases
+    - `src/lib/core/__tests__/latex.test.ts` (22 tests): Document generation, cover page, page counts, separate-page handling
+  - Enhanced `versioning.test.ts` with bracket format tests (21 total tests)
+  - Complete `settings.test.ts` coverage (51 tests)
+  - **Total: 138 tests passing (100%)**
+  - **Core business logic coverage: 77.99%** (up from ~3%)
+    - `rng.ts`: 94.73% statements, 100% branches, 80% functions
+    - `parser.ts`: 81.29% statements, 83.75% branches, 66.66% functions
+    - `latex.ts`: 75.46% statements, 88.42% branches, 75% functions
+    - `settings.ts`: 100% statements, 100% branches, 100% functions
+    - `versioning.ts`: 66.85% statements, 85.96% branches, 60% functions
+
+### Fixed
+- Group preview regex in Details page now handles square brackets correctly (line 228)
+- File upload validation regex now handles square brackets in group configuration (adapter.ts line 95)
+- Parser tests now use correct LaTeX format (`\begin{enumerate}` blocks instead of `%% Question:` markers)
+- Test parameter ordering corrected in latex.test.ts (settings, masterExam, versions, mappings)
+- Array sort comparator added for numeric sorting in rng.test.ts
+- Tag placement in parser tests (tags must be on separate lines after `\item`)
+
+### Changed
+- `GroupConfig` type now has two boolean flags: `shuffleGroupPosition` and `shuffleQuestionsWithin`
+- Versioning logic updated to parse and handle three grouping modes
+- Documentation page reorganized with "Three Shuffling Modes" section
+
 ## [1.4.0] - 2026-01-05
 
 ### Added
@@ -139,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
+[1.5.0]: https://github.com/yourusername/exam-shuffler/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/yourusername/exam-shuffler/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/yourusername/exam-shuffler/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/yourusername/exam-shuffler/compare/v1.2.0...v1.2.1

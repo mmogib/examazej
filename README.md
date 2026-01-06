@@ -12,6 +12,7 @@ A professional exam generation tool that creates multiple randomized versions of
 - **Excel/CSV Support**: Easy-to-use templates with LaTeX math ($...$) support in cells
 - **Answer Keys**: Automatic generation of answer keys for each version
 - **Question Groups**: Organize questions into balanced groups for structured randomization
+- **Three Grouping Modes**: Standard, Parentheses (dependent questions), and Square Brackets (topic-based shuffling)
 - **Multiple Question Types**: Support for regular, fixed, fixed-options, open-ended, separate-page, and image questions
 - **Page Count Variation Warnings**: Smart detection and warnings when different exam versions have different page counts, preventing exam hall confusion
 - **Cover Pages**: Optional individual or master cover pages
