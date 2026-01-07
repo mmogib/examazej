@@ -363,16 +363,340 @@ Users configure groups like `"5,10,15"`, `"(5),10,(15)"`, or `"5,(10),[15],20"`
 Creates balanced exam sections with flexible control over question and group ordering.
 
 ### LaTeX Markers
+
+#### 1. Settings Block (`%{#setting}...%{/setting}`)
+**All Available Settings** (all fields required except `seed`):
+
 ```latex
-%% Question: Regular
-What is 2 + 2?
-%% Option:
-Three
-%% Option: *
-Four (asterisk marks correct answer)
-%% Option:
-Five
-%% End Question
+%{#setting}
+%university=King Fahd University of Petroleum and Minerals
+%department=Department of Mathematics
+%term=Term 251
+%coursecode=MATH 101
+%examname=Midterm Exam
+%examdate=January 07, 2026
+%timeallowed=120 Minutes
+%numberofvestions=4
+%groups=5,10,15
+%examtype=MAJOR
+%code_name=CODE
+%code_numbering=ALPHA
+%paper_size=A4
+%includeCoverPage=yes
+%seed=MATH101-Midterm-251-Jan07
+%{/setting}
+```
+
+**Field Descriptions:**
+- `university` - Institution name (appears on cover page/header)
+- `department` - Department name (appears on cover page)
+- `term` - Academic term (e.g., "Term 251" = Fall 2025, "252" = Spring 2026, "253" = Summer 2026)
+- `coursecode` - Course code (e.g., "MATH 101", "CS 201")
+- `examname` - Exam title (e.g., "First Major Exam", "Final Exam")
+- `examdate` - Exam date (e.g., "January 07, 2026")
+- `timeallowed` - Duration (e.g., "120 Minutes")
+- `numberofvestions` - Number of exam versions to generate (e.g., 4 creates versions A, B, C, D)
+- `groups` - Question grouping (e.g., "5,10,15" or "(5),10,[15]") - see Grouping Modes below
+- `examtype` - Exam type label (e.g., "MAJOR", "QUIZ", "FINAL")
+- `code_name` - Version label prefix (e.g., "CODE" → "CODE A", "CODE B")
+- `code_numbering` - Version numbering style: `ALPHA` (A,B,C...) or `NUMERIC` (1,2,3...)
+- `paper_size` - Paper size: `A4` or `LETTER`
+- `includeCoverPage` - Include cover page: `yes` or `no` (default: `yes`)
+- `seed` - RNG seed for reproducibility (optional, auto-generated if missing)
+
+**Grouping Modes:**
+- **Standard `5`**: Group position fixed, questions shuffle within, options shuffle
+- **Parentheses `(5)`**: Group shuffles position, questions keep order (for dependent questions), options shuffle
+- **Square Brackets `[5]`**: Group shuffles position, questions shuffle within (for topic grouping), options shuffle
+- **Mixed**: `5,(10),[15],20` - Combine all three modes
+
+---
+
+#### 2. Instructions Block (`%{#instructions}...%{/instructions}`)
+**Purpose**: Exam instructions printed on first page (before questions)
+
+```latex
+%{#instructions}
+%\begin{enumerate}
+%    \begin{normalsize}
+%        \item All types of calculators, smart watches or mobile phones are NOT allowed.
+%        \item Use HB 2.5 pencils only.
+%        \item Write your name, ID number and Section number on the examination paper.
+%    \end{normalsize}
+%\end{enumerate}
+%{/instructions}
+```
+
+**Format Rules:**
+- Each line must start with `%` (comment character)
+- Can include LaTeX commands (enumerate, itemize, etc.)
+- Multi-line instructions supported
+- Rendered verbatim (preserves formatting)
+
+---
+
+#### 3. Preamble Block (`%{#preamble}...%{/preamble}`) - **OPTIONAL**
+**Purpose**: Custom LaTeX packages and commands for the entire document
+
+```latex
+%{#preamble}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{circuitikz}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+%{/preamble}
+```
+
+**Use Cases:**
+- **Math Packages**: `amsmath`, `amssymb` for advanced math symbols
+- **Graphics**: `tikz`, `graphicx` for diagrams and images
+- **Custom Commands**: Define shortcuts (e.g., `\R` for `\mathbb{R}`)
+- **Specialized Packages**: `circuitikz` (circuits), `chemfig` (chemistry), `pgfplots` (plots)
+
+**Important Notes:**
+- All commands added to document preamble (before `\begin{document}`)
+- Applies to ALL questions in ALL versions
+- No `%` prefix needed inside preamble block
+- Optional - omit entirely if no custom packages needed
+
+---
+
+#### 4. Question Blocks
+
+**Multiple Choice Question (with enumerate):**
+```latex
+\begin{enumerate}
+\item %{#q}What is $2 + 2$?%{/q}
+\begin{enumerate}
+\item %{#o}Three%{/o}
+\item %{#o}Four%{/o}
+\item %{#o}Five%{/o}
+\end{enumerate}
+\end{enumerate}
+```
+
+**Multiple Choice Question (inline):**
+```latex
+\begin{enumerate}
+\item %{#q}Calculate $\int x^2 \, dx$%{/q}
+\begin{enumerate}
+\item %{#o}$\frac{x^3}{3} + C$%{/o}
+\item %{#o}$x^3 + C$%{/o}
+\item %{#o}$2x + C$%{/o}
+\end{enumerate}
+\end{enumerate}
+```
+
+**Open-Ended Question (no options):**
+```latex
+%{#q}
+Explain the process of photosynthesis in detail.
+%{/q}
+```
+
+**Multi-line Question:**
+```latex
+%{#q}
+Consider the function $f(x) = x^2 + 3x + 2$.
+
+Find the following:
+\begin{itemize}
+    \item Vertex
+    \item Axis of symmetry
+    \item Y-intercept
+\end{itemize}
+%{/q}
+```
+
+**Multi-line Option:**
+```latex
+\item %{#o}
+First line of option
+Second line of option
+Third line of option
+%{/o}
+```
+
+---
+
+#### 5. Question Tags (Behavioral Modifiers)
+
+**ALL VALID TAGS**: `fixed`, `fixed-options`, `separate-page`
+
+**Tag Format**: `%{#tag-name}` or `%{#tag-name:value}` (must be on separate line after `\item`)
+
+**⚠️ TAG CONFLICTS**: Cannot use `fixed` + `fixed-options` together!
+
+---
+
+**Tag 1: `%{#fixed}` - Lock Position AND Option Order**
+
+Locks BOTH question position AND option order (options won't shuffle).
+
+```latex
+\begin{enumerate}
+\item %{#fixed}
+%{#q}What is your student ID number?%{/q}
+\begin{enumerate}
+\item %{#o}Enter your ID%{/o}
+\end{enumerate}
+\end{enumerate}
+```
+
+**Use Cases:**
+- Personal info questions (Name, ID, Section)
+- Questions that must appear first/last
+- Questions with position-dependent context
+
+---
+
+**Tag 2: `%{#fixed-options:X}` - Lock Option Order Only**
+
+Locks option order but allows question position to shuffle. Requires correct answer letter.
+
+**Format**: `%{#fixed-options:B}` where B is the correct answer (A, B, C, D, or E)
+
+```latex
+\begin{enumerate}
+\item %{#fixed-options:B}
+%{#q}Which is the capital of France?%{/q}
+\begin{enumerate}
+\item %{#o}London%{/o}
+\item %{#o}Paris%{/o}
+\item %{#o}Berlin%{/o}
+\item %{#o}Madrid%{/o}
+\end{enumerate}
+\end{enumerate}
+```
+
+**Use Cases:**
+- Options have logical order (chronological, size, alphabetical)
+- "All of the above" / "None of the above" options
+- Numeric sequences (1, 2, 3, 4...)
+- True/False questions
+
+**⚠️ IMPORTANT**: Must specify correct answer letter (`:A`, `:B`, `:C`, `:D`, `:E`)
+
+---
+
+**Tag 3: `%{#separate-page}` - Force New Page**
+
+Forces question to start on a new page. Works with both MCQ and open-ended questions.
+
+```latex
+\item %{#separate-page}
+%{#q}
+Essay Question: Discuss the impact of climate change on global agriculture.
+Write at least 500 words.
+%{/q}
+```
+
+**Use Cases:**
+- Essay questions needing full page
+- Questions with large diagrams/images
+- Questions requiring significant workspace
+- Page count control for printing
+
+---
+
+**Tag 4: Multiple Tags Combined**
+
+You can combine `fixed` OR `fixed-options` with `separate-page`:
+
+```latex
+\item %{#fixed}
+%{#separate-page}
+%{#q}Student Information (Full Page)%{/q}
+```
+
+```latex
+\item %{#fixed-options:A}
+%{#separate-page}
+%{#q}This question must be on its own page%{/q}
+\begin{enumerate}
+\item %{#o}Answer A (correct)%{/o}
+\item %{#o}Answer B%{/o}
+\end{enumerate}
+```
+
+**⚠️ INVALID COMBINATION**:
+```latex
+\item %{#fixed}
+%{#fixed-options:B}
+%{#q}This will ERROR!%{/q}
+```
+
+---
+
+#### 6. Complete Example Template
+
+```latex
+%{#setting}
+%university=King Fahd University of Petroleum and Minerals
+%department=Department of Mathematics
+%term=Term 251
+%coursecode=MATH 101
+%examname=Midterm Exam
+%examdate=January 07, 2026
+%timeallowed=120 Minutes
+%numberofvestions=4
+%groups=5,10
+%examtype=MAJOR
+%code_name=CODE
+%code_numbering=ALPHA
+%paper_size=A4
+%includeCoverPage=yes
+%{/setting}
+
+%{#preamble}
+\usepackage{amsmath}
+\usepackage{tikz}
+%{/preamble}
+
+%{#instructions}
+%\begin{enumerate}
+%    \begin{normalsize}
+%        \item All types of calculators are NOT allowed.
+%        \item Use HB 2.5 pencils only.
+%    \end{normalsize}
+%\end{enumerate}
+%{/instructions}
+
+\begin{enumerate}
+
+% Question 1: Fixed position (student info)
+\item %{#fixed}
+%{#q}Write your Student ID Number:%{/q}
+\begin{enumerate}
+\item %{#o}Enter your ID%{/o}
+\end{enumerate}
+
+% Question 2: Regular MCQ (shuffles)
+\item %{#q}What is $2 + 2$?%{/q}
+\begin{enumerate}
+\item %{#o}3%{/o}
+\item %{#o}4%{/o}
+\item %{#o}5%{/o}
+\end{enumerate}
+
+% Question 3: Fixed options (logical order)
+\item %{#fixed-options:C}
+%{#q}Order these numbers: 1, 3, 2, 4%{/q}
+\begin{enumerate}
+\item %{#o}4, 3, 2, 1%{/o}
+\item %{#o}2, 1, 4, 3%{/o}
+\item %{#o}1, 2, 3, 4%{/o}
+\item %{#o}All of the above%{/o}
+\end{enumerate}
+
+% Question 4: Essay on separate page
+\item %{#separate-page}
+%{#q}Essay: Explain the Pythagorean theorem and provide two real-world applications.%{/q}
+
+\end{enumerate}
 ```
 
 ### CSV Format
