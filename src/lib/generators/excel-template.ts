@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import type { ExamData, ExamSettings } from "../types";
 import { extractPlainInstructions } from "../parsers/adapter";
 import { createLogger } from "../utils/logger";
@@ -8,91 +8,29 @@ const logger = createLogger("EXCEL_TEMPLATE_GENERATOR");
 /**
  * Generates an Excel template file with 4 sheets and example data
  */
-export function generateExcelTemplate(
+export async function generateExcelTemplate(
   settings: ExamSettings,
   exam: ExamData
-): Blob {
+): Promise<Blob> {
   logger.debug("Generating Excel template");
 
-  const workbook = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
 
   // Sheet 1: Questions (REQUIRED)
-  // Example format (Type column removed, tags used instead):
-  // const questionsData = [
-  //   [
-  //     "Question Text",
-  //     "Option A",
-  //     "Option B",
-  //     "Option C",
-  //     "Option D",
-  //     "Option E",
-  //     "Correct",
-  //     "Tags",
-  //   ],
-  //   ["What is $2 + 2$?", "3", "4", "5", "6", "", "B", ""],
-  //   [
-  //     "What is the derivative of $x^2$?",
-  //     "$x$",
-  //     "$2x$",
-  //     "$x^2$",
-  //     "$2$",
-  //     "",
-  //     "B",
-  //     "",
-  //   ],
-  //   [
-  //     "Calculate $\\int x \\, dx$",
-  //     "$x$",
-  //     "$x^2$",
-  //     "$\\frac{x^2}{2} + C$",
-  //     "$2x$",
-  //     "",
-  //     "C",
-  //     "",
-  //   ],
-  //   [
-  //     "Define the concept of a limit in calculus",
-  //     "",
-  //     "",
-  //     "",
-  //     "",
-  //     "",
-  //     "",
-  //     "",  // Open-ended: no options, no tags needed
-  //   ],
-  //   [
-  //     "This question will not shuffle positions",
-  //     "Option 1",
-  //     "Option 2",
-  //     "Option 3",
-  //     "",
-  //     "",
-  //     "A",
-  //     "fixed",
-  //   ],
-  //   [
-  //     "Question with fixed option order",
-  //     "Answer A",
-  //     "Answer B",
-  //     "Answer C",
-  //     "Answer D",
-  //     "",
-  //     "C",
-  //     "fixed-options",
-  //   ],
-  //   [
-  //     "Large question requiring full page (e.g., graph or diagram)",
-  //     "See diagram",
-  //     "Not diagram",
-  //     "Wrong",
-  //     "Also wrong",
-  //     "",
-  //     "A",
-  //     "separate-page",
-  //   ],
-  //   ["True or false question", "True", "False", "", "", "", "A", ""],
-  // ];
-  const examQuestions = exam.questions.map((q) => {
+  const questionsSheet = workbook.addWorksheet("Questions");
+  const questionsHeader = [
+    "Question Text",
+    "Option A",
+    "Option B",
+    "Option C",
+    "Option D",
+    "Option E",
+    "Correct",
+    "Tags",
+  ];
+  questionsSheet.addRow(questionsHeader);
+
+  for (const q of exam.questions) {
     const options = q.choices[0].map((choice) => choice.text);
     while (options.length < 5) {
       options.push("");
@@ -112,7 +50,7 @@ export function generateExcelTemplate(
     }
     const tagsStr = tags.join(", ");
 
-    return [
+    questionsSheet.addRow([
       q.text,
       options[0],
       options[1],
@@ -121,25 +59,11 @@ export function generateExcelTemplate(
       options[4],
       correct,
       tagsStr,
-    ];
-  });
-  const questionsData = [
-    [
-      "Question Text",
-      "Option A",
-      "Option B",
-      "Option C",
-      "Option D",
-      "Option E",
-      "Correct",
-      "Tags",
-    ],
-    ...examQuestions,
-  ];
-  const questionsSheet = XLSX.utils.aoa_to_sheet(questionsData);
-  XLSX.utils.book_append_sheet(workbook, questionsSheet, "Questions");
+    ]);
+  }
 
   // Sheet 2: Settings (OPTIONAL)
+  const settingsSheet = workbook.addWorksheet("Settings");
   const settingsData = [
     ["Key", "Value"],
     ["university", settings.university],
@@ -157,20 +81,21 @@ export function generateExcelTemplate(
     ["includeCoverPage", settings.includeCoverPage ? "yes" : "no"],
     ["seed", settings.seed ? settings.seed.toString() : ""],
   ];
-  const settingsSheet = XLSX.utils.aoa_to_sheet(settingsData);
-  XLSX.utils.book_append_sheet(workbook, settingsSheet, "Settings");
+  for (const row of settingsData) {
+    settingsSheet.addRow(row);
+  }
 
   // Sheet 3: Instructions (OPTIONAL)
+  const instructionsSheet = workbook.addWorksheet("Instructions");
   const instructionsLines = extractPlainInstructions(settings.instructions);
-  const instructionsData = [
-    ["Instruction"],
-    ...instructionsLines.map((line) => [line]),
-  ];
-  const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsData);
-  XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
+  instructionsSheet.addRow(["Instruction"]);
+  for (const line of instructionsLines) {
+    instructionsSheet.addRow([line]);
+  }
 
   // Sheet 4: Preamble (OPTIONAL)
-  const preambleData = [
+  const preambleSheet = workbook.addWorksheet("Preamble");
+  const preambleRows = [
     ["LaTeX Preamble"],
     ["% Add custom LaTeX packages and commands here"],
     ["% Example: \\usepackage{tikz}"],
@@ -178,12 +103,13 @@ export function generateExcelTemplate(
     ["% Example: \\newcommand{\\R}{\\mathbb{R}}"],
     [""],
   ];
-  const preambleSheet = XLSX.utils.aoa_to_sheet(preambleData);
-  XLSX.utils.book_append_sheet(workbook, preambleSheet, "Preamble");
+  for (const row of preambleRows) {
+    preambleSheet.addRow(row);
+  }
 
   // Generate blob
-  const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  const blob = new Blob([wbout], {
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
 

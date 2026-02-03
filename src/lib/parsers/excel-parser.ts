@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import type { Question, ExamSettings } from "../types";
 import { createLogger } from "../utils/logger";
 import { validateQuestionTags } from "../utils/tag-validator";
@@ -13,64 +13,67 @@ export interface ParsedExcelData {
 }
 
 /**
+ * Convert an ExcelJS worksheet into a 2D array (like sheet_to_json with header:1)
+ */
+function worksheetToArray(worksheet: ExcelJS.Worksheet): any[][] {
+  const rows: any[][] = [];
+  worksheet.eachRow({ includeEmpty: false }, (row) => {
+    const values: any[] = [];
+    // ExcelJS row.values is 1-indexed (index 0 is undefined)
+    for (let col = 1; col <= row.cellCount; col++) {
+      const cell = row.getCell(col);
+      values.push(cell.value ?? "");
+    }
+    rows.push(values);
+  });
+  return rows;
+}
+
+/**
  * Parse Excel file with sheets: Questions (required), Settings, Instructions, Preamble (optional)
  */
 export async function parseExcel(file: File): Promise<ParsedExcelData> {
   logger.info("Starting Excel parsing", { filename: file.name });
 
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(arrayBuffer);
+
+  const sheetNames = workbook.worksheets.map((ws) => ws.name);
 
   logger.debug("Workbook loaded", {
-    sheetNames: workbook.SheetNames,
+    sheetNames,
   });
 
   // Check for required Questions sheet
-  if (!workbook.SheetNames.some((name) => name.toLowerCase() === "questions")) {
+  if (!sheetNames.some((name) => name.toLowerCase() === "questions")) {
     throw new Error(
       "Excel file must contain a 'Questions' sheet. Found sheets: " +
-        workbook.SheetNames.join(", ")
+        sheetNames.join(", ")
     );
   }
 
-  // Parse each sheet
-  const settings = workbook.SheetNames.some(
-    (name) => name.toLowerCase() === "settings"
-  )
-    ? parseSettingsSheet(
-        workbook.Sheets[
-          workbook.SheetNames.find((name) => name.toLowerCase() === "settings")!
-        ]
-      )
-    : {};
+  // Helper to find a worksheet by case-insensitive name
+  const findSheet = (targetName: string): ExcelJS.Worksheet | undefined => {
+    return workbook.worksheets.find(
+      (ws) => ws.name.toLowerCase() === targetName.toLowerCase()
+    );
+  };
 
-  const instructions = workbook.SheetNames.some(
-    (name) => name.toLowerCase() === "instructions"
-  )
-    ? parseInstructionsSheet(
-        workbook.Sheets[
-          workbook.SheetNames.find(
-            (name) => name.toLowerCase() === "instructions"
-          )!
-        ]
-      )
+  // Parse each sheet
+  const settingsSheet = findSheet("settings");
+  const settings = settingsSheet ? parseSettingsSheet(settingsSheet) : {};
+
+  const instructionsSheet = findSheet("instructions");
+  const instructions = instructionsSheet
+    ? parseInstructionsSheet(instructionsSheet)
     : [];
 
-  const preamble = workbook.SheetNames.some(
-    (name) => name.toLowerCase() === "preamble"
-  )
-    ? parsePreambleSheet(
-        workbook.Sheets[
-          workbook.SheetNames.find((name) => name.toLowerCase() === "preamble")!
-        ]
-      )
-    : "";
+  const preambleSheet = findSheet("preamble");
+  const preamble = preambleSheet ? parsePreambleSheet(preambleSheet) : "";
 
-  const questions = parseQuestionsSheet(
-    workbook.Sheets[
-      workbook.SheetNames.find((name) => name.toLowerCase() === "questions")!
-    ]
-  );
+  const questionsSheet = findSheet("questions")!;
+  const questions = parseQuestionsSheet(questionsSheet);
 
   logger.info("Excel parsing completed", {
     settingsCount: Object.keys(settings).length,
@@ -85,8 +88,10 @@ export async function parseExcel(file: File): Promise<ParsedExcelData> {
 /**
  * Parse Settings sheet (2 columns: Key, Value)
  */
-function parseSettingsSheet(sheet: XLSX.WorkSheet): Partial<ExamSettings> {
-  const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+function parseSettingsSheet(
+  worksheet: ExcelJS.Worksheet
+): Partial<ExamSettings> {
+  const data = worksheetToArray(worksheet);
 
   if (data.length < 2) {
     logger.warn("Settings sheet is empty or has no data rows");
@@ -171,8 +176,8 @@ function parseSettingsSheet(sheet: XLSX.WorkSheet): Partial<ExamSettings> {
 /**
  * Parse Instructions sheet (1 column: Instruction)
  */
-function parseInstructionsSheet(sheet: XLSX.WorkSheet): string[] {
-  const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+function parseInstructionsSheet(worksheet: ExcelJS.Worksheet): string[] {
+  const data = worksheetToArray(worksheet);
 
   if (data.length < 2) {
     logger.warn("Instructions sheet is empty or has no data rows");
@@ -199,8 +204,8 @@ function parseInstructionsSheet(sheet: XLSX.WorkSheet): string[] {
 /**
  * Parse Preamble sheet (1 column of LaTeX code)
  */
-function parsePreambleSheet(sheet: XLSX.WorkSheet): string {
-  const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+function parsePreambleSheet(worksheet: ExcelJS.Worksheet): string {
+  const data = worksheetToArray(worksheet);
 
   if (data.length < 2) {
     logger.warn("Preamble sheet is empty or has no data rows");
@@ -232,9 +237,9 @@ function parsePreambleSheet(sheet: XLSX.WorkSheet): string {
  * Parse Questions sheet (table format)
  */
 function parseQuestionsSheet(
-  sheet: XLSX.WorkSheet
+  worksheet: ExcelJS.Worksheet
 ): Omit<Question, "group" | "order">[] {
-  const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  const data = worksheetToArray(worksheet);
 
   if (data.length < 2) {
     throw new Error("Questions sheet is empty or has no data rows");

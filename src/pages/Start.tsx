@@ -330,7 +330,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     }
   };
 
-  const generateTemplate = (
+  const generateTemplate = async (
     format: "tex" | "csv" | "xlsx",
     coursecode: string,
     examname: string,
@@ -417,7 +417,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } else if (format === "xlsx") {
-      const blob = generateExcelTemplate(mockSettings, mockExam);
+      const blob = await generateExcelTemplate(mockSettings, mockExam);
 
       logger.info("Excel template generated", {
         size: `${(blob.size / 1024).toFixed(2)} KB`,
