@@ -1,38 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { StartPage } from './Start';
 import { DetailsPage } from './Details';
 import { ResultsPage } from './Results';
 import { DocumentationPage } from './Documentation';
-import { getCurrentUser, signOut, type User } from '@/lib/auth';
 import type { ExamJSON } from '@/lib/types';
 
 const Index = () => {
   const [examData, setExamData] = useState<ExamJSON | null>(null);
   const [currentStep, setCurrentStep] = useState<'start' | 'details' | 'results' | 'docs'>('start');
   const [generationSeed, setGenerationSeed] = useState<string>('');
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check authentication on mount
-    const checkAuth = async () => {
-      const currentUser = await getCurrentUser();
-      
-      if (!currentUser) {
-        navigate('/auth');
-      } else {
-        setUser(currentUser);
-      }
-      
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, [navigate]);
 
   const handleDataLoaded = (data: ExamJSON) => {
     setExamData(data);
@@ -70,35 +48,13 @@ const Index = () => {
     setCurrentStep('start');
   };
 
-  const handleSignOut = () => {
-    signOut();
-    navigate('/auth');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-academic flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null; // Will redirect to auth
-  }
-
   return (
     <div className="min-h-screen bg-gradient-academic flex flex-col">
-      <Header 
+      <Header
         onStartOver={handleStartOver}
         onShowDocs={handleShowDocs}
         showStartOver={currentStep !== 'start'}
         currentStep={currentStep}
-        user={user}
-        onSignOut={handleSignOut}
       />
       <main className="flex-1">
         {currentStep === 'start' && (

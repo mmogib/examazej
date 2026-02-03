@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Shuffle, Users, Clock, Shield, CheckCircle, ArrowRight, LogIn, BarChart3 } from 'lucide-react';
+import { Shuffle, Clock, Shield, CheckCircle, ArrowRight, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 const Landing = () => {
   return <div className="relative min-h-screen bg-gradient-academic">
@@ -20,10 +20,10 @@ const Landing = () => {
             </span>
             <h1 className="text-xl font-semibold tracking-tight group-hover:opacity-90">ExamShuffler</h1>
           </Link>
-          <Link to="/auth">
+          <Link to="/app">
             <Button variant="secondary" size="lg" className="group h-10 gap-2 rounded-xl border border-border/60 bg-card/60 text-foreground/90 shadow-card ring-1 ring-transparent transition hover:bg-primary hover:text-primary-foreground hover:ring-primary/30 hover:shadow-elegant py-[16px] px-[32px] text-lg">
-              <LogIn className="h-4 w-4 opacity-80 transition-transform group-hover:translate-x-0.5" />
-              <span>Sign In</span>
+              <ArrowRight className="h-4 w-4 opacity-80 transition-transform group-hover:translate-x-0.5" />
+              <span>Open App</span>
             </Button>
           </Link>
         </div>
@@ -40,7 +40,7 @@ const Landing = () => {
             Generate randomized, reproducible exam variants in seconds. Built for universities and certification programs.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4">
-            <Link to="/auth">
+            <Link to="/app">
               <Button size="lg" className="group h-12 gap-3 rounded-xl px-8 text-base font-semibold shadow-elegant ring-1 ring-primary/20">
                 Get Started
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
@@ -81,14 +81,14 @@ const Landing = () => {
             <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-primary opacity-10 blur-2xl transition group-hover:opacity-20" />
             <CardHeader>
               <Shield className="mb-4 h-11 w-11 text-primary" />
-              <CardTitle className="text-lg">Secure Access</CardTitle>
-              <CardDescription className="text-base">Supabase auth with role-aware access controls.</CardDescription>
+              <CardTitle className="text-lg">100% Private</CardTitle>
+              <CardDescription className="text-base">All processing happens locally in your browser.</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 text-base">
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Authorized users only</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Time-based access</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Status permissions</li>
+                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> No data leaves your device</li>
+                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> No server processing</li>
+                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> No account required</li>
               </ul>
             </CardContent>
           </Card>
@@ -173,13 +173,13 @@ const Landing = () => {
             <CardDescription className="text-lg">Join institutions using ExamShuffler for fair, secure examinations.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link to="/auth">
+            <Link to="/app">
               <Button size="lg" className="mb-4 h-12 gap-3 rounded-xl px-10 text-lg font-semibold">
-                Access Platform
-                <Users className="h-5 w-5" />
+                Open App
+                <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
-            <p className="text-sm text-muted-foreground">Access requires an authorized account. Contact your administrator.</p>
+            <p className="text-sm text-muted-foreground">Free to use. No account required.</p>
           </CardContent>
         </Card>
       </section>
