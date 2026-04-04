@@ -1,19 +1,15 @@
-import { Shield, FileText, Home, BookOpen, LogOut, User as UserIcon, BarChart3 } from 'lucide-react';
+import { Shield, FileText, Home, BookOpen, BarChart3 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { User } from '@/lib/auth';
 
 interface HeaderProps {
   onStartOver?: () => void;
   onShowDocs?: () => void;
   showStartOver?: boolean;
   currentStep?: string;
-  user?: User | null;
-  onSignOut?: () => void;
 }
 
-export function Header({ onStartOver, onShowDocs, showStartOver = false, currentStep, user, onSignOut }: HeaderProps) {
+export function Header({ onStartOver, onShowDocs, showStartOver = false, currentStep }: HeaderProps) {
   return (
     <header className="border-b bg-card shadow-card">
       <div className="container mx-auto px-4 py-4">
@@ -62,38 +58,6 @@ export function Header({ onStartOver, onShowDocs, showStartOver = false, current
               </Button>
             )}
 
-            {user && (
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Card className="px-3 py-2 bg-muted border-muted cursor-default">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <UserIcon className="h-4 w-4" />
-                          <span className="text-xs font-medium truncate max-w-32">
-                            {user.name || user.email}
-                          </span>
-                        </div>
-                      </Card>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{user.email}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <Button
-                  onClick={onSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </Button>
-              </div>
-            )}
-            
             <Card className="px-3 py-2 bg-accent/50 border-accent">
               <div className="flex items-center gap-2 text-accent-foreground">
                 <Shield className="h-4 w-4" />

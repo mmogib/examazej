@@ -7,7 +7,7 @@
 
 ## What This App Does
 
-**MC Exam Randomizer** generates multiple versions of multiple-choice exams from LaTeX, CSV, or Excel templates. Questions and answer options are shuffled deterministically using seed-based randomization for reproducibility. All processing is client-side (browser only).
+**MC Exam Randomizer** generates multiple versions of multiple-choice exams from LaTeX, CSV, or Excel templates. Questions and answer options are shuffled deterministically using seed-based randomization for reproducibility. All processing is client-side (browser only). No authentication -- open access.
 
 ## Tech Stack
 
@@ -15,9 +15,15 @@
 - **UI**: shadcn/ui + Radix UI + Tailwind CSS
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
-- **Auth**: Custom JWT via Hono API (`https://shuffler-auth.mshahrani.website`)
 - **Routing**: React Router v6
 - **Testing**: Vitest (138 tests, 77.99% core coverage)
+
+## Architecture Constraints
+
+- **Client-side only** -- all exam generation in browser, no backend, no auth
+- **Deterministic RNG** -- LCG + Fisher-Yates in `rng.ts`; never modify the algorithm
+- **No `console.log`** -- use logger utility (`createLogger`) instead
+- **CRITICAL: No business logic inside logger callbacks** -- `logger.group()` / `logger.time()` are tree-shaken in production
 
 ## Project Structure
 
@@ -29,9 +35,8 @@ src/
     parsers/        # CSV, Excel, adapter (converts to LaTeX format)
     generators/     # CSV/Excel template generators
     utils/          # logger, tag-validator, page-count-analyzer, seed-generator
-    auth.ts         # JWT auth client
     types.ts        # TypeScript interfaces
-  pages/            # Landing, Auth, Index, Start, Details, Results, Documentation
+  pages/            # Landing, Index, Start, Details, Results, Documentation
   components/ui/    # shadcn/ui components + template-dialog, file-upload
 ```
 
@@ -67,7 +72,7 @@ src/
 ## Conventions & Rules
 
 ### DO NOT
-- Add Supabase (migrated away permanently)
+- Add authentication back (removed intentionally)
 - Create backend endpoints (client-side only)
 - Modify core RNG algorithm (reproducibility requirement)
 - Use `console.log()` directly (use `createLogger()` from `src/lib/utils/logger.ts`)
@@ -76,7 +81,6 @@ src/
 - Change `generateTemplateSettings()` to positional parameters (use config object)
 
 ### DO
-- Use `src/lib/auth.ts` for authentication
 - Use shadcn/ui + Tailwind CSS for UI
 - Use config object pattern for functions with 5+ parameters
 - Use Zod for validation
@@ -121,19 +125,10 @@ See `notes/test-coverage.md` for detailed breakdown.
 - UI components
 - Integration/E2E tests
 
-## Auth Flow
-
-1. User enters access code at `/auth`
-2. `POST /api/auth/verify` -> JWT token + user data
-3. Token in `localStorage` (`auth_token`, `user_data`)
-4. Protected routes verify via `/api/auth/me`
-5. Token expires after 30 days
-
 ## File Reference
 
 | Task | Where to look |
 |------|--------------|
-| Auth | `src/lib/auth.ts` |
 | Exam generation | `src/lib/core/*.ts` |
 | LaTeX output | `src/lib/core/latex.ts` |
 | Input parsing | `src/lib/parsers/*.ts` |
