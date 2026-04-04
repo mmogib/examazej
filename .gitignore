@@ -30,3 +30,6 @@ coverage/
 
 # Vitest
 .vitest/
+
+# Local planning notes
+notes/

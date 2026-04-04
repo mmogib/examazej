@@ -14,8 +14,15 @@ export class DeterministicRNG {
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash | 0; // Convert to 32-bit integer
     }
+    // Murmur3-style finalizer: ensures small input differences
+    // produce large output differences (avalanche effect)
+    hash ^= hash >>> 16;
+    hash = Math.imul(hash, 0x85ebca6b);
+    hash ^= hash >>> 13;
+    hash = Math.imul(hash, 0xc2b2ae35);
+    hash ^= hash >>> 16;
     return Math.abs(hash);
   }
 
