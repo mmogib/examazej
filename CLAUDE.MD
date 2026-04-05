@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Assistant Context
 
 **Last Updated**: 2026-04-04
-**Version**: 1.5.0
+**Version**: 1.5.1
 
 ---
 
@@ -16,7 +16,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (138 tests, 77.99% core coverage)
+- **Testing**: Vitest (142 tests, core coverage ~78%)
 
 ## Architecture Constraints
 
@@ -104,26 +104,26 @@ npm test -- --coverage  # Coverage report
 ```
 
 ### Git Branches
-- `main` -- Production
+- `main` -- Production (deploys to Netlify + university server)
 - `new-feat` -- Current feature branch
+
+### Releasing
+```bash
+./scripts/release.sh          # minor (1.5.1 -> 1.6.0)
+./scripts/release.sh patch    # patch (1.5.1 -> 1.5.2)
+./scripts/release.sh major    # major (1.5.1 -> 2.0.0)
+```
+Bumps version, commits, tags, merges to main, pushes. Run from feature branch.
 
 ## Testing
 
-**138/138 tests passing** in `src/lib/core/__tests__/`:
+**142/142 tests passing** in `src/lib/core/__tests__/`:
 - `settings.test.ts` (51) -- 100% coverage
 - `rng.test.ts` (33) -- 94.73% coverage
 - `latex.test.ts` (22) -- 75.46% coverage
 - `versioning.test.ts` (21) -- 66.85% coverage
 - `parser.test.ts` (15) -- 81.29% coverage
-
-See `notes/test-coverage.md` for detailed breakdown.
-
-### Untested Areas
-- Tag validator, page count analyzer
-- CSV/Excel parsers and adapter
-- Template generators
-- UI components
-- Integration/E2E tests
+- `bug-last-question.test.ts` (4) -- regression tests for RNG fix
 
 ## File Reference
 
