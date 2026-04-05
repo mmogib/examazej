@@ -1,195 +1,271 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Shuffle, Clock, Shield, CheckCircle, ArrowRight, BarChart3 } from 'lucide-react';
+import { Shuffle, Shield, Clock, CheckCircle, ArrowRight, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-const Landing = () => {
-  return <div className="relative min-h-screen bg-gradient-academic">
-      {/* Decorative background */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-gradient-primary opacity-20 blur-3xl" />
-        <div className="absolute inset-0 bg-dot-grid" />
-      </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/60 backdrop-blur-xl supports-[backdrop-filter]:bg-card/50">
-        <div className="container flex items-center justify-between px-4 py-5">
-          <Link to="/" className="group inline-flex items-center gap-2">
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground shadow-glow">
-              <Shuffle className="h-5 w-5" />
+const Landing = () => {
+  return (
+    <div className="relative min-h-screen bg-background">
+      {/* ── Sticky Glass Nav ── */}
+      <nav className="sticky top-0 z-50 border-b border-border/10 bg-background/60 shadow-[0_16px_32px_rgba(0,0,0,0.3)] backdrop-blur-[40px]">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 md:px-12">
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Shuffle className="h-4 w-4" />
             </span>
-            <h1 className="text-xl font-semibold tracking-tight group-hover:opacity-90">ExamShuffler</h1>
+            <span className="text-2xl font-black tracking-tighter text-primary">
+              Shuffler
+            </span>
           </Link>
           <Link to="/app">
-            <Button variant="secondary" size="lg" className="group h-10 gap-2 rounded-xl border border-border/60 bg-card/60 text-foreground/90 shadow-card ring-1 ring-transparent transition hover:bg-primary hover:text-primary-foreground hover:ring-primary/30 hover:shadow-elegant py-[16px] px-[32px] text-lg">
-              <ArrowRight className="h-4 w-4 opacity-80 transition-transform group-hover:translate-x-0.5" />
-              <span>Open App</span>
+            <Button
+              size="lg"
+              className="h-10 rounded-md bg-gradient-to-r from-primary to-primary-glow px-6 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+            >
+              Open App
             </Button>
           </Link>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero Section */}
-      <section className="relative">
-        <div className="container px-4 py-24 text-center">
-          <Badge variant="secondary" className="mb-5 text-lg px-6 py-2">Academic Tool</Badge>
-          <h1 className="mx-auto max-w-4xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-6xl">
-            Fair, Secure, Modern Exam Shuffling
+      {/* ── Hero ── */}
+      <section className="landing-hero-dark hero-mesh relative flex min-h-[780px] flex-col items-center justify-center overflow-hidden px-6">
+        {/* Decorative dot grid */}
+        <div className="pointer-events-none absolute inset-0 bg-dot-grid-hero opacity-[0.03]" />
+        {/* Gradient orbs */}
+        <div className="landing-orb absolute -top-40 left-1/4 h-[500px] w-[500px] bg-primary/20 opacity-40 animate-subtle-pulse" />
+        <div className="landing-orb absolute -bottom-20 right-1/4 h-[400px] w-[400px] bg-secondary/15 opacity-30" />
+
+        <div className="relative z-10 max-w-5xl text-center">
+          {/* Badge */}
+          <div className="mb-6 opacity-0 animate-fade-in-up">
+            <span className="mono-label inline-block rounded-full bg-primary/10 px-4 py-1.5 font-bold text-primary">
+              Academic Tool
+            </span>
+          </div>
+
+          {/* Heading */}
+          <h1 className="mb-8 text-5xl font-extrabold leading-[1.1] tracking-tighter-landing text-white opacity-0 animate-fade-in-up-delay-1 md:text-7xl">
+            Fair, Secure, Modern
+            <br />
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Exam Shuffling
+            </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Generate randomized, reproducible exam variants in seconds. Built for universities and certification programs.
+
+          {/* Subtitle */}
+          <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-white/50 opacity-0 animate-fade-in-up-delay-2 md:text-xl">
+            Generate randomized, reproducible exam variants in seconds.
+            Designed for educators who demand institutional integrity without the complexity.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
+
+          {/* CTAs */}
+          <div className="flex flex-col items-center justify-center gap-6 opacity-0 animate-fade-in-up-delay-3 sm:flex-row">
             <Link to="/app">
-              <Button size="lg" className="group h-12 gap-3 rounded-xl px-8 text-base font-semibold shadow-elegant ring-1 ring-primary/20">
-                Get Started
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+              <Button
+                size="lg"
+                className="h-14 rounded-md bg-gradient-to-r from-primary to-primary-glow px-10 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+              >
+                Get Started Free
               </Button>
             </Link>
-            <a href="#features" className="text-sm font-medium text-foreground/80 underline-offset-8 hover:text-foreground hover:underline">
+            <a
+              href="#features"
+              className="group flex items-center gap-2 text-base font-semibold text-white/60 transition-colors duration-300 hover:text-primary"
+            >
               Learn more
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </a>
+          </div>
+        </div>
+
+        {/* Bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-background" />
+      </section>
+
+      {/* ── Features ── */}
+      <section id="features" className="px-6 py-32 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          {/* Section header */}
+          <div className="mb-20 flex flex-col items-end justify-between gap-8 md:flex-row">
+            <div className="max-w-xl">
+              <span className="mono-label mb-3 inline-block text-primary">Features</span>
+              <h2 className="text-4xl font-extrabold tracking-tighter-landing md:text-5xl">
+                Why Choose Shuffler?
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Built for high-stakes testing, prioritizing privacy and precision at every step.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature cards */}
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* Card 1 */}
+            <div className="group rounded-xl border border-transparent bg-muted/40 p-10 transition-all duration-500 hover:border-border/40 hover:bg-muted/60">
+              <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-lg bg-muted transition-colors group-hover:bg-primary/10">
+                <Shuffle className="h-7 w-7 text-primary" />
+              </div>
+              <h3 className="mb-4 text-2xl font-bold tracking-tight-landing">
+                Advanced Shuffling
+              </h3>
+              <p className="mb-8 leading-relaxed text-muted-foreground">
+                Maintain total integrity with deterministic seed-based randomization. Reproduce any variant at any time with a single key.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  Question order shuffle
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  Answer choice shuffle
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  Deterministic seeds
+                </li>
+              </ul>
+            </div>
+
+            {/* Card 2 */}
+            <div className="group rounded-xl border border-transparent bg-muted/40 p-10 transition-all duration-500 hover:border-border/40 hover:bg-muted/60">
+              <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-lg bg-muted transition-colors group-hover:bg-primary/10">
+                <Shield className="h-7 w-7 text-primary" />
+              </div>
+              <h3 className="mb-4 text-2xl font-bold tracking-tight-landing">
+                100% Private
+              </h3>
+              <p className="mb-8 leading-relaxed text-muted-foreground">
+                All exam data is processed locally in your browser. No questions or student data ever leave your device. Total sovereignty.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  No data leaves your device
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  No server processing
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  No account required
+                </li>
+              </ul>
+            </div>
+
+            {/* Card 3 */}
+            <div className="group rounded-xl border border-transparent bg-muted/40 p-10 transition-all duration-500 hover:border-border/40 hover:bg-muted/60">
+              <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-lg bg-muted transition-colors group-hover:bg-primary/10">
+                <Clock className="h-7 w-7 text-primary" />
+              </div>
+              <h3 className="mb-4 text-2xl font-bold tracking-tight-landing">
+                Easy to Use
+              </h3>
+              <p className="mb-8 leading-relaxed text-muted-foreground">
+                From LaTeX import to final export in minutes. Live preview allows you to see randomization results instantly.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  Import LaTeX templates
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  Instant preview
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
+                  <CheckCircle className="h-[18px] w-[18px] text-primary" />
+                  Multiple export formats
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="container px-4 py-20">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Why Choose ExamShuffler?</h2>
-          <p className="mt-3 text-lg text-muted-foreground">Purpose-built for academic integrity, security, and ease of use.</p>
-        </div>
+      {/* ── Regrade Companion Tool ── */}
+      <section className="px-6 py-24">
+        <div className="glow-card-wrapper mx-auto max-w-4xl">
+          <div className="relative overflow-hidden rounded-xl border border-primary/10 bg-muted/60 p-8 md:p-12">
+            {/* Decorative orb */}
+            <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="group relative overflow-hidden rounded-xl border border-border/70 bg-card/80 shadow-card transition hover:shadow-elegant">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-primary opacity-10 blur-2xl transition group-hover:opacity-20" />
-            <CardHeader>
-              <Shuffle className="mb-4 h-11 w-11 text-primary" />
-              <CardTitle className="text-lg">Advanced Shuffling</CardTitle>
-              <CardDescription className="text-base">Randomization with integrity and seed-based reproducibility.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-base">
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Question order shuffle</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Answer choice shuffle</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Deterministic seeds</li>
-              </ul>
-            </CardContent>
-          </Card>
+            <div className="relative flex flex-col items-center gap-8 md:flex-row">
+              {/* Icon */}
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                <BarChart3 className="h-10 w-10 text-primary" />
+              </div>
 
-          <Card className="group relative overflow-hidden rounded-xl border border-border/70 bg-card/80 shadow-card transition hover:shadow-elegant">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-primary opacity-10 blur-2xl transition group-hover:opacity-20" />
-            <CardHeader>
-              <Shield className="mb-4 h-11 w-11 text-primary" />
-              <CardTitle className="text-lg">100% Private</CardTitle>
-              <CardDescription className="text-base">All processing happens locally in your browser.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-base">
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> No data leaves your device</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> No server processing</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> No account required</li>
-              </ul>
-            </CardContent>
-          </Card>
+              {/* Content */}
+              <div className="flex-grow text-center md:text-left">
+                <h3 className="mb-2 text-2xl font-bold tracking-tight-landing">
+                  Already Graded Your Exam?
+                </h3>
+                <p className="text-lg leading-snug text-muted-foreground">
+                  Discover our companion MCQ re-grading tool. Instantly audit results with comprehensive item analysis.
+                </p>
+              </div>
 
-          <Card className="group relative overflow-hidden rounded-xl border border-border/70 bg-card/80 shadow-card transition hover:shadow-elegant">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-primary opacity-10 blur-2xl transition group-hover:opacity-20" />
-            <CardHeader>
-              <Clock className="mb-4 h-11 w-11 text-primary" />
-              <CardTitle className="text-lg">Easy to Use</CardTitle>
-              <CardDescription className="text-base">From LaTeX import to final export.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-base">
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Import LaTeX</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Instant preview</li>
-                <li className="flex items-center gap-3"><CheckCircle className="h-5 w-5 text-primary" /> Multiple formats</li>
-              </ul>
-            </CardContent>
-          </Card>
+              {/* CTA */}
+              <div className="flex-shrink-0">
+                <a href="https://regrade.mshahrani.website/" target="_blank" rel="noopener noreferrer">
+                  <Button
+                    variant="outline"
+                    className="group h-12 gap-2 rounded-md border-primary/30 px-6 font-bold text-primary transition-all hover:bg-primary/10"
+                  >
+                    View Regrade Tool
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Regrade Tool Section */}
-      <section className="container px-4 py-16">
-        <div className="relative mx-auto max-w-4xl">
-          <Card className="group relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/5 shadow-elegant transition hover:shadow-2xl hover:border-primary/60">
-            <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-primary opacity-30 blur-3xl transition group-hover:opacity-40" />
-            <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-gradient-to-r from-secondary to-primary opacity-20 blur-3xl" />
+      {/* ── CTA ── */}
+      <section className="relative overflow-hidden px-6 py-40 text-center">
+        {/* Background orb */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-[120px]" />
 
-            <CardHeader className="relative pb-4 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-glow">
-                <BarChart3 className="h-8 w-8" />
-              </div>
-              <CardTitle className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Already Graded Your Exam?
-              </CardTitle>
-              <CardDescription className="mt-3 text-lg text-foreground/80">
-                Complete your exam workflow with our companion tool for MCQ re-grading and comprehensive item analysis.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="relative text-center">
-              <div className="mb-6 grid gap-3 sm:grid-cols-2 text-left mx-auto max-w-2xl">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-base text-foreground/90">Re-grade MCQ exams efficiently</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-base text-foreground/90">Perform detailed item analysis</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-base text-foreground/90">Process results from grading center</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-base text-foreground/90">100% client-side processing</span>
-                </div>
-              </div>
-
-              <a href="https://regrade.mshahrani.website/" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" className="group h-14 gap-3 rounded-xl px-10 text-lg font-semibold shadow-elegant ring-2 ring-primary/30 hover:ring-primary/50">
-                  Go to Regrade Tool
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </a>
-
-              <p className="mt-4 text-sm text-muted-foreground">
-                Analyze results after receiving them from KFUPM ITC grading center
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="container px-4 pb-24 text-center">
-        <Card className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-border/70 bg-card/80 shadow-elegant">
-          <CardHeader>
-            <CardTitle className="text-3xl sm:text-4xl">Ready to Get Started?</CardTitle>
-            <CardDescription className="text-lg">Join institutions using ExamShuffler for fair, secure examinations.</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="relative z-10 mx-auto max-w-3xl">
+          <h2 className="mb-8 text-4xl font-extrabold tracking-tighter-landing md:text-6xl">
+            Ready to Get Started?
+          </h2>
+          <p className="mx-auto mb-12 max-w-xl text-xl text-muted-foreground">
+            Experience the new standard in academic exam preparation. Simple, fast, and entirely free.
+          </p>
+          <div className="space-y-6">
             <Link to="/app">
-              <Button size="lg" className="mb-4 h-12 gap-3 rounded-xl px-10 text-lg font-semibold">
-                Open App
-                <ArrowRight className="h-5 w-5" />
+              <Button
+                size="lg"
+                className="h-16 rounded-md bg-gradient-to-r from-primary to-primary-glow px-14 text-xl font-black text-primary-foreground shadow-2xl transition-all hover:scale-105 active:scale-95"
+              >
+                Open App Now
               </Button>
             </Link>
-            <p className="text-sm text-muted-foreground">Free to use. No account required.</p>
-          </CardContent>
-        </Card>
+            <p className="mono-label text-muted-foreground/60">
+              Free to use. No account required.
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/60 bg-card/40 py-8">
-        <div className="container px-4 text-center text-muted-foreground">
-          <p>&copy; 2024 ExamShuffler. Professional Academic Tool.</p>
+      {/* ── Footer ── */}
+      <footer className="border-t border-border/10 py-12 md:py-24">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 md:flex-row md:px-12">
+          <div>
+            <div className="mb-1 text-xl font-bold text-primary">Shuffler</div>
+            <p className="text-sm text-muted-foreground/50">Empowering educators since 2024.</p>
+          </div>
+          <div className="mono-label text-muted-foreground/50">
+            &copy; {new Date().getFullYear()} Dr. Mohammed Alshahrani.
+          </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Landing;

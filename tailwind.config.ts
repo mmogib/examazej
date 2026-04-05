@@ -88,6 +88,10 @@ export default {
 				'card': 'var(--shadow-card)',
 				'glow': 'var(--shadow-glow)'
 			},
+			letterSpacing: {
+				'tighter-landing': '-0.04em',
+				'tight-landing': '-0.02em',
+			},
 			transitionTimingFunction: {
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
 				'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)'
@@ -113,11 +117,29 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in-up': {
+					'0%': { opacity: '0', transform: 'translateY(16px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' },
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' },
+				},
+				'subtle-pulse': {
+					'0%, 100%': { opacity: '0.4' },
+					'50%': { opacity: '0.7' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in-up': 'fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+				'fade-in-up-delay-1': 'fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards',
+				'fade-in-up-delay-2': 'fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards',
+				'fade-in-up-delay-3': 'fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards',
+				'fade-in': 'fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+				'subtle-pulse': 'subtle-pulse 4s ease-in-out infinite'
 			}
 		}
 	},
