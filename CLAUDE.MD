@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-04-04
-**Version**: 1.5.1
+**Last Updated**: 2026-04-05
+**Version**: 1.5.2
 
 ---
 
@@ -99,7 +99,7 @@ npm install          # Install dependencies
 npm run dev          # Dev server (localhost:8080)
 npm run build        # Production build
 npm run lint         # ESLint
-npm test             # Run all 138 tests
+npm test             # Run all 142 tests
 npm test -- --coverage  # Coverage report
 ```
 
