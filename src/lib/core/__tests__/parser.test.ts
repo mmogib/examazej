@@ -402,6 +402,80 @@ with proper formatting.
       expect(result.questions[0].text).toContain("multiple lines");
     });
 
+    it("should parse open-ended question between MCQ questions", () => {
+      const latex = `
+\\begin{enumerate}
+
+\\item
+%{#q}
+MCQ Question?
+%{/q}
+  \\begin{enumerate}
+    \\item %{#o}Option A%{/o}
+    \\item %{#o}Option B%{/o}
+  \\end{enumerate}
+
+\\item
+%{#q}
+Open-ended question here.
+%{/q}
+
+\\item
+%{#q}
+Another MCQ?
+%{/q}
+  \\begin{enumerate}
+    \\item %{#o}Option C%{/o}
+    \\item %{#o}Option D%{/o}
+  \\end{enumerate}
+
+\\end{enumerate}
+      `.trim();
+
+      const result = parseLatexTemplate(latex);
+
+      expect(result.questions).toHaveLength(3);
+      expect(result.questions[0].text).toContain("MCQ Question?");
+      expect(result.questions[0].choices[0]).toHaveLength(2);
+      expect(result.questions[1].text).toContain("Open-ended question here.");
+      expect(result.questions[1].choices[0]).toHaveLength(0);
+      expect(result.questions[2].text).toContain("Another MCQ?");
+      expect(result.questions[2].choices[0]).toHaveLength(2);
+    });
+
+    it("should parse multiple consecutive open-ended questions", () => {
+      const latex = `
+\\begin{enumerate}
+
+\\item
+%{#q}
+First open-ended question.
+%{/q}
+
+\\item
+%{#q}
+Second open-ended question.
+%{/q}
+
+\\item
+%{#q}
+Third open-ended question.
+%{/q}
+
+\\end{enumerate}
+      `.trim();
+
+      const result = parseLatexTemplate(latex);
+
+      expect(result.questions).toHaveLength(3);
+      expect(result.questions[0].text).toContain("First open-ended");
+      expect(result.questions[0].choices[0]).toHaveLength(0);
+      expect(result.questions[1].text).toContain("Second open-ended");
+      expect(result.questions[1].choices[0]).toHaveLength(0);
+      expect(result.questions[2].text).toContain("Third open-ended");
+      expect(result.questions[2].choices[0]).toHaveLength(0);
+    });
+
     it("should not confuse %{#q} marker with tag names", () => {
       // Regression test for the bug that was fixed
       const latex = `

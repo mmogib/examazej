@@ -259,6 +259,23 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentOptionText = "";
       }
 
+      // Save pending open-ended question when outer enumerate closes
+      if (enumerateDepth === 1 && currentQuestion !== null) {
+        const question = createQuestionObject(
+          currentQuestion,
+          currentOptions,
+          currentTags,
+          currentCorrectLetter,
+          result.questions.length + 1,
+          allValidationErrors
+        );
+        result.questions.push(question);
+        currentQuestion = null;
+        currentOptions = [];
+        currentTags = [];
+        currentCorrectLetter = undefined;
+      }
+
       enumerateDepth--;
 
       if (enumerateDepth === 0) {
@@ -306,6 +323,23 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
 
     if (trimmed.includes("%{#q}")) {
       // console.log("Found question start marker at line:", i + 1);
+
+      // Save pending open-ended question inside enumerate before starting a new one
+      if (inQuestionEnumerate && currentQuestion !== null) {
+        const question = createQuestionObject(
+          currentQuestion,
+          currentOptions,
+          currentTags,
+          currentCorrectLetter,
+          result.questions.length + 1,
+          allValidationErrors
+        );
+        result.questions.push(question);
+        currentQuestion = null;
+        currentOptions = [];
+        currentTags = [];
+        currentCorrectLetter = undefined;
+      }
 
       inQuestionBlock = true;
 

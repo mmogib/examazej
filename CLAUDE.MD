@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-04-05
-**Version**: 1.5.2
+**Last Updated**: 2026-04-10
+**Version**: 1.5.3
 
 ---
 
@@ -16,7 +16,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (142 tests, core coverage ~78%)
+- **Testing**: Vitest (144 tests, core coverage ~78%)
 
 ## Architecture Constraints
 
@@ -99,7 +99,7 @@ npm install          # Install dependencies
 npm run dev          # Dev server (localhost:8080)
 npm run build        # Production build
 npm run lint         # ESLint
-npm test             # Run all 142 tests
+npm test             # Run all 144 tests
 npm test -- --coverage  # Coverage report
 ```
 
@@ -117,12 +117,12 @@ Bumps version, commits, tags, merges to main, pushes. Run from feature branch.
 
 ## Testing
 
-**142/142 tests passing** in `src/lib/core/__tests__/`:
+**144/144 tests passing** in `src/lib/core/__tests__/`:
 - `settings.test.ts` (51) -- 100% coverage
 - `rng.test.ts` (33) -- 94.73% coverage
 - `latex.test.ts` (22) -- 75.46% coverage
 - `versioning.test.ts` (21) -- 66.85% coverage
-- `parser.test.ts` (15) -- 81.29% coverage
+- `parser.test.ts` (17) -- 79.11% coverage
 - `bug-last-question.test.ts` (4) -- regression tests for RNG fix
 
 ## File Reference
