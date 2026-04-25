@@ -7,6 +7,7 @@ import type {
 } from "../types";
 import { generateSettingsBlock } from "./settings";
 import {
+  calculateQuestionPages,
   detectPageCountVariations,
   formatPageCountWarning,
   type PageCountWarning,
@@ -108,36 +109,6 @@ function generateLatexBarChart(
 \\end{figure}`;
 
   return latexCode;
-}
-
-// Calculate total question pages with support for separate page questions
-function calculateQuestionPages(questions: Question[]): number {
-  if (questions.length === 0) return 0;
-
-  const maxQuestionsPerPage = 2;
-
-  const { currentPage } = questions.reduce(
-    (acc, question) => {
-      if (question.keepOnSeparatePage) {
-        const pageIncrement = acc.questionsOnCurrentPage > 0 ? 2 : 1;
-        return {
-          currentPage: acc.currentPage + pageIncrement,
-          questionsOnCurrentPage: 0,
-        };
-      } else {
-        const needNewPage = acc.questionsOnCurrentPage >= maxQuestionsPerPage;
-        return {
-          currentPage: acc.currentPage + (needNewPage ? 1 : 0),
-          questionsOnCurrentPage: needNewPage
-            ? 1
-            : acc.questionsOnCurrentPage + 1,
-        };
-      }
-    },
-    { currentPage: 1, questionsOnCurrentPage: 0 }
-  );
-
-  return currentPage;
 }
 
 export function escapeLatex(text: string): string {
@@ -281,7 +252,7 @@ ${settings.instructions}
  \\vspace*{\\fill}
 \\newpage
 `
-      : ""
+      : "\\newpage"
   }
 }
 
@@ -460,9 +431,12 @@ ${
       if (questionsOnCurrentPage === 2 && !isLastQuestion) {
         questionsLatex += "\n\\eogseparator\n";
         questionsOnCurrentPage = 0;
-      } else if (isLastQuestion) {
-        questionsLatex += "\n\\eogseparator";
       } else {
+        // Emit \questionseparator (\vspace*{\fill}) for layout consistency —
+        // shared with the inter-question case so multi-question pages always
+        // get balanced fills (q1 top, q2 mid). On the section's last regular
+        // question, the trailing fill is harmless and the next section's
+        // \newcodecover handles the page break.
         questionsLatex += "\n\\questionseparator";
       }
     }
@@ -585,13 +559,14 @@ ${
 
       questionsOnCurrentPage++;
 
-      // Add separator after every 2 regular questions (except for the last question)
       if (questionsOnCurrentPage === 2 && !isLastQuestion) {
         versionQuestionsLatex += "\n\\eogseparator\n";
         questionsOnCurrentPage = 0;
-      } else if (isLastQuestion) {
-        versionQuestionsLatex += "\n\\eogseparator";
       } else {
+        // Always emit \questionseparator after a regular question — gives the
+        // page balanced fills (q1 top, q2 mid). On the section's last regular
+        // question, the trailing fill is harmless and the next section's
+        // \newcodecover handles the page break.
         versionQuestionsLatex += "\n\\questionseparator";
       }
     }

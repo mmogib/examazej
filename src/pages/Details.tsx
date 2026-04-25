@@ -33,6 +33,7 @@ import {
 import type { ExamJSON, ExamSettings } from "@/lib/types";
 import { InstructionsDialog } from "@/components/ui/instructions-dialog";
 import { generateDynamicSeed, isDefaultSeed } from "@/lib/utils/seed-generator";
+import { validateSeparatePageGrouping } from "@/lib/utils/tag-validator";
 
 interface DetailsPageProps {
   examData: ExamJSON;
@@ -174,6 +175,16 @@ export function DetailsPage({
       if (groupSum !== totalQuestions) {
         errors.push(
           `Group partition must sum to ${totalQuestions} questions (currently sums to ${groupSum})`
+        );
+      }
+
+      // Enforce: separate-page questions must be alone in their group
+      if (groupSum === totalQuestions) {
+        errors.push(
+          ...validateSeparatePageGrouping(
+            examData.exam.questions,
+            groupPartition
+          )
         );
       }
     }

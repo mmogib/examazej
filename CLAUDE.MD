@@ -50,8 +50,9 @@ src/
 ### Question Tags
 - `fixed` -- Locks position AND option order
 - `fixed-options:X` -- Locks option order only (X = correct answer letter)
-- `separate-page` -- Forces question onto new page
+- `separate-page` -- Forces question onto its own page
 - **Conflict**: `fixed` + `fixed-options` cannot be combined
+- **Grouping rule**: A `separate-page` question must be alone in its own size-1 group. Sharing a group with other questions causes version-dependent page counts (Details page hard-errors this)
 
 ### Three Grouping Modes
 - **Standard `5`**: Fixed position, questions shuffle within

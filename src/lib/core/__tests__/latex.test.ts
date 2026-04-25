@@ -606,4 +606,167 @@ describe("generateLatexDocument", () => {
       expect(result.content).toContain("CODE 15");
     });
   });
+
+  // ============================================================================
+  // SECTION 7: Page Count Header (calculateQuestionPages)
+  // ============================================================================
+
+  describe("Page count header", () => {
+    const makeQ = (text: string, sep = false): Question => ({
+      text,
+      group: 1,
+      order: 1,
+      choices: [[{ text: "A" }, { text: "B" }], 0, null],
+      fixed: false,
+      fixedOptions: false,
+      keepOnSeparatePage: sep,
+    });
+
+    const generateWith = (questions: Question[]) => {
+      const master: ExamData = {
+        ...mockMasterExam,
+        questions: questions.map((q, i) => ({ ...q, order: i + 1 })),
+      };
+      const version: ExamData = {
+        ...mockVersions[0],
+        questions: questions.map((q, i) => ({ ...q, order: i + 1 })),
+      };
+      return generateLatexDocument(mockSettings, master, [version], []);
+    };
+
+    it("reports 2 pages for 3 regular questions (2-per-page packing)", () => {
+      const result = generateWith([
+        makeQ("Q1"),
+        makeQ("Q2"),
+        makeQ("Q3"),
+      ]);
+      expect(result.content).toContain("of 2 ");
+      expect(result.content).not.toContain("of 3 ");
+    });
+
+    it("reports 2 pages when separate-page question is last", () => {
+      const result = generateWith([
+        makeQ("Q1"),
+        makeQ("Q2"),
+        makeQ("Q3", true),
+      ]);
+      expect(result.content).toContain("of 2 ");
+      expect(result.content).not.toContain("of 3 ");
+    });
+
+    it("reports 2 pages when separate-page question is first", () => {
+      const result = generateWith([
+        makeQ("Q1", true),
+        makeQ("Q2"),
+        makeQ("Q3"),
+      ]);
+      expect(result.content).toContain("of 2 ");
+      expect(result.content).not.toContain("of 3 ");
+    });
+
+    it("reports 3 pages when all three questions are separate-page", () => {
+      const result = generateWith([
+        makeQ("Q1", true),
+        makeQ("Q2", true),
+        makeQ("Q3", true),
+      ]);
+      expect(result.content).toContain("of 3 ");
+      expect(result.content).not.toContain("of 4 ");
+    });
+
+    it("reports 3 pages for 5 regular + separate-page in middle", () => {
+      const result = generateWith([
+        makeQ("Q1"),
+        makeQ("Q2"),
+        makeQ("Q3", true),
+        makeQ("Q4"),
+        makeQ("Q5"),
+      ]);
+      expect(result.content).toContain("of 3 ");
+    });
+
+    it("reports consistent total across versions of the user-reported scenario", () => {
+      // 3 questions, q3=sep, grouping [2],[1]
+      // Both shuffle outcomes should yield 2 pages
+      const withSepLast = generateWith([
+        makeQ("Q1"),
+        makeQ("Q2"),
+        makeQ("Q3", true),
+      ]);
+      const withSepFirst = generateWith([
+        makeQ("Q3", true),
+        makeQ("Q1"),
+        makeQ("Q2"),
+      ]);
+      expect(withSepLast.content).toContain("of 2 ");
+      expect(withSepFirst.content).toContain("of 2 ");
+    });
+  });
+
+  // ============================================================================
+  // SECTION 8: Section transitions (newcodecover + trailing separator)
+  // ============================================================================
+
+  describe("Section transitions", () => {
+    const makeQ = (text: string, sep = false): Question => ({
+      text,
+      group: 1,
+      order: 1,
+      choices: [[{ text: "A" }], 0, null],
+      fixed: false,
+      fixedOptions: false,
+      keepOnSeparatePage: sep,
+    });
+
+    it("\\newcodecover emits \\newpage even when includeCoverPage=false", () => {
+      const settings = { ...mockSettings, includeCoverPage: false };
+      const result = generateLatexDocument(
+        settings,
+        mockMasterExam,
+        mockVersions,
+        mockMappings
+      );
+      // Without the fix the false-branch was empty. With the fix it emits \newpage.
+      expect(result.content).toMatch(
+        /\\newcommand\{\\newcodecover\}\[1\]\{\\newpage\s*\}/
+      );
+    });
+
+    it("emits \\questionseparator (not \\eogseparator) after last regular question", () => {
+      // 2 regular questions: Q1 + qsep + Q2 + qsep, then close. The trailing
+      // \questionseparator gives the page balanced fills; \eogseparator at this
+      // position would create a blank trailing page.
+      const master: ExamData = {
+        ...mockMasterExam,
+        questions: [makeQ("Q1"), makeQ("Q2")],
+      };
+      const result = generateLatexDocument(
+        { ...mockSettings, includeCoverPage: false },
+        master,
+        [{ ...mockVersions[0], questions: master.questions }],
+        []
+      );
+      // Master section: inner \end{enumerate} (options) → \questionseparator
+      // → outer \end{enumerate} → \end{large}, with NO \eogseparator wedged in.
+      expect(result.content).toMatch(
+        /\\end\{enumerate\}\s*\n\\questionseparator\s*\n\s*\\end\{enumerate\}\s*\n\\end\{large\}/
+      );
+    });
+
+    it("keeps \\eogseparator between groups of regular questions when more follow", () => {
+      // 3 regular questions: Q1+Q2 fill page 1, Q3 needs a page break before it.
+      const master: ExamData = {
+        ...mockMasterExam,
+        questions: [makeQ("Q1"), makeQ("Q2"), makeQ("Q3")],
+      };
+      const result = generateLatexDocument(
+        { ...mockSettings, includeCoverPage: false },
+        master,
+        [{ ...mockVersions[0], questions: master.questions }],
+        []
+      );
+      // \eogseparator must still appear between Q2 and Q3 to break the page
+      expect(result.content).toContain("\\eogseparator");
+    });
+  });
 });

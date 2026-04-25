@@ -21,36 +21,33 @@ export interface PageCountWarning {
 }
 
 /**
- * Calculate total pages for a list of questions
- * Replicates the logic from latex.ts calculateQuestionPages
+ * Calculate total pages for a list of questions, mirroring the actual
+ * generator output in latex.ts. Separate-page questions occupy a dedicated
+ * page; regular questions pack maxQuestionsPerPage per page.
+ *
+ * This is the canonical implementation — latex.ts imports it from here so the
+ * two cannot drift.
  */
-function calculateQuestionPages(questions: Question[]): number {
+export function calculateQuestionPages(questions: Question[]): number {
   if (questions.length === 0) return 0;
 
   const maxQuestionsPerPage = 2;
 
-  const { currentPage } = questions.reduce(
-    (acc, question) => {
-      if (question.keepOnSeparatePage) {
-        const pageIncrement = acc.questionsOnCurrentPage > 0 ? 2 : 1;
-        return {
-          currentPage: acc.currentPage + pageIncrement,
-          questionsOnCurrentPage: 0,
-        };
-      } else {
-        const needNewPage = acc.questionsOnCurrentPage >= maxQuestionsPerPage;
-        return {
-          currentPage: acc.currentPage + (needNewPage ? 1 : 0),
-          questionsOnCurrentPage: needNewPage
-            ? 1
-            : acc.questionsOnCurrentPage + 1,
-        };
-      }
-    },
-    { currentPage: 1, questionsOnCurrentPage: 0 }
-  );
+  let pages = 0;
+  let count = 0;
 
-  return currentPage;
+  for (const question of questions) {
+    if (question.keepOnSeparatePage) {
+      pages += 1;
+      count = 0;
+    } else {
+      if (count === 0) pages += 1;
+      count += 1;
+      if (count >= maxQuestionsPerPage) count = 0;
+    }
+  }
+
+  return pages;
 }
 
 /**

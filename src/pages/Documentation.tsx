@@ -1203,6 +1203,32 @@ This is a complex question that requires its own page with lots of space for dia
                         those requiring significant workspace.
                       </AlertDescription>
                     </Alert>
+                    <Alert className="mt-3 border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-900 dark:text-red-100">
+                        <strong>Grouping rule:</strong> A question with{" "}
+                        <code className="bg-red-100 dark:bg-red-900 px-1 rounded">
+                          separate-page
+                        </code>{" "}
+                        must be alone in its own group (size 1). Sharing a
+                        group with other questions makes the total page count
+                        depend on the shuffle outcome — different versions
+                        would end up with different page totals. Example: for
+                        3 questions where q3 is separate-page, use{" "}
+                        <code className="bg-red-100 dark:bg-red-900 px-1 rounded">
+                          2,1
+                        </code>{" "}
+                        or{" "}
+                        <code className="bg-red-100 dark:bg-red-900 px-1 rounded">
+                          [2],[1]
+                        </code>
+                        , not{" "}
+                        <code className="bg-red-100 dark:bg-red-900 px-1 rounded">
+                          3
+                        </code>
+                        .
+                      </AlertDescription>
+                    </Alert>
                   </CardContent>
                 </Card>
               </>

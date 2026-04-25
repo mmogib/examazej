@@ -86,6 +86,64 @@ export function validateQuestionTags(
 }
 
 /**
+ * Parse a group-partition string into numeric group sizes.
+ * Returns null if any token is unparseable (caller uses separate syntax validation).
+ */
+function parseGroupSizes(groupPartition: string): number[] | null {
+  const tokens = groupPartition.split(',').map(t => t.trim()).filter(t => t !== '');
+  const sizes: number[] = [];
+  for (const token of tokens) {
+    const cleaned = token.replace(/[()[\]]/g, '');
+    const n = parseInt(cleaned, 10);
+    if (isNaN(n) || n <= 0) return null;
+    sizes.push(n);
+  }
+  return sizes;
+}
+
+export interface SeparatePageQuestionInfo {
+  keepOnSeparatePage?: boolean;
+}
+
+/**
+ * Validate that every `separate-page` question sits alone in its own size-1 group.
+ *
+ * Sharing a group with other questions makes the total page count depend on where
+ * the separate-page question lands after shuffling, producing versions with
+ * different page counts. Enforcing size-1 groups keeps the layout invariant.
+ *
+ * @returns array of error messages (empty if valid)
+ */
+export function validateSeparatePageGrouping(
+  questions: SeparatePageQuestionInfo[],
+  groupPartition: string
+): string[] {
+  const sizes = parseGroupSizes(groupPartition);
+  if (sizes === null) return []; // syntax errors handled elsewhere
+
+  const totalFromGroups = sizes.reduce((s, n) => s + n, 0);
+  if (totalFromGroups !== questions.length) return []; // partition mismatch handled elsewhere
+
+  const errors: string[] = [];
+  let cursor = 0;
+  sizes.forEach((size, groupIdx) => {
+    const groupQuestions = questions.slice(cursor, cursor + size);
+    groupQuestions.forEach((q, offset) => {
+      if (q.keepOnSeparatePage && size > 1) {
+        const qNo = cursor + offset + 1;
+        errors.push(
+          `Question ${qNo} has the 'separate-page' tag but shares Group ${groupIdx + 1} (size ${size}) with other questions. ` +
+          `Place it in its own size-1 group (e.g., split "${size}" into smaller groups so this question is alone).`
+        );
+      }
+    });
+    cursor += size;
+  });
+
+  return errors;
+}
+
+/**
  * Get human-readable description of tag combination
  * Useful for documentation and error messages
  */
