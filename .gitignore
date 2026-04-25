@@ -33,3 +33,6 @@ coverage/
 
 # Local planning notes
 notes/
+
+# Claude Code local settings (per-machine permissions)
+.claude/settings.local.json
