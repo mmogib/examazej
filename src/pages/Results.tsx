@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import JSZip from "jszip";
 import overleafIcon from "@/assets/overleaf-icon.png";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +34,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Download,
   ArrowLeft,
-  FileText,
   Table as TableIcon,
   BarChart3,
   Settings2,
@@ -106,23 +106,6 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       "_"
     )}`;
 
-  // Generic file download helper
-  const downloadFile = (
-    content: string,
-    filename: string,
-    mimeType: string = "text/plain"
-  ) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   // Helper function to submit content to Overleaf
   const submitToOverleaf = (content: string, filename: string) => {
     const form = document.createElement("form");
@@ -157,29 +140,12 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) =>
       (e.currentTarget.style.backgroundColor = "rgb(71, 161, 65)"),
   };
-  const performLatexDownload = () => {
+  const buildAndDownloadBundle = async () => {
     if (!generationState) return;
 
-    const { content: latexContent, pageCountWarning: warning } =
-      generateLatexDocument(
-        generationState.settings,
-        examData.exam,
-        generationState.versions,
-        generationState.mappings,
-        allowTrustedTex
-      );
+    const base = getBaseFilename();
 
-    // Store warning for display in UI banner
-    setPageCountWarning(warning);
-
-    downloadFile(latexContent, `${getBaseFilename()}.tex`);
-  };
-
-  const downloadLatex = () => {
-    if (!generationState) return;
-
-    // Generate to check for warnings
-    const { pageCountWarning: warning } = generateLatexDocument(
+    const { content: latexContent } = generateLatexDocument(
       generationState.settings,
       examData.exam,
       generationState.versions,
@@ -187,41 +153,21 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       allowTrustedTex
     );
 
-    // If there's a page count warning, show dialog first
-    if (warning) {
-      setPageCountWarning(warning);
-      setPendingDownload(() => performLatexDownload);
-      setShowWarningDialog(true);
-    } else {
-      // No warning, download directly
-      performLatexDownload();
-    }
-  };
+    const template = generateLatexTemplate(
+      generationState.settings,
+      examData.exam,
+      generationState.versions.length
+    );
 
-  const downloadMappingCSV = () => {
-    if (!generationState) return;
+    const mappingCSV = generateMappingCSV(generationState.mappings);
 
-    const csvContent = generateMappingCSV(generationState.mappings);
-    downloadFile(csvContent, `${getBaseFilename()}_mapping.csv`, "text/csv");
-  };
-
-  const downloadOptionsMappingCSV = () => {
-    if (!generationState) return;
-
-    const mappingTable = generateQuestionOptionMapping(
+    const optionsMappingTable = generateQuestionOptionMapping(
       generationState,
       examData.exam
     );
-    const csvContent = mappingTable.map((row) => row.join(",")).join("\n");
-
-    downloadFile(
-      csvContent,
-      `${getBaseFilename()}_options_mapping.csv`,
-      "text/csv"
-    );
-  };
-  const downloadSessionJSON = () => {
-    if (!generationState) return;
+    const optionsMappingCSV = optionsMappingTable
+      .map((row) => row.join(","))
+      .join("\n");
 
     const sessionData = {
       ...examData,
@@ -239,11 +185,43 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
       },
     };
 
-    downloadFile(
-      JSON.stringify(sessionData, null, 2),
-      `${getBaseFilename()}_session.json`,
-      "application/json"
+    const zip = new JSZip();
+    zip.file(`${base}.tex`, latexContent);
+    zip.file(`${base}_template.tex`, template);
+    zip.file(`${base}_mapping.csv`, mappingCSV);
+    zip.file(`${base}_options_mapping.csv`, optionsMappingCSV);
+    zip.file(`${base}_session.json`, JSON.stringify(sessionData, null, 2));
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${base}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadExamBundle = () => {
+    if (!generationState) return;
+
+    const { pageCountWarning: warning } = generateLatexDocument(
+      generationState.settings,
+      examData.exam,
+      generationState.versions,
+      generationState.mappings,
+      allowTrustedTex
     );
+
+    setPageCountWarning(warning);
+
+    if (warning) {
+      setPendingDownload(() => buildAndDownloadBundle);
+      setShowWarningDialog(true);
+    } else {
+      buildAndDownloadBundle();
+    }
   };
 
   const performOverleafOpen = () => {
@@ -297,18 +275,6 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
     );
 
     submitToOverleaf(template, `${getBaseFilename()}_template.tex`);
-  };
-
-  const downloadTemplate = () => {
-    if (!generationState) return;
-
-    const template = generateLatexTemplate(
-      generationState.settings,
-      examData.exam,
-      generationState.versions.length
-    );
-
-    downloadFile(template, `${getBaseFilename()}_template.tex`);
   };
 
   if (loading || !generationState) {
@@ -780,45 +746,13 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                 </Button>
               </ExamPreviewSheet>
 
-              <Button onClick={downloadLatex} variant="hero" className="w-full">
-                <FileText className="h-4 w-4 mr-2" />
-                Complete Exam
-              </Button>
-
               <Button
-                onClick={downloadTemplate}
-                variant="outline"
-                className="w-full"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Template
-              </Button>
-
-              <Button
-                onClick={downloadMappingCSV}
-                variant="outline"
-                className="w-full"
-              >
-                <TableIcon className="h-4 w-4 mr-2" />
-                Question Map
-              </Button>
-
-              <Button
-                onClick={downloadOptionsMappingCSV}
-                variant="outline"
-                className="w-full"
-              >
-                <TableIcon className="h-4 w-4 mr-2" />
-                Options Matrix
-              </Button>
-
-              <Button
-                onClick={downloadSessionJSON}
-                variant="outline"
+                onClick={downloadExamBundle}
+                variant="hero"
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export JSON
+                Exam Package (.zip)
               </Button>
             </CardContent>
           </Card>

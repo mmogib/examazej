@@ -532,7 +532,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {highlightText(
-                          "Generate randomized exam versions and download the complete LaTeX document with answer keys."
+                          "Generate randomized exam versions and download the complete Exam Package (.zip) containing the LaTeX document, template, mapping CSVs, and session JSON."
                         )}
                       </p>
                     </div>
@@ -1976,7 +1976,41 @@ Which is largest?
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-medium mb-2">What's Included</h4>
+                    <h4 className="font-medium mb-2">
+                      Exam Package (.zip) Contents
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Clicking the <strong>Exam Package (.zip)</strong> button
+                      downloads a single archive containing five files:
+                    </p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>
+                        • <code>{"{course}_{exam}.tex"}</code> — complete LaTeX
+                        document (all versions + answer keys)
+                      </li>
+                      <li>
+                        • <code>{"{course}_{exam}_template.tex"}</code> —
+                        editable LaTeX template
+                      </li>
+                      <li>
+                        • <code>{"{course}_{exam}_mapping.csv"}</code> —
+                        question position map across versions
+                      </li>
+                      <li>
+                        • <code>{"{course}_{exam}_options_mapping.csv"}</code>{" "}
+                        — answer-choice permutation matrix
+                      </li>
+                      <li>
+                        • <code>{"{course}_{exam}_session.json"}</code> — full
+                        session state (for reproducibility)
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">
+                      What's Included in the LaTeX Document
+                    </h4>
                     <ul className="text-sm space-y-1 ml-4">
                       <li>
                         • <strong>Master cover page</strong> with exam details
