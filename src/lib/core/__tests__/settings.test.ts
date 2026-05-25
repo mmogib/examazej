@@ -351,6 +351,15 @@ describe("settings.ts", () => {
   });
 
   describe("generateTemplateSettings", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-05-25T12:00:00Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("should generate settings with user-provided metadata", () => {
       const config = {
         coursecode: "CS 201",
