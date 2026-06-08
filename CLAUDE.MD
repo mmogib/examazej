@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-05-25
-**Version**: 1.6.0
+**Last Updated**: 2026-06-08
+**Version**: 1.6.1
 
 ---
 
