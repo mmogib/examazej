@@ -2,16 +2,28 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
-import { createRequire } from "node:module";
+import { createRequire, builtinModules } from "node:module";
 
 // Read the app version from package.json (release.sh keeps it in lockstep) so the web UI
 // (Footer, /download fallback) always shows the shipped version without a manual edit.
 const pkg = createRequire(import.meta.url)("./package.json") as { version: string };
 
+// Only Electron + Node built-ins are provided by the runtime; everything else (electron-updater
+// and its deps) must be BUNDLED into main.mjs, because electron-builder excludes node_modules
+// from the package (see electron-builder.yml) — nothing there is require-able at runtime.
+const nodeExternals = [
+  "electron",
+  ...builtinModules,
+  ...builtinModules.map((m) => `node:${m}`),
+];
+
 // Main = ESM (.mjs) — Electron 43 supports an ESM entrypoint.
 const emitMjs = (name: string) => ({
   build: {
-    rollupOptions: { output: { entryFileNames: `${name}.mjs` } },
+    rollupOptions: {
+      external: nodeExternals,
+      output: { entryFileNames: `${name}.mjs` },
+    },
   },
 });
 

@@ -3,6 +3,10 @@ import type { MenuItemConstructorOptions } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import electronUpdater from "electron-updater";
+
+// electron-updater is CommonJS; this is its documented ESM interop.
+const { autoUpdater } = electronUpdater;
 
 // ESM entrypoint → reconstruct __dirname.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,6 +16,25 @@ const DEV_URL = process.env.VITE_DEV_SERVER_URL;
 const isDev = !!DEV_URL;
 
 let mainWindow: BrowserWindow | null = null;
+
+// ── Auto-update status → renderer (Phase 4, D11). Silent by default; the renderer
+// (useDesktopUpdates) only surfaces a subtle "ready to restart" toast, plus feedback for a
+// user-initiated "Check for Updates…". Keep in sync with UpdaterStatus in src/vite-env.d.ts.
+type UpdaterStatus =
+  | { kind: "checking"; manual: boolean }
+  | { kind: "available"; version: string; manual: boolean }
+  | { kind: "none"; manual: boolean }
+  | { kind: "progress"; percent: number }
+  | { kind: "downloaded"; version: string }
+  | { kind: "error"; message: string; manual: boolean };
+
+// True while the in-flight check came from the Help menu (→ show feedback) rather than the
+// silent on-launch check (→ stay quiet unless an update is actually ready to install).
+let manualCheck = false;
+
+function sendUpdateStatus(status: UpdaterStatus) {
+  mainWindow?.webContents.send("updater:status", status);
+}
 
 // ── Window-state persistence (the app's ONLY on-disk state; local-only) ──────
 const stateFile = path.join(app.getPath("userData"), "window-state.json");
@@ -54,11 +77,20 @@ function isOnScreen(s: WindowState): boolean {
   return intersects && titleReachable;
 }
 
-// ── Offline enforcement + CSP (T5). The renderer makes zero external calls; ──
-// this blocks all of them at the request layer. NOTE: electron-updater uses
-// Electron's `net` on session.defaultSession, so it is ALSO caught by this block.
-// TODO(Phase 4): allowlist the update-feed hosts here (or run updates on a separate
-// partitioned session) before wiring auto-update — otherwise updates are silently blocked.
+// The GitHub Releases hosts electron-updater talks to (on the default session). This is the
+// app's ONLY sanctioned network egress — the disclosed "we only check for updates" exception
+// (D11). The renderer stays boxed to 'self' by CSP, so it can't piggyback on this allowlist.
+function isUpdateFeedHost(host: string): boolean {
+  return (
+    host === "github.com" ||
+    host === "api.github.com" ||
+    host.endsWith(".githubusercontent.com") // objects/… + release-assets/… asset redirects
+  );
+}
+
+// ── Offline enforcement + CSP (T5). The renderer makes zero external calls; this blocks all
+// of them at the request layer. The single exception is the update feed above (electron-updater
+// uses Electron's `net` on session.defaultSession, so it flows through here too).
 function hardenSession() {
   const ses = session.defaultSession;
   const devHost = DEV_URL ? new URL(DEV_URL).host : null;
@@ -67,8 +99,12 @@ function hardenSession() {
     { urls: ["http://*/*", "https://*/*", "ws://*/*", "wss://*/*"] },
     (details, cb) => {
       try {
-        if (isDev && devHost && new URL(details.url).host === devHost) {
+        const { host } = new URL(details.url);
+        if (isDev && devHost && host === devHost) {
           return cb({}); // allow the Vite dev server + HMR websocket
+        }
+        if (isUpdateFeedHost(host)) {
+          return cb({}); // allow the GitHub update feed (electron-updater, main process)
         }
       } catch {
         /* fallthrough to block */
@@ -150,17 +186,58 @@ function showAbout() {
   });
 }
 
-// Phase 4 replaces this with the electron-updater flow.
+// Help ▸ "Check for Updates…" — user-initiated, so we show feedback. The on-launch check runs
+// silently from initAutoUpdater().
 function checkForUpdates() {
-  // TODO(Phase 4): replace with autoUpdater.checkForUpdates() + sonner-toast status.
-  dialog.showMessageBox(mainWindow!, {
-    type: "info",
-    title: "Examazej",
-    message: isDev
-      ? "Updates are delivered in release builds."
-      : "Automatic update checks will arrive in an upcoming release.",
-    buttons: ["OK"],
+  if (isDev) {
+    dialog.showMessageBox(mainWindow!, {
+      type: "info",
+      title: "Examazej",
+      message: "Updates are delivered in packaged release builds.",
+      buttons: ["OK"],
+    });
+    return;
+  }
+  manualCheck = true;
+  autoUpdater.checkForUpdates().catch((err) => {
+    sendUpdateStatus({ kind: "error", message: String(err?.message ?? err), manual: true });
+    manualCheck = false;
   });
+}
+
+// electron-updater: check on launch → download silently → install on quit (D11). Signature
+// verification stays off until code-signing lands (D9); we rely on HTTPS + the public repo.
+function initAutoUpdater() {
+  if (isDev) return; // no app-update.yml in dev → autoUpdater would throw
+
+  autoUpdater.autoDownload = true; // silent background download
+  autoUpdater.autoInstallOnAppQuit = true; // apply on the next quit
+
+  autoUpdater.on("checking-for-update", () =>
+    sendUpdateStatus({ kind: "checking", manual: manualCheck })
+  );
+  autoUpdater.on("update-available", (info) =>
+    sendUpdateStatus({ kind: "available", version: info.version, manual: manualCheck })
+  );
+  autoUpdater.on("update-not-available", () => {
+    sendUpdateStatus({ kind: "none", manual: manualCheck });
+    manualCheck = false;
+  });
+  autoUpdater.on("download-progress", (p) =>
+    sendUpdateStatus({ kind: "progress", percent: Math.round(p.percent) })
+  );
+  autoUpdater.on("update-downloaded", (info) => {
+    sendUpdateStatus({ kind: "downloaded", version: info.version });
+    manualCheck = false;
+  });
+  autoUpdater.on("error", (err) => {
+    // Silent on the auto check (don't nag offline users); surfaced only for manual checks.
+    sendUpdateStatus({ kind: "error", message: String(err?.message ?? err), manual: manualCheck });
+    manualCheck = false;
+  });
+
+  // Check shortly after launch, once the renderer is up to receive toast events.
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 3000);
 }
 
 function createWindow() {
@@ -244,9 +321,12 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     ipcMain.handle("app:getVersion", () => app.getVersion());
+    // Renderer "Restart now" action → apply the downloaded update (silent install + relaunch).
+    ipcMain.handle("updater:install", () => autoUpdater.quitAndInstall(true, true));
     hardenSession();
     buildMenu();
     createWindow();
+    initAutoUpdater();
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

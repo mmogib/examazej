@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
+import { useDesktopUpdates } from "@/hooks/useDesktopUpdates";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
@@ -14,7 +15,10 @@ const queryClient = new QueryClient();
 // Desktop (Electron) loads from file:// → HashRouter; web uses BrowserRouter.
 const Router = __DESKTOP__ ? HashRouter : BrowserRouter;
 
-const App = () => (
+const App = () => {
+  useDesktopUpdates(); // no-op on web
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -49,6 +53,7 @@ const App = () => (
       </Router>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

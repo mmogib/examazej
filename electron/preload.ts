@@ -14,10 +14,13 @@ contextBridge.exposeInMainWorld("examazej", {
     return () => ipcRenderer.removeListener("menu:show-docs", listener);
   },
 
-  // Auto-update status channel (Phase 4 fleshes out the payload).
+  // Auto-update status channel (main → renderer). Payload = UpdaterStatus (see main.ts).
   onUpdateStatus: (cb: (status: unknown) => void): (() => void) => {
     const listener = (_e: unknown, status: unknown) => cb(status);
     ipcRenderer.on("updater:status", listener);
     return () => ipcRenderer.removeListener("updater:status", listener);
   },
+
+  // Renderer → main: apply the already-downloaded update now ("Restart now").
+  installUpdate: (): Promise<void> => ipcRenderer.invoke("updater:install"),
 });
