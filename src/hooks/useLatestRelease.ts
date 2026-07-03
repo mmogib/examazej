@@ -19,8 +19,8 @@ export type ReleaseInfo = {
 };
 
 const FALLBACK: ReleaseInfo = {
-  version: "1.6.2",
-  fileName: "Examazej Setup 1.6.2.exe",
+  version: __APP_VERSION__,
+  fileName: `Examazej Setup ${__APP_VERSION__}.exe`,
   downloadUrl: `https://github.com/${OWNER}/${REPO}/releases/latest`,
   sizeMB: null,
   sha256: null,

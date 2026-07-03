@@ -16,7 +16,7 @@ export function Footer() {
           </a>
         </p>
         <p className="text-xs text-muted-foreground/70">
-          Examazej v1.6.2
+          Examazej v{__APP_VERSION__}
           {!__DESKTOP__ && (
             <>
               {" · "}

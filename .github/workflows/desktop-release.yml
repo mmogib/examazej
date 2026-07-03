@@ -1,0 +1,46 @@
+name: Desktop Release
+
+# Build + publish the Examazej Windows installer for a version tag.
+#
+# Triggered by `scripts/release.sh` when it runs `git push origin vX.Y.Z`. The build runs on a
+# clean windows-latest runner — crucially, NOT behind the university SSL-inspection proxy, so the
+# Electron binary / NSIS toolchain downloads that need `--use-system-ca` on the owner's machine
+# just work here. electron-builder uploads "Examazej Setup X.Y.Z.exe" + latest.yml + .blockmap to
+# the matching GitHub Release and auto-publishes it (releaseType: release in electron-builder.yml),
+# so the web /download button (and, from Phase 4, the electron-updater feed) go live automatically.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# electron-builder needs to create the release and upload assets.
+permissions:
+  contents: write
+
+# One build per tag; don't cancel an in-flight publish if the tag is re-pushed.
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and publish Windows installer
+        env:
+          # electron-builder reads GH_TOKEN to create the release + upload assets.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:publish

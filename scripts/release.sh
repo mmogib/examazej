@@ -1,5 +1,10 @@
 #!/bin/bash
-# Release script: bumps version, tags, merges to main, and pushes
+# Release script: bumps version, tags, merges to main, and pushes.
+#
+# Pushing the vX.Y.Z tag triggers .github/workflows/desktop-release.yml, which builds the
+# Windows installer on a clean windows-latest runner and auto-publishes it to the matching
+# GitHub Release (electron-builder --publish always). Web (Netlify) + desktop ship from one run.
+#
 # Usage: ./scripts/release.sh [major|minor|patch]
 #   major: 1.5.0 → 2.0.0
 #   minor: 1.5.0 → 1.6.0 (default)
@@ -67,6 +72,9 @@ echo "Pushed main and tag v$NEW_VERSION to origin"
 git checkout "$CURRENT_BRANCH"
 
 echo ""
-echo "Done! v$NEW_VERSION is live."
-echo "  Netlify: auto-deploying from main"
+echo "Done! v$NEW_VERSION is tagged, merged, and pushed."
+echo "  Web     → Netlify auto-deploys from main"
+echo "  Desktop → GitHub Actions builds the Windows installer from tag v$NEW_VERSION and"
+echo "            auto-publishes it to the v$NEW_VERSION GitHub Release when the build finishes"
+echo "            watch: https://github.com/mmogib/examazej/actions"
 echo "  University: email deployment team when ready"

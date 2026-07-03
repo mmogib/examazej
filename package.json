@@ -12,6 +12,7 @@
     "electron:dev": "vite --mode desktop",
     "electron:build": "vite build --mode desktop && electron-builder",
     "electron:build:local": "node scripts/build-desktop-local.mjs",
+    "electron:publish": "vite build --mode desktop && electron-builder --publish always",
     "electron:clean": "node scripts/clean-desktop-build.mjs",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

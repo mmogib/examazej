@@ -35,7 +35,11 @@ nsis:
   shortcutName: Examazej
 
 # Update feed (used by app-update.yml + electron-updater in Phase 4). Public repo.
+# `electron:publish` (run by CI on a version tag) uploads the installer here.
 publish:
   provider: github
   owner: mmogib
   repo: examazej
+  # Auto-publish a non-draft release so it appears at /releases/latest the moment CI finishes
+  # → the web /download button + (Phase 4) the electron-updater feed go live with no manual click.
+  releaseType: release

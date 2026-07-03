@@ -2,6 +2,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
+import { createRequire } from "node:module";
+
+// Read the app version from package.json (release.sh keeps it in lockstep) so the web UI
+// (Footer, /download fallback) always shows the shipped version without a manual edit.
+const pkg = createRequire(import.meta.url)("./package.json") as { version: string };
 
 // Main = ESM (.mjs) — Electron 43 supports an ESM entrypoint.
 const emitMjs = (name: string) => ({
@@ -57,6 +62,7 @@ export default defineConfig(({ mode }) => {
     // vitest.config.ts is ever added, it must re-declare __DESKTOP__ or tests throw.
     define: {
       __DESKTOP__: JSON.stringify(isDesktop),
+      __APP_VERSION__: JSON.stringify(pkg.version),
     },
     server: {
       host: "::",
