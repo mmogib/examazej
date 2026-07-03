@@ -1,13 +1,25 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-06-08
-**Version**: 1.6.1
+**Last Updated**: 2026-07-03
+**Version**: 1.6.2
 
 ---
 
 ## What This App Does
 
-**MC Exam Randomizer** generates multiple versions of multiple-choice exams from LaTeX, CSV, or Excel templates. Questions and answer options are shuffled deterministically using seed-based randomization for reproducibility. All processing is client-side (browser only). No authentication -- open access.
+**Examazej** (tagline: *Multiple-Choice Exam Randomizer*) generates multiple versions of multiple-choice exams from LaTeX, CSV, or Excel templates. Questions and answer options are shuffled deterministically using seed-based randomization for reproducibility. All processing is client-side (browser only). No authentication -- open access.
+
+> **Branding:** the app was unified under the single name **Examazej** (English *Exam* + Arabic *مزيج / mazeej*, "blend/mix") in v1.6.2 — replacing the prior inconsistent names (Shuffler / Exam Generator / MC Exam Randomizer / Exam Shuffler).
+
+## Desktop App (Examazej) — In Planning
+
+A **Windows desktop** build is planned as a thin **Electron** shell around the *same* web build (one codebase; functional parity by construction). Full plan + all 26 decisions live in `notes/desktop-app-plan.md` (local/gitignored). Key decisions:
+
+- **Electron** (bundles its own Chromium — a hard requirement, which rules out Tauri) · **Windows-first** · **one repo** (`mmogib/tex-exam-craft`) · `electron-builder` **NSIS per-user** installer (no admin/UAC).
+- **Auto-update:** `electron-updater` + **GitHub Releases** (public repo). Check-on-launch → silent download → install-on-quit → subtle `sonner` toast.
+- **Parity:** desktop loads the same `dist/`; only thin shell deltas, all gated behind a `__DESKTOP__` build flag — `HashRouter`, boots to `/app` (skips Landing), enforced-offline, native Windows menu.
+- **Offline/trust:** self-host fonts (drop the Google Fonts `@import`) so the app makes zero network calls; v0.1 ships **unsigned** (SmartScreen warning accepted), code-signing later.
+- **Branding/icon:** name **Examazej**; icon source in `assets/branding/icon/`, generated via `scripts/gen-icons.ps1` → `build/icon.ico` (desktop) + `public/` favicons (web). `appId` = `io.github.mmogib.examazej`.
 
 ## Tech Stack
 
