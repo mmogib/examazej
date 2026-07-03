@@ -155,13 +155,10 @@ function createWindow() {
     backgroundColor: "#027E2F",
     title: "Examazej",
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      // sandbox:false for now — an ESM preload can't run sandboxed. contextIsolation +
-      // nodeIntegration:false keep the renderer locked down. TODO(hardening): re-enable
-      // sandbox:true with a CJS preload.
-      sandbox: false,
+      sandbox: true, // preload is emitted as CommonJS (preload.cjs), so the sandbox works
     },
   });
 

@@ -3,13 +3,18 @@ import react from "@vitejs/plugin-react-swc";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
 
-// The app package is `type: module`, so emit the Electron main/preload as ESM
-// (.mjs). Electron 43 supports an ESM entrypoint.
-const emit = (name: string) => ({
+// Main = ESM (.mjs) — Electron 43 supports an ESM entrypoint.
+const emitMjs = (name: string) => ({
   build: {
-    rollupOptions: {
-      output: { entryFileNames: `${name}.mjs` },
-    },
+    rollupOptions: { output: { entryFileNames: `${name}.mjs` } },
+  },
+});
+
+// Preload = CommonJS (.cjs) — a sandboxed preload (sandbox:true) cannot be ESM.
+const emitCjs = (name: string, entry: string) => ({
+  build: {
+    lib: { entry, formats: ["cjs" as const] },
+    rollupOptions: { output: { entryFileNames: `${name}.cjs` } },
   },
 });
 
@@ -35,8 +40,11 @@ export default defineConfig(({ mode }) => {
       react(),
       isDesktop &&
         electron({
-          main: { entry: "electron/main.ts", vite: emit("main") },
-          preload: { input: "electron/preload.ts", vite: emit("preload") },
+          main: { entry: "electron/main.ts", vite: emitMjs("main") },
+          preload: {
+            input: "electron/preload.ts",
+            vite: emitCjs("preload", "electron/preload.ts"),
+          },
         }),
     ].filter(Boolean),
     resolve: {
