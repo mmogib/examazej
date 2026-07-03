@@ -1,0 +1,38 @@
+appId: io.github.mmogib.examazej
+productName: Examazej
+copyright: © Mohammed Alshahrani
+
+directories:
+  output: release
+  buildResources: build
+
+# The packaged app = the renderer (dist/) + the main/preload (dist-electron/).
+# The renderer's deps are already bundled into dist/ by Vite, and the main process
+# only needs `electron` (from the runtime), so exclude node_modules entirely — this
+# roughly halves the app size. (Phase 4: bundle electron-updater into main.mjs, or add
+# a narrow node_modules include for it.)
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+  - "!node_modules/**"
+
+win:
+  target: nsis
+  icon: build/icon.ico
+
+# Per-user install — no admin/UAC (D16), important for locked-down university machines.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  runAfterFinish: true
+  shortcutName: Examazej
+
+# Update feed (used by app-update.yml + electron-updater in Phase 4). Public repo.
+publish:
+  provider: github
+  owner: mmogib
+  repo: examazej

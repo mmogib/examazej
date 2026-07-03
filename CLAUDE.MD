@@ -11,7 +11,7 @@
 
 > **Branding:** the app was unified under the single name **Examazej** (English *Exam* + Arabic *مزيج / mazeej*, "blend/mix") in v1.6.2 — replacing the prior inconsistent names (Shuffler / Exam Generator / MC Exam Randomizer / Exam Shuffler).
 
-## Desktop App (Examazej) — In Planning
+## Desktop App (Examazej) — In Progress (Phases 0–2 done: Electron shell + unsigned installer build & run; on `new-feat`, unpushed)
 
 A **Windows desktop** build is planned as a thin **Electron** shell around the *same* web build (one codebase; functional parity by construction). Full plan + all 26 decisions live in `notes/desktop-app-plan.md` (local/gitignored). Key decisions:
 
