@@ -1,5 +1,10 @@
 # Examazej — Icon Design Brief (for Claude Design app / Fable)
 
+> **STATUS: ✅ DELIVERED.** Final art lives in `assets/branding/icon/` (`examazej-*`), and
+> `build/icon.ico` + `public/` favicons are generated via `scripts/gen-icons.ps1`. The
+> save-map lower in this file (which mentions `assets/branding/icon.svg`) is the ORIGINAL
+> brief, kept for history — the single source of truth is **`assets/branding/icon/`**.
+
 Purpose: produce ONE refined master icon; we generate all derived formats locally so the
 **web app** (`public/`) and **desktop app** (`build/`) share identical branding.
 
