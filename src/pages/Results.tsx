@@ -757,33 +757,37 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <img src={overleafIcon} alt="Overleaf" className="h-4 w-4" />
-                Overleaf
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button onClick={openInOverleaf} {...overleafButtonProps}>
-                <img
-                  src={overleafIcon}
-                  alt="Overleaf"
-                  className="h-4 w-4 mr-2"
-                />
-                Complete Exam
-              </Button>
+          {/* Overleaf hidden on desktop (D27) — the app is offline; desktop users
+              compile from the downloaded .zip. Shown on web only. */}
+          {!__DESKTOP__ && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <img src={overleafIcon} alt="Overleaf" className="h-4 w-4" />
+                  Overleaf
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button onClick={openInOverleaf} {...overleafButtonProps}>
+                  <img
+                    src={overleafIcon}
+                    alt="Overleaf"
+                    className="h-4 w-4 mr-2"
+                  />
+                  Complete Exam
+                </Button>
 
-              <Button onClick={openTemplateInOverleaf} {...overleafButtonProps}>
-                <img
-                  src={overleafIcon}
-                  alt="Overleaf"
-                  className="h-4 w-4 mr-2"
-                />
-                Template
-              </Button>
-            </CardContent>
-          </Card>
+                <Button onClick={openTemplateInOverleaf} {...overleafButtonProps}>
+                  <img
+                    src={overleafIcon}
+                    alt="Overleaf"
+                    className="h-4 w-4 mr-2"
+                  />
+                  Template
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { StartPage } from './Start';
@@ -47,6 +47,12 @@ const Index = () => {
   const handleBackFromDocs = () => {
     setCurrentStep('start');
   };
+
+  // Desktop native menu "Help → Documentation" opens the in-app docs step (T8/D13).
+  useEffect(() => {
+    if (!__DESKTOP__) return;
+    return window.examazej?.onShowDocs(() => setCurrentStep('docs'));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-academic flex flex-col">
