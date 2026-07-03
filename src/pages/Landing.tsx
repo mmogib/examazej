@@ -136,12 +136,12 @@ const Landing = () => {
                 100% Private
               </h3>
               <p className="mb-8 leading-relaxed text-muted-foreground">
-                All exam data is processed locally in your browser. No questions or student data ever leave your device. Total sovereignty.
+                All exam data is processed locally in your browser — no accounts, no servers. Your content leaves your device only if you choose to open it in Overleaf.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
                   <CheckCircle className="h-[18px] w-[18px] text-primary" />
-                  No data leaves your device
+                  No automatic uploads
                 </li>
                 <li className="flex items-center gap-3 text-sm font-medium text-foreground/80">
                   <CheckCircle className="h-[18px] w-[18px] text-primary" />
