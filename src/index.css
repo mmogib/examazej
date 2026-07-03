@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Fonts are self-hosted via @fontsource-variable (imported in main.tsx) — no external requests. */
 
 @tailwind base;
 @tailwind components;
@@ -65,9 +65,9 @@
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     /* Typography scale */
-    --font-heading: 'Inter', system-ui, sans-serif;
-    --font-body: 'Inter', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-heading: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
 
     --sidebar-background: 0 0% 98%;
 
