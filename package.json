@@ -11,6 +11,8 @@
     "build": "vite build",
     "electron:dev": "vite --mode desktop",
     "electron:build": "vite build --mode desktop && electron-builder",
+    "electron:build:local": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/build-desktop-local.ps1",
+    "electron:clean": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts/clean-desktop-build.ps1",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

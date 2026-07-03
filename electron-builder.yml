@@ -3,6 +3,9 @@ productName: Examazej
 copyright: © Mohammed Alshahrani
 
 directories:
+  # CI default. LOCAL builds on the owner's machine override this to D: via
+  # `npm run electron:build:local` (scripts/build-desktop-local.ps1) — C: is space-tight.
+  # Do NOT run plain `electron:build` locally: it writes ~460 MB to C:\release\.
   output: release
   buildResources: build
 
