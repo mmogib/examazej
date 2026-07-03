@@ -39,8 +39,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Pre-create the Release so electron-builder's parallel asset uploads (.exe / .blockmap /
+      # latest.yml) find an existing release instead of each racing to create one — which on
+      # v1.6.2 produced TWO releases for the same tag. Idempotent: reuse if it already exists.
+      - name: Ensure the GitHub Release exists (avoids electron-builder duplicate-release race)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists — reusing."
+          else
+            echo "Creating release $tag."
+            gh release create "$tag" -R "$GITHUB_REPOSITORY" --verify-tag \
+              --title "$tag" --notes "Examazej $tag — Windows installer (auto-published by CI)."
+          fi
+
       - name: Build and publish Windows installer
         env:
-          # electron-builder reads GH_TOKEN to create the release + upload assets.
+          # electron-builder reads GH_TOKEN to upload assets to the release created above.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run electron:publish
