@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, session, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, Menu, shell, session, ipcMain, dialog, screen } from "electron";
 import type { MenuItemConstructorOptions } from "electron";
 import path from "node:path";
 import fs from "node:fs";
@@ -16,7 +16,9 @@ let mainWindow: BrowserWindow | null = null;
 // ── Window-state persistence (the app's ONLY on-disk state; local-only) ──────
 const stateFile = path.join(app.getPath("userData"), "window-state.json");
 
-function loadWindowState(): { width?: number; height?: number; x?: number; y?: number } {
+type WindowState = { width?: number; height?: number; x?: number; y?: number; maximized?: boolean };
+
+function loadWindowState(): WindowState {
   try {
     return JSON.parse(fs.readFileSync(stateFile, "utf-8"));
   } catch {
@@ -25,12 +27,31 @@ function loadWindowState(): { width?: number; height?: number; x?: number; y?: n
 }
 
 function saveWindowState(win: BrowserWindow) {
-  if (!win || win.isDestroyed() || win.isMinimized()) return;
+  if (!win || win.isDestroyed()) return;
   try {
-    fs.writeFileSync(stateFile, JSON.stringify(win.getBounds()));
+    // getNormalBounds() = the un-maximized size, so we restore to that then re-maximize.
+    fs.writeFileSync(
+      stateFile,
+      JSON.stringify({ ...win.getNormalBounds(), maximized: win.isMaximized() })
+    );
   } catch {
     /* best-effort */
   }
+}
+
+// Only reuse saved x/y if the window would still be visible on a connected display
+// (e.g. after unplugging the monitor it was last on) — otherwise let it center.
+function isOnScreen(s: WindowState): boolean {
+  if (s.x == null || s.y == null || s.width == null || s.height == null) return false;
+  const { x, y, width, height } = screen.getDisplayMatching({
+    x: s.x,
+    y: s.y,
+    width: s.width,
+    height: s.height,
+  }).workArea;
+  const intersects = s.x < x + width && s.x + s.width > x && s.y < y + height && s.y + s.height > y;
+  const titleReachable = s.y >= y - 8 && s.y < y + height - 30;
+  return intersects && titleReachable;
 }
 
 // ── Offline enforcement + CSP (T5). The renderer makes zero external calls; ──
@@ -144,11 +165,12 @@ function checkForUpdates() {
 
 function createWindow() {
   const state = loadWindowState();
+  const useSavedPos = isOnScreen(state);
   mainWindow = new BrowserWindow({
     width: state.width ?? 1280,
     height: state.height ?? 840,
-    x: state.x,
-    y: state.y,
+    x: useSavedPos ? state.x : undefined,
+    y: useSavedPos ? state.y : undefined,
     minWidth: 1024,
     minHeight: 700,
     show: false,
@@ -161,6 +183,7 @@ function createWindow() {
       sandbox: true, // preload is emitted as CommonJS (preload.cjs), so the sandbox works
     },
   });
+  if (state.maximized) mainWindow.maximize();
 
   mainWindow.once("ready-to-show", () => mainWindow?.show());
   mainWindow.on("close", () => mainWindow && saveWindowState(mainWindow));
