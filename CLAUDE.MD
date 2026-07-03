@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Assistant Context
 
 **Last Updated**: 2026-07-03
-**Version**: 1.6.2
+**Version**: 1.6.4
 
 ---
 
@@ -11,9 +11,9 @@
 
 > **Branding:** the app was unified under the single name **Examazej** (English *Exam* + Arabic *مزيج / mazeej*, "blend/mix") in v1.6.2 — replacing the prior inconsistent names (Shuffler / Exam Generator / MC Exam Randomizer / Exam Shuffler).
 
-## Desktop App (Examazej) — v1.6.2 SHIPPED ✅ (Phases 0–3 + 5 done; next: Phase 4 auto-update)
+## Desktop App (Examazej) — v1.6.4 SHIPPED ✅ (Phases 0–5 done; auto-update proven; next & last: Phase 6 signing)
 
-**Live as of 2026-07-03:** the Windows desktop app ships as a thin **Electron** shell around the *same* web build. `release.sh patch` shipped v1.6.2 → CI (`.github/workflows/desktop-release.yml`, windows-latest) built the unsigned NSIS installer and auto-published it to the GitHub Release; the web app's guided **`/download`** page (live via Netlify) serves the real `.exe` + sha256 from `/releases/latest`. Remaining: **Phase 4** (electron-updater auto-update) and **Phase 6** (code signing). Full plan + all decisions live in `notes/desktop-app-plan.md` (local/gitignored). Key decisions:
+**Live as of 2026-07-03 — v0.1 pilot functionally complete.** The Windows desktop app ships as a thin **Electron** shell around the *same* web build. Shipping is one command — `./scripts/release.sh patch` bumps + tags + pushes, which triggers Netlify (web deploy) **and** CI (`.github/workflows/desktop-release.yml`, windows-latest) that builds the unsigned NSIS installer and auto-publishes it to the GitHub Release. The guided **`/download`** page serves the latest `.exe` + sha256 from `/releases/latest`. **Auto-update is proven end-to-end** (electron-updater: check-on-launch → silent download → subtle "Restart now" toast → install-on-quit; verified live v1.6.3 → v1.6.4). `npm audit` is clean (0). **Only remaining phase: Phase 6 — code signing** (kills the SmartScreen warning; university-funded cert), plus macOS/Linux if demand appears. Full plan + all decisions live in `notes/desktop-app-plan.md` (local/gitignored). Key decisions:
 
 - **Electron** (bundles its own Chromium — a hard requirement, which rules out Tauri) · **Windows-first** · **one repo** (`mmogib/examazej`) · `electron-builder` **NSIS per-user** installer (no admin/UAC).
 - **Auto-update:** `electron-updater` + **GitHub Releases** (public repo). Check-on-launch → silent download → install-on-quit → subtle `sonner` toast.
