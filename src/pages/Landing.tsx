@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Shuffle, Shield, Clock, CheckCircle, ArrowRight, BarChart3 } from 'lucide-react';
+import { Shuffle, Shield, Clock, CheckCircle, ArrowRight, BarChart3, Download, MonitorDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Landing = () => {
@@ -16,14 +16,26 @@ const Landing = () => {
               Examazej
             </span>
           </Link>
-          <Link to="/app">
-            <Button
-              size="lg"
-              className="h-10 rounded-md bg-gradient-to-r from-primary to-primary-glow px-6 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-            >
-              Open App
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/download">
+              <Button
+                variant="outline"
+                size="lg"
+                className="hidden h-10 rounded-md border-primary/30 px-5 text-sm font-bold text-primary transition-all hover:bg-primary/10 sm:inline-flex"
+              >
+                <Download className="mr-1.5 h-4 w-4" />
+                Download
+              </Button>
+            </Link>
+            <Link to="/app">
+              <Button
+                size="lg"
+                className="h-10 rounded-md bg-gradient-to-r from-primary to-primary-glow px-6 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+              >
+                Open App
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -184,6 +196,40 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* ── Desktop App ── */}
+      <section className="px-6 py-24">
+        <div className="glow-card-wrapper mx-auto max-w-4xl">
+          <div className="relative overflow-hidden rounded-xl border border-primary/10 bg-muted/60 p-8 md:p-12">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+            <div className="relative flex flex-col items-center gap-8 md:flex-row">
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+                <MonitorDown className="h-10 w-10 text-primary" />
+              </div>
+              <div className="flex-grow text-center md:text-left">
+                <h3 className="mb-2 text-2xl font-bold tracking-tight-landing">
+                  Prefer an app that never touches the internet?
+                </h3>
+                <p className="text-lg leading-snug text-muted-foreground">
+                  Examazej is also a free Windows desktop app. Same tool, same results — installed
+                  on your PC and fully offline. It only uses the network to check for updates; your
+                  exam content never leaves your machine.
+                </p>
+              </div>
+              <div className="flex-shrink-0 text-center">
+                <Link to="/download">
+                  <Button className="group h-12 gap-2 rounded-md bg-gradient-to-r from-primary to-primary-glow px-6 font-bold text-primary-foreground shadow-lg shadow-primary/20">
+                    <Download className="h-4 w-4" />
+                    Download for Windows
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+                </Link>
+                <p className="mono-label mt-2 text-muted-foreground/60">FREE · WINDOWS 10 &amp; 11</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Regrade Companion Tool ── */}
       <section className="px-6 py-24">
         <div className="glow-card-wrapper mx-auto max-w-4xl">
@@ -259,6 +305,9 @@ const Landing = () => {
             <div className="mb-1 text-xl font-bold text-primary">Examazej</div>
             <p className="text-sm text-muted-foreground/50">Empowering educators since 2024.</p>
           </div>
+          <Link to="/download" className="text-sm text-muted-foreground/50 transition-colors hover:text-primary">
+            Download for Windows
+          </Link>
           <div className="mono-label text-muted-foreground/50">
             &copy; {new Date().getFullYear()} Dr. Mohammed Alshahrani.
           </div>

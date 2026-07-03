@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom";
+
 export function Footer() {
   return (
     <footer className="border-t bg-card/50 py-6 mt-auto">
-      <div className="container mx-auto px-4 text-center">
+      <div className="container mx-auto px-4 text-center space-y-1">
         <p className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} Dr. Mohammed Alshahrani -{" "}
           <a 
@@ -12,6 +14,17 @@ export function Footer() {
           >
             mshahrani.website
           </a>
+        </p>
+        <p className="text-xs text-muted-foreground/70">
+          Examazej v1.6.2
+          {!__DESKTOP__ && (
+            <>
+              {" · "}
+              <Link to="/download" className="text-primary hover:underline">
+                Download for Windows
+              </Link>
+            </>
+          )}
         </p>
       </div>
     </footer>

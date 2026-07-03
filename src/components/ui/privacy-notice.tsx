@@ -16,7 +16,7 @@ export function PrivacyNotice() {
           <div className="text-sm text-left flex-1">
             <p className="font-medium text-accent-foreground">100% Local Processing</p>
             <p className="text-accent-foreground/80">
-              All exam generation happens in your browser. No data is uploaded to servers.
+              All exam generation happens {__DESKTOP__ ? 'on your computer' : 'in your browser'}. No data is uploaded to servers.
             </p>
           </div>
         </div>

@@ -8,7 +8,9 @@ import {
   CheckCircle,
   FileSpreadsheet,
   Table2,
+  MonitorDown,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -450,6 +452,19 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
         <div className="max-w-xl mx-auto">
           <PrivacyNotice />
+          {!__DESKTOP__ && (
+            <Link
+              to="/download"
+              className="group mt-2 flex items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-primary/10"
+            >
+              <MonitorDown className="h-4 w-4 text-primary" />
+              <span>
+                Want it fully offline?{" "}
+                <span className="font-semibold text-primary">Get the free Windows desktop app</span>
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 text-primary transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          )}
         </div>
       </div>
 
