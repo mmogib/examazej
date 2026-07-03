@@ -11,9 +11,9 @@
 
 > **Branding:** the app was unified under the single name **Examazej** (English *Exam* + Arabic *مزيج / mazeej*, "blend/mix") in v1.6.2 — replacing the prior inconsistent names (Shuffler / Exam Generator / MC Exam Randomizer / Exam Shuffler).
 
-## Desktop App (Examazej) — In Progress (Phases 0–2 done: Electron shell + unsigned installer build & run; on `new-feat`, unpushed)
+## Desktop App (Examazej) — v1.6.2 SHIPPED ✅ (Phases 0–3 + 5 done; next: Phase 4 auto-update)
 
-A **Windows desktop** build is planned as a thin **Electron** shell around the *same* web build (one codebase; functional parity by construction). Full plan + all 26 decisions live in `notes/desktop-app-plan.md` (local/gitignored). Key decisions:
+**Live as of 2026-07-03:** the Windows desktop app ships as a thin **Electron** shell around the *same* web build. `release.sh patch` shipped v1.6.2 → CI (`.github/workflows/desktop-release.yml`, windows-latest) built the unsigned NSIS installer and auto-published it to the GitHub Release; the web app's guided **`/download`** page (live via Netlify) serves the real `.exe` + sha256 from `/releases/latest`. Remaining: **Phase 4** (electron-updater auto-update) and **Phase 6** (code signing). Full plan + all decisions live in `notes/desktop-app-plan.md` (local/gitignored). Key decisions:
 
 - **Electron** (bundles its own Chromium — a hard requirement, which rules out Tauri) · **Windows-first** · **one repo** (`mmogib/examazej`) · `electron-builder` **NSIS per-user** installer (no admin/UAC).
 - **Auto-update:** `electron-updater` + **GitHub Releases** (public repo). Check-on-launch → silent download → install-on-quit → subtle `sonner` toast.
