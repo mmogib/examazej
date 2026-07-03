@@ -1,4 +1,4 @@
-// Type definitions for the Exam Generator application
+// Type definitions for Examazej
 
 export interface ExamSettings {
   university: string;

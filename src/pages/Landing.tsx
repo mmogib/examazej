@@ -13,7 +13,7 @@ const Landing = () => {
               <Shuffle className="h-4 w-4" />
             </span>
             <span className="text-2xl font-black tracking-tighter text-primary">
-              Shuffler
+              Examazej
             </span>
           </Link>
           <Link to="/app">
@@ -90,7 +90,7 @@ const Landing = () => {
             <div className="max-w-xl">
               <span className="mono-label mb-3 inline-block text-primary">Features</span>
               <h2 className="text-4xl font-extrabold tracking-tighter-landing md:text-5xl">
-                Why Choose Shuffler?
+                Why Choose Examazej?
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
                 Built for high-stakes testing, prioritizing privacy and precision at every step.
@@ -256,7 +256,7 @@ const Landing = () => {
       <footer className="border-t border-border/10 py-12 md:py-24">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 md:flex-row md:px-12">
           <div>
-            <div className="mb-1 text-xl font-bold text-primary">Shuffler</div>
+            <div className="mb-1 text-xl font-bold text-primary">Examazej</div>
             <p className="text-sm text-muted-foreground/50">Empowering educators since 2024.</p>
           </div>
           <div className="mono-label text-muted-foreground/50">

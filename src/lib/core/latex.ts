@@ -310,7 +310,7 @@ ${masterExam.preamble || ""}
     \\vfill
 
     \\begin{minipage}[b][3ex][b]{0.6\\textwidth}
-    \\tiny{This exam was prepared using MC Exam Randomizer.}\\\\
+    \\tiny{This exam was prepared using Examazej.}\\\\
     \\tiny{For questions send an email to Dr. Mohammed Alshahrani (mshahrani@kfupm.edu.sa) }
     \\tiny{You can download it by scanning the code}
     \\end{minipage}

@@ -1,8 +1,8 @@
-# Exam Shuffler - Academic Assessment Tool
+# Examazej — Multiple-Choice Exam Randomizer
 
-A professional exam generation tool that creates multiple randomized versions of exams from LaTeX templates. Perfect for educators and academic institutions seeking to maintain exam integrity through intelligent question and answer randomization.
+**Examazej** creates multiple randomized versions of multiple-choice exams from LaTeX, CSV, or Excel templates. Questions and answer options are shuffled deterministically (seed-based and reproducible), entirely client-side in the browser — no accounts, no servers. Built for educators who need exam integrity without the complexity.
 
-![Exam Shuffler](https://img.shields.io/badge/Status-Production-green) ![LaTeX](https://img.shields.io/badge/LaTeX-Supported-blue) ![React](https://img.shields.io/badge/React-18.3-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![Examazej](https://img.shields.io/badge/Status-Production-green) ![LaTeX](https://img.shields.io/badge/LaTeX-Supported-blue) ![React](https://img.shields.io/badge/React-18.3-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 
 ## 🎯 Key Features
 

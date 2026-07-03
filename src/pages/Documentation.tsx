@@ -267,7 +267,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                 Documentation
               </h1>
               <p className="text-muted-foreground">
-                Master the Exam Generator in minutes
+                Master Examazej in minutes
               </p>
             </div>
           </div>
@@ -1875,7 +1875,7 @@ Which is largest?
                   </Alert>
 
                   <p className="text-sm">
-                    The exam generator creates two types of cover pages that
+                    Examazej creates two types of cover pages that
                     serve different purposes:
                   </p>
                   <ul className="text-sm space-y-2 ml-4">

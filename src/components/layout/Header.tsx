@@ -19,8 +19,8 @@ export function Header({ onStartOver, onShowDocs, showStartOver = false, current
               <FileText className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-heading font-bold text-foreground">MCQ Exam Generator</h1>
-              <p className="text-sm text-muted-foreground">Professional MCQ Exam Creation Tool</p>
+              <h1 className="text-xl font-heading font-bold text-foreground">Examazej</h1>
+              <p className="text-sm text-muted-foreground">Multiple-Choice Exam Randomizer</p>
             </div>
           </div>
           

@@ -1,4 +1,4 @@
-// LaTeX template parser for the Exam Generator
+// LaTeX template parser for Examazej
 
 import { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import { generateDynamicSeed } from "../utils/seed-generator";
