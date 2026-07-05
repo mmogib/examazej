@@ -483,7 +483,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                     </Badge>
                     <div>
                       <h3 className="font-semibold">
-                        {highlightText("Create or Upload Template")}
+                        {highlightText(__DESKTOP__ ? "Create or Open Template" : "Create or Upload Template")}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {highlightText(
@@ -528,7 +528,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                     </Badge>
                     <div>
                       <h3 className="font-semibold">
-                        {highlightText("Generate & Download")}
+                        {highlightText(__DESKTOP__ ? "Generate & Save" : "Generate & Download")}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {highlightText(
@@ -971,9 +971,9 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
                 </Alert>
 
                 <div>
-                  <h4 className="font-semibold mb-2">Download Template</h4>
+                  <h4 className="font-semibold mb-2">{__DESKTOP__ ? 'Get a Template' : 'Download Template'}</h4>
                   <p className="text-sm text-muted-foreground">
-                    Click "Download Excel Template" on the Start page to get a
+                    Click "{__DESKTOP__ ? 'Save Excel Template' : 'Download Excel Template'}" on the Start page to get a
                     pre-filled template with examples and proper formatting.
                   </p>
                 </div>

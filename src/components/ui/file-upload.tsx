@@ -22,7 +22,7 @@ export function FileUpload({
   selectedFile,
   onFileRemove,
   className,
-  label = 'Upload File',
+  label = __DESKTOP__ ? 'Open File' : 'Upload File',
   description = 'Select a LaTeX template (.tex) or JSON file'
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);

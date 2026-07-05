@@ -474,7 +474,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Download className="h-5 w-5" />
-                Download Template
+                {__DESKTOP__ ? 'Get a Template' : 'Download Template'}
               </CardTitle>
               <CardDescription>
                 Choose your preferred format to get started
@@ -505,7 +505,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
                   triggerButton={
                     <Button variant="outline" className="w-full">
                       <Table2 className="h-4 w-4 mr-2" />
-                      Download Excel Template (.xlsx)
+                      {__DESKTOP__ ? 'Save Excel Template (.xlsx)' : 'Download Excel Template (.xlsx)'}
                     </Button>
                   }
                 />
@@ -524,7 +524,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
                   triggerButton={
                     <Button variant="outline" className="w-full">
                       <FileSpreadsheet className="h-4 w-4 mr-2" />
-                      Download CSV Template (.csv)
+                      {__DESKTOP__ ? 'Save CSV Template (.csv)' : 'Download CSV Template (.csv)'}
                     </Button>
                   }
                 />
@@ -538,10 +538,10 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
-                Upload Existing Exam
+                {__DESKTOP__ ? 'Open Existing Exam' : 'Upload Existing Exam'}
               </CardTitle>
               <CardDescription>
-                Upload LaTeX (.tex), Excel (.xlsx), CSV (.csv), or JSON file
+                {__DESKTOP__ ? 'Open' : 'Upload'} LaTeX (.tex), Excel (.xlsx), CSV (.csv), or JSON file
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -737,7 +737,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
                 <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
                   <Download className="h-6 w-6 text-accent-foreground" />
                 </div>
-                <h3 className="font-medium mb-2">3. Generate & Download</h3>
+                <h3 className="font-medium mb-2">{__DESKTOP__ ? '3. Generate & Save' : '3. Generate & Download'}</h3>
                 <p className="text-sm text-muted-foreground">
                   Get your randomized exam versions with automatic answer keys
                 </p>

@@ -1,4 +1,4 @@
-import { Shield, FileText, Home, BookOpen, BarChart3 } from 'lucide-react';
+import { Shield, FileText, Home, BookOpen, BarChart3, FilePlus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -53,8 +53,8 @@ export function Header({ onStartOver, onShowDocs, showStartOver = false, current
                 size="sm"
                 className="flex items-center gap-2"
               >
-                <Home className="h-4 w-4" />
-                Start Over
+                {__DESKTOP__ ? <FilePlus className="h-4 w-4" /> : <Home className="h-4 w-4" />}
+                {__DESKTOP__ ? 'New Exam' : 'Start Over'}
               </Button>
             )}
 

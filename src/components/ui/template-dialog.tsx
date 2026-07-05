@@ -190,7 +190,7 @@ export function TemplateDialog({
         {triggerButton || (
           <Button variant="academic" className="w-full">
             <FormatIcon className="h-4 w-4 mr-2" />
-            Download Sample Template
+            {__DESKTOP__ ? 'Save Sample Template' : 'Download Sample Template'}
           </Button>
         )}
       </DialogTrigger>

@@ -733,7 +733,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Downloads</CardTitle>
+              <CardTitle className="text-base">{__DESKTOP__ ? 'Export' : 'Downloads'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <ExamPreviewSheet
@@ -879,7 +879,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                 }
               }}
             >
-              Download Anyway
+              {__DESKTOP__ ? 'Save Anyway' : 'Download Anyway'}
             </Button>
           </DialogFooter>
         </DialogContent>
