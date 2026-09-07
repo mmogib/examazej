@@ -1,5 +1,8 @@
 import type { ExamSettings } from "../types";
-import { DEFAULT_ACADEMIC_INTEGRITY_PLEDGE } from "./academic-integrity-pledge";
+import {
+  DEFAULT_ACADEMIC_INTEGRITY_PLEDGE,
+  normalizeAcademicIntegrityPledgeText,
+} from "./academic-integrity-pledge";
 import { generateDynamicSeed } from "@/lib/utils/seed-generator";
 import { createLogger } from "@/lib/utils/logger";
 
@@ -139,7 +142,13 @@ export function generateSettingsBlock(
 %		examtype=${settings.examtype}
 %		code_name=${settings.code_name}
 %		code_numbering=${settings.code_numbering}
-%		includeCoverPage=${settings.includeCoverPage ? "yes" : "no"}${
+%		includeCoverPage=${settings.includeCoverPage ? "yes" : "no"}
+%		includeAcademicIntegrityPledge=${
+    settings.includeAcademicIntegrityPledge ? "yes" : "no"
+  }
+%		academicIntegrityPledgeText=${normalizeAcademicIntegrityPledgeText(
+    settings.academicIntegrityPledgeText
+  )}${
     settings.seed ? `\n%		seed=${settings.seed}` : ""
   }
 %{/setting}
@@ -159,6 +168,8 @@ export function generateTemplateSettings(config: {
   term: string;
   numQuestions: number;
   includeCoverPage?: boolean;
+  includeAcademicIntegrityPledge?: boolean;
+  academicIntegrityPledgeText?: string;
 }): ExamSettings {
   logger.debug("Generating template settings", config);
 
@@ -180,8 +191,11 @@ export function generateTemplateSettings(config: {
     paper_size: defaults.paper_size!,
     instructions: defaults.instructions!,
     includeCoverPage: config.includeCoverPage ?? true,
-    includeAcademicIntegrityPledge: defaults.includeAcademicIntegrityPledge!,
-    academicIntegrityPledgeText: defaults.academicIntegrityPledgeText!,
+    includeAcademicIntegrityPledge:
+      config.includeAcademicIntegrityPledge ?? true,
+    academicIntegrityPledgeText: normalizeAcademicIntegrityPledgeText(
+      config.academicIntegrityPledgeText ?? DEFAULT_ACADEMIC_INTEGRITY_PLEDGE
+    ),
   };
 
   // Generate seed based on exam metadata

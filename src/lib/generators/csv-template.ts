@@ -1,6 +1,7 @@
 import type { ExamData, ExamSettings } from "../types";
 import { extractPlainInstructions } from "../parsers/adapter";
 import { createLogger } from "../utils/logger";
+import { normalizeAcademicIntegrityPledgeText } from "../core/academic-integrity-pledge";
 
 const logger = createLogger("CSV_TEMPLATE_GENERATOR");
 
@@ -70,6 +71,8 @@ code_name,${settings.code_name}
 code_numbering,${settings.code_numbering}
 paper_size,${settings.paper_size}
 includeCoverPage,${settings.includeCoverPage ? "yes" : "no"}
+includeAcademicIntegrityPledge,${settings.includeAcademicIntegrityPledge ? "yes" : "no"}
+academicIntegrityPledgeText,${normalizeAcademicIntegrityPledgeText(settings.academicIntegrityPledgeText)}
 seed,${settings.seed}
 
 # instructions

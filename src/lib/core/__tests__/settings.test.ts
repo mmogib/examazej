@@ -349,6 +349,16 @@ describe("settings.ts", () => {
       expect(result).toContain("includeCoverPage=no");
     });
 
+    it("should serialize normalized academic integrity pledge settings", () => {
+      mockSettings.includeAcademicIntegrityPledge = false;
+      mockSettings.academicIntegrityPledgeText = "  Custom\n pledge.  ";
+
+      const result = generateSettingsBlock(mockSettings);
+
+      expect(result).toContain("includeAcademicIntegrityPledge=no");
+      expect(result).toContain("academicIntegrityPledgeText=Custom pledge.");
+    });
+
     it("should omit seed when not provided", () => {
       delete mockSettings.seed;
       const result = generateSettingsBlock(mockSettings);
@@ -468,6 +478,36 @@ describe("settings.ts", () => {
       const result = generateTemplateSettings(config);
 
       expect(result.includeCoverPage).toBe(false);
+    });
+
+    it("should default academic integrity pledge settings", () => {
+      const result = generateTemplateSettings({
+        coursecode: "MATH 101",
+        examname: "Test",
+        examdate: "Dec 1, 2025",
+        term: "Term 251",
+        numQuestions: 10,
+      });
+
+      expect(result.includeAcademicIntegrityPledge).toBe(true);
+      expect(result.academicIntegrityPledgeText).toBe(
+        DEFAULT_ACADEMIC_INTEGRITY_PLEDGE
+      );
+    });
+
+    it("should respect and normalize supplied academic integrity pledge settings", () => {
+      const result = generateTemplateSettings({
+        coursecode: "MATH 101",
+        examname: "Test",
+        examdate: "Dec 1, 2025",
+        term: "Term 251",
+        numQuestions: 10,
+        includeAcademicIntegrityPledge: false,
+        academicIntegrityPledgeText: "  Custom\n pledge.  ",
+      });
+
+      expect(result.includeAcademicIntegrityPledge).toBe(false);
+      expect(result.academicIntegrityPledgeText).toBe("Custom pledge.");
     });
 
     it("should set hardcoded defaults correctly", () => {

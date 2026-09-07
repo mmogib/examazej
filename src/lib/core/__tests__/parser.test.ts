@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseLatexTemplate } from "../parser";
+import { DEFAULT_ACADEMIC_INTEGRITY_PLEDGE } from "../academic-integrity-pledge";
 
 /**
  * Simplified Parser Tests - Priority 1
@@ -99,6 +100,55 @@ Test question?
       expect(result.settings?.department).toBe("Mathematics");
       expect(result.settings?.coursecode).toBe("MATH 101");
       expect(result.settings?.examname).toBe("Final Exam");
+    });
+
+    it("should parse academic integrity pledge settings and preserve equals signs", () => {
+      const latex = `%{#setting}
+% includeAcademicIntegrityPledge=no
+% academicIntegrityPledgeText=Custom pledge = accepted.
+%{/setting}`;
+
+      const result = parseLatexTemplate(latex);
+
+      expect(result.settings?.includeAcademicIntegrityPledge).toBe(false);
+      expect(result.settings?.academicIntegrityPledgeText).toBe(
+        "Custom pledge = accepted."
+      );
+    });
+
+    it("should restore academic integrity pledge defaults for legacy settings", () => {
+      const latex = `%{#setting}
+% coursecode=MATH 101
+% includeCoverPage=yes
+%{/setting}`;
+
+      const result = parseLatexTemplate(latex);
+
+      expect(result.settings?.includeAcademicIntegrityPledge).toBe(true);
+      expect(result.settings?.academicIntegrityPledgeText).toBe(
+        DEFAULT_ACADEMIC_INTEGRITY_PLEDGE
+      );
+    });
+
+    it.each([
+      ["no", false],
+      ["false", false],
+      ["0", false],
+      ["unexpected", false],
+      ["yes", true],
+      ["true", true],
+      ["1", true],
+    ])("should parse boolean setting value %s as %s", (value, expected) => {
+      const latex = `%{#setting}
+% includeCoverPage=${value}
+% includeAcademicIntegrityPledge=${value}
+% academicIntegrityPledgeText=Custom pledge.
+%{/setting}`;
+
+      const result = parseLatexTemplate(latex);
+
+      expect(result.settings?.includeCoverPage).toBe(expected);
+      expect(result.settings?.includeAcademicIntegrityPledge).toBe(expected);
     });
 
     it("should parse preamble block", () => {

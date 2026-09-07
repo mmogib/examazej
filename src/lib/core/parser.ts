@@ -4,6 +4,7 @@ import { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import { generateDynamicSeed } from "../utils/seed-generator";
 import { validateQuestionTags, QuestionTags } from "../utils/tag-validator";
 import { createLogger } from "@/lib/utils/logger";
+import { getDefaultSettings } from "./settings";
 
 const logger = createLogger("PARSER");
 
@@ -108,9 +109,13 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
 
         if (cleanKey === "numberofvestions") {
           (settings as any)[cleanKey] = parseInt(value) || 1;
-        } else if (cleanKey === "includeCoverPage") {
-          // Convert string to boolean: missing or "yes" = true, "no" = false
-          (settings as any)[cleanKey] = value.toLowerCase() !== "no";
+        } else if (
+          cleanKey === "includeCoverPage" ||
+          cleanKey === "includeAcademicIntegrityPledge"
+        ) {
+          (settings as any)[cleanKey] = ["yes", "true", "1"].includes(
+            value.toLowerCase()
+          );
         } else {
           (settings as any)[cleanKey] = value;
         }
@@ -130,6 +135,16 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Set default includeCoverPage if not present
     if (settings.includeCoverPage === undefined) {
       settings.includeCoverPage = true;
+    }
+
+    const defaults = getDefaultSettings();
+    if (settings.includeAcademicIntegrityPledge === undefined) {
+      settings.includeAcademicIntegrityPledge =
+        defaults.includeAcademicIntegrityPledge;
+    }
+    if (settings.academicIntegrityPledgeText === undefined) {
+      settings.academicIntegrityPledgeText =
+        defaults.academicIntegrityPledgeText;
     }
 
     result.settings = settings;

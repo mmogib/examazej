@@ -128,6 +128,8 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
       "code_numbering",
       "paper_size",
       "includeCoverPage",
+      "includeAcademicIntegrityPledge",
+      "academicIntegrityPledgeText",
       "seed",
     ];
 
@@ -150,7 +152,10 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
         );
       }
       (settings as any)[key] = num;
-    } else if (key === "includeCoverPage") {
+    } else if (
+      key === "includeCoverPage" ||
+      key === "includeAcademicIntegrityPledge"
+    ) {
       const boolValue =
         value.toLowerCase() === "yes" ||
         value.toLowerCase() === "true" ||

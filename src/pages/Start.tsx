@@ -28,7 +28,7 @@ import { parseLatexTemplate, validateParsedTemplate } from "@/lib/core/parser";
 import {
   generateTemplateSettings,
   generateSettingsBlock,
-  getDefaultSettings,
+  mergeSettingsWithDefaults,
 } from "@/lib/core/settings";
 import type {
   ExamJSON,
@@ -201,8 +201,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
   } | null>(null);
 
   const createExamFromTemplate = (template: ParsedLatexTemplate): ExamJSON => {
-    const defaults = getDefaultSettings();
-    const settings = { ...defaults, ...template.settings };
+    const settings = mergeSettingsWithDefaults(template.settings);
 
     const examQuestions = template.questions.map((q, index) => ({
       ...q,
@@ -241,7 +240,10 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       if (extension === "json") {
         const content = await file.text();
         const jsonData = JSON.parse(content) as ExamJSON;
-        onDataLoaded(jsonData);
+        onDataLoaded({
+          ...jsonData,
+          setting: mergeSettingsWithDefaults(jsonData.setting) as ExamSettings,
+        });
       } else if (extension === "tex") {
         // Existing LaTeX flow - UNCHANGED
         const content = await file.text();

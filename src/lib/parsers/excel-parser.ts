@@ -126,6 +126,8 @@ function parseSettingsSheet(
       "code_numbering",
       "paper_size",
       "includeCoverPage",
+      "includeAcademicIntegrityPledge",
+      "academicIntegrityPledgeText",
       "seed",
     ];
 
@@ -144,7 +146,10 @@ function parseSettingsSheet(
         );
       }
       (settings as any)[key] = num;
-    } else if (key === "includeCoverPage") {
+    } else if (
+      key === "includeCoverPage" ||
+      key === "includeAcademicIntegrityPledge"
+    ) {
       const boolValue =
         value.toLowerCase() === "yes" ||
         value.toLowerCase() === "true" ||
