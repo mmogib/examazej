@@ -109,8 +109,8 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
 
     questionExamples += `"${q.text}","${options[0]}","${options[1]}","${options[2]}","${options[3]}","${options[4]}","${correct}","${tagsStr}"\n`;
   });
-  template += questionExamples;
+  template += convertMultilineFieldsToEscapedNewlines(questionExamples);
 
   logger.info("CSV template generated");
-  return convertMultilineFieldsToEscapedNewlines(template);
+  return template;
 }

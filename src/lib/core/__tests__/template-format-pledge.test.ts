@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import ExcelJS from "exceljs";
 import { generateCSVTemplate } from "../../generators/csv-template";
 import { generateExcelTemplate } from "../../generators/excel-template";
 import { parseCSV } from "../../parsers/csv-parser";
@@ -66,6 +67,35 @@ function createExcelFile(blob: Blob): File {
   return file;
 }
 
+async function createExcelFileWithNativePledgeVisibility(
+  value: number | boolean
+): Promise<File> {
+  const generatedBlob = await generateExcelTemplate(settings, exam);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await readBlobAsArrayBuffer(generatedBlob));
+
+  const settingsSheet = workbook.getWorksheet("Settings");
+  if (!settingsSheet) {
+    throw new Error("Generated workbook has no Settings sheet");
+  }
+
+  let pledgeRowNumber: number | undefined;
+  settingsSheet.eachRow((row, rowNumber) => {
+    if (row.getCell(1).value === "includeAcademicIntegrityPledge") {
+      pledgeRowNumber = rowNumber;
+    }
+  });
+
+  if (pledgeRowNumber === undefined) {
+    throw new Error("Generated workbook has no pledge visibility setting");
+  }
+
+  settingsSheet.getCell(`B${pledgeRowNumber}`).value = value;
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: generatedBlob.type });
+  return createExcelFile(blob);
+}
+
 describe("academic integrity pledge template formats", () => {
   it("round-trips pledge settings through CSV", () => {
     const csv = generateCSVTemplate(settings, exam);
@@ -74,6 +104,20 @@ describe("academic integrity pledge template formats", () => {
 
     expect(parsed.settings.includeAcademicIntegrityPledge).toBe(false);
     expect(parsed.settings.academicIntegrityPledgeText).toBe(customPledge);
+  });
+
+  it("preserves settings and questions when CSV pledge text has an odd quote", () => {
+    const pledgeWithQuote = 'I accept the 6" device rule.';
+    const csv = generateCSVTemplate(
+      { ...settings, academicIntegrityPledgeText: pledgeWithQuote },
+      exam
+    );
+
+    const parsed = parseCSV(csv);
+
+    expect(parsed.settings.academicIntegrityPledgeText).toBe(pledgeWithQuote);
+    expect(parsed.settings.seed).toBe("pledge-test");
+    expect(parsed.questions.length).toBeGreaterThanOrEqual(1);
   });
 
   it("round-trips pledge settings through Excel", async () => {
@@ -85,4 +129,15 @@ describe("academic integrity pledge template formats", () => {
     expect(parsed.settings.includeAcademicIntegrityPledge).toBe(false);
     expect(parsed.settings.academicIntegrityPledgeText).toBe(customPledge);
   });
+
+  it.each([0, false])(
+    "parses native Excel pledge opt-out value %s as false",
+    async (nativeValue) => {
+      const file = await createExcelFileWithNativePledgeVisibility(nativeValue);
+
+      const parsed = await parseExcel(file);
+
+      expect(parsed.settings.includeAcademicIntegrityPledge).toBe(false);
+    }
+  );
 });

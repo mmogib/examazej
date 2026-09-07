@@ -106,7 +106,7 @@ function parseSettingsSheet(
     if (!row || row.length < 2) continue;
 
     const key = String(row[0] || "").trim();
-    const value = String(row[1] || "").trim();
+    const value = String(row[1] ?? "").trim();
 
     if (!key || !value) continue;
 
