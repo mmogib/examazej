@@ -6,6 +6,7 @@ import type {
   ExamVersion,
 } from "../types";
 import { generateSettingsBlock } from "./settings";
+import { normalizeAcademicIntegrityPledgeText } from "./academic-integrity-pledge";
 import {
   calculateQuestionPages,
   detectPageCountVariations,
@@ -174,6 +175,24 @@ ${pageCountWarning.recommendations
 `
     : "";
 
+  const showAcademicIntegrityPledge =
+    settings.includeCoverPage && settings.includeAcademicIntegrityPledge;
+  const academicIntegrityPledgeBlock = showAcademicIntegrityPledge
+    ? `
+\\vspace*{0.35cm}
+\\noindent\\underline{\\textbf{Academic Integrity Pledge:}}\\par
+\\vspace*{0.15cm}
+\\noindent ${escapeLatex(
+        normalizeAcademicIntegrityPledgeText(
+          settings.academicIntegrityPledgeText
+        )
+      )}\\par
+\\vspace*{0.45cm}
+\\noindent\\hfill\\textbf{Signature:}\\hspace{0.25cm}\\rule{0.58\\textwidth}{0.4pt}
+\\vspace*{0.45cm}
+`
+    : "";
+
   // Document preamble
   const documentPreamble = `\\documentclass[leqno,fleqn,12pt]{article}
 % exam paper size and margins
@@ -207,7 +226,7 @@ ${SEPARATOR_COMMANDS}
 \\begin{center}
         ${processText(settings.university)} \\\\
         ${processText(settings.department)}  \\\\
-        \\vspace*{4.5cm}
+        \\vspace*{${showAcademicIntegrityPledge ? "1cm" : "4.5cm"}}
         {\\bf \\fbox{ #1 } }  \\hfill {\\bf \\fbox{ #1 }} \\\\
         {\\bf ${processText(settings.coursecode)} }  \\\\
         {\\bf ${processText(settings.examname)} }  \\\\
@@ -216,6 +235,7 @@ ${SEPARATOR_COMMANDS}
         {\\bf Net Time Allowed: ${processText(settings.timeallowed)} }  \\\\
         \\vspace*{0.2cm}
 \\end{center}
+${academicIntegrityPledgeBlock}
 \\begin{tcbraster}[raster columns=1, raster column skip=0pt, raster equal height, colback=white, before skip=0pt]
 \\begin{tcolorbox}[coltitle=black, enhanced jigsaw, boxrule=1pt ,segmentation style={solid,black,line width=1pt},sidebyside,lefthand width=1cm]
     \\hspace*{-4pt}\\begin{large}\\textbf{Name}\\end{large}
@@ -241,7 +261,7 @@ ${SEPARATOR_COMMANDS}
           masterExam.questions.length
         } }} questions.} \\end{center}
 
-\\vspace{2cm}
+\\vspace{${showAcademicIntegrityPledge ? "0.6cm" : "2cm"}}
 
 \\underline{\\bf Important Instructions:}
 

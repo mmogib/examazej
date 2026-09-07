@@ -231,6 +231,74 @@ describe("generateLatexDocument", () => {
       expect(result.content).toContain("Test Department");
       expect(result.content).toContain("TEST 101");
     });
+
+    it("renders the fixed pledge frame and customized text when enabled", () => {
+      mockSettings.includeCoverPage = true;
+      mockSettings.includeAcademicIntegrityPledge = true;
+      mockSettings.academicIntegrityPledgeText = "Custom integrity pledge.";
+
+      const result = generateLatexDocument(
+        mockSettings,
+        mockMasterExam,
+        mockVersions,
+        mockMappings
+      );
+
+      expect(result.content).toContain(
+        "\\underline{\\textbf{Academic Integrity Pledge:}}"
+      );
+      expect(result.content).toContain("Custom integrity pledge.");
+      expect(result.content).toContain("\\textbf{Signature:}");
+    });
+
+    it.each([
+      { includeCoverPage: true, includeAcademicIntegrityPledge: false },
+      { includeCoverPage: false, includeAcademicIntegrityPledge: true },
+    ])("does not render the pledge frame for %o", (overrides) => {
+      Object.assign(mockSettings, overrides);
+
+      const result = generateLatexDocument(
+        mockSettings,
+        mockMasterExam,
+        mockVersions,
+        mockMappings
+      );
+
+      expect(result.content).not.toContain(
+        "\\underline{\\textbf{Academic Integrity Pledge:}}"
+      );
+    });
+
+    it("always escapes customized pledge text, including trusted LaTeX mode", () => {
+      mockSettings.academicIntegrityPledgeText = "Policy & conduct_100% #1";
+
+      const result = generateLatexDocument(
+        mockSettings,
+        mockMasterExam,
+        mockVersions,
+        mockMappings,
+        true
+      );
+
+      expect(result.content).toContain("Policy \\& conduct\\_100\\% \\#1");
+    });
+
+    it("preserves the existing student-cover spacing when the pledge is off", () => {
+      mockSettings.includeAcademicIntegrityPledge = false;
+
+      const result = generateLatexDocument(
+        mockSettings,
+        mockMasterExam,
+        mockVersions,
+        mockMappings
+      );
+      const studentCoverMacro = result.content.match(
+        /\\newcommand\{\\newcodecover\}\[1\]\{([\s\S]*?)\n\}\n\n\n%% put your preamble/
+      )?.[1];
+
+      expect(studentCoverMacro).toContain("\\vspace*{4.5cm}");
+      expect(studentCoverMacro).toContain("\\vspace{2cm}");
+    });
   });
 
   // ============================================================================
