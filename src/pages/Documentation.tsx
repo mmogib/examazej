@@ -91,7 +91,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
           "Settings Block",
           "Complete Question Example",
           "university department term coursecode examname examdate timeallowed numberofvestions groups",
-          "examtype code_name code_numbering includeCoverPage paper_size seed",
+          "examtype code_name code_numbering includeCoverPage includeAcademicIntegrityPledge academicIntegrityPledgeText paper_size seed",
           "CSV Format excel spreadsheet table simple text editor version control",
           "CSV sections settings instructions preamble questions required",
           "CSV columns Question Text Option Correct Tags behavioral modifiers",
@@ -124,7 +124,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
           "Smart Seed Generation dynamic seeds automatic randomization refresh",
           "Question Grouping groups balanced mix randomization",
           "Smart Seed Generation dynamic seeds automatic randomization refresh",
-          "Cover Page Options master individual student cover pages includeCoverPage",
+          "Cover Page Options master individual student cover pages includeCoverPage includeAcademicIntegrityPledge academicIntegrityPledgeText",
           "Custom Preamble LaTeX packages styling amsmath graphicx tikz",
         ],
         count: 0,
@@ -675,6 +675,8 @@ Option text goes here
 %code_name=A
 %code_numbering=ALPHA
 %includeCoverPage=yes
+%includeAcademicIntegrityPledge=yes
+%academicIntegrityPledgeText=I pledge that I do not possess any mobile phone, smartwatch, earphones, or any other communication or smart devices, nor any written or printed material within my reach during this examination. I understand that possession of such devices or material will result in disciplinary action as per university policy.
 %paper_size=A4
 %seed=fall2024_midterm_auto
 %{/setting}`}
@@ -1854,7 +1856,7 @@ Which is largest?
             )}
 
             {shouldShowContent(
-              "Cover Page Options master individual student cover pages includeCoverPage"
+              "Cover Page Options master individual student cover pages includeCoverPage includeAcademicIntegrityPledge academicIntegrityPledgeText"
             ) && (
               <Card>
                 <CardHeader>
@@ -1887,6 +1889,11 @@ Which is largest?
                       • <strong>Individual Version Covers</strong> - Optional
                       student-facing pages with name/ID fields
                     </li>
+                    <li>
+                      • <strong>Academic Integrity Pledge</strong> — Enabled by
+                      default on individual student covers; independently
+                      optional and editable from the pledge popup.
+                    </li>
                   </ul>
 
                   <div className="bg-muted p-4 rounded-lg">
@@ -1899,6 +1906,12 @@ Which is largest?
                       When set to <code>no</code>, student name and ID fields
                       are added to the page header instead of a separate cover
                       page.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Turning off cover pages disables the pledge controls
+                      without erasing their saved values. The Academic
+                      Integrity Pledge heading and Signature line remain fixed;
+                      only the pledge paragraph is editable.
                     </p>
                   </div>
 
