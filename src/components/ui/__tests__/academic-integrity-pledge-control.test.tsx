@@ -133,6 +133,9 @@ describe("AcademicIntegrityPledgeControl", () => {
       "Academic Integrity Pledge",
     );
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
+      "The heading and signature line are fixed. Edit only the pledge paragraph.",
+    );
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
       "Pledge text",
     );
     expect(getTextarea().value).toBe("My current pledge.");

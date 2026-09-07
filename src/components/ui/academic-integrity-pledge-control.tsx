@@ -75,7 +75,7 @@ export function AcademicIntegrityPledgeControl({
               <DialogHeader>
                 <DialogTitle>Academic Integrity Pledge</DialogTitle>
                 <DialogDescription>
-                  The heading and signature line are fixed. Only the pledge paragraph can be edited.
+                  The heading and signature line are fixed. Edit only the pledge paragraph.
                 </DialogDescription>
               </DialogHeader>
 
