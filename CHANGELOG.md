@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgraded Tiptap to 3.31.3 and React Router to 7.18.3 to remove known production dependency vulnerabilities.
 - Deferred ExcelJS loading until spreadsheet import or export is used, keeping it out of the initial application preload path.
+- Pinned approvals for the three reviewed dependency install scripts and documented deprecation notices that remain in the latest ExcelJS and Electron packaging dependency trees.
 - The release script now requires the complete quality gate to pass before it calculates or creates a release version.
 
 ### Fixed

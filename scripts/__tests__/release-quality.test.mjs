@@ -114,6 +114,18 @@ describe("clean build runner", () => {
 });
 
 describe("release integration", () => {
+  it("pins every reviewed dependency install script", () => {
+    const npmConfig = readFileSync(
+      resolve(repositoryRoot, ".npmrc"),
+      "utf8",
+    );
+
+    expect(npmConfig).toContain(
+      "allow-scripts=@swc/core@1.13.2,electron-winstaller@5.4.0,esbuild@0.25.12",
+    );
+    expect(npmConfig).toContain("strict-allow-scripts=true");
+  });
+
   it("runs verification after the clean-tree check and before version mutation", () => {
     const releaseScript = readFileSync(
       resolve(repositoryRoot, "scripts", "release.sh"),
