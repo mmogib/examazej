@@ -39,6 +39,8 @@ describe("generateLatexDocument", () => {
       paper_size: "A4",
       instructions: "Test instructions\nRead carefully",
       includeCoverPage: true,
+      includeAcademicIntegrityPledge: true,
+      academicIntegrityPledgeText: "Test academic integrity pledge.",
       seed: "test-seed",
     };
 

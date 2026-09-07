@@ -16,6 +16,8 @@ export interface ExamSettings {
   paper_size: 'A4' | 'Letter';
   instructions: string;
   includeCoverPage: boolean;
+  includeAcademicIntegrityPledge: boolean;
+  academicIntegrityPledgeText: string;
   seed?: string;
 }
 

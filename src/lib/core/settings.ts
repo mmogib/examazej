@@ -1,4 +1,8 @@
 import type { ExamSettings } from "../types";
+import {
+  DEFAULT_ACADEMIC_INTEGRITY_PLEDGE,
+  normalizeAcademicIntegrityPledgeText,
+} from "./academic-integrity-pledge";
 import { generateDynamicSeed } from "@/lib/utils/seed-generator";
 import { createLogger } from "@/lib/utils/logger";
 
@@ -107,7 +111,15 @@ export function getDefaultSettings(): Partial<ExamSettings> {
     \\end{normalsize}
 \\end{enumerate}`,
     includeCoverPage: true,
+    includeAcademicIntegrityPledge: true,
+    academicIntegrityPledgeText: DEFAULT_ACADEMIC_INTEGRITY_PLEDGE,
   };
+}
+
+export function mergeSettingsWithDefaults(
+  settings: Partial<ExamSettings> = {}
+): Partial<ExamSettings> {
+  return { ...getDefaultSettings(), ...settings };
 }
 
 export function generateSettingsBlock(
@@ -171,6 +183,8 @@ export function generateTemplateSettings(config: {
     paper_size: defaults.paper_size!,
     instructions: defaults.instructions!,
     includeCoverPage: config.includeCoverPage ?? true,
+    includeAcademicIntegrityPledge: defaults.includeAcademicIntegrityPledge!,
+    academicIntegrityPledgeText: defaults.academicIntegrityPledgeText!,
   };
 
   // Generate seed based on exam metadata

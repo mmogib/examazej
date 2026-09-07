@@ -44,6 +44,8 @@ describe("generateExamVersions - Group Shuffling", () => {
       paper_size: "A4",
       instructions: "Test instructions",
       includeCoverPage: true,
+      includeAcademicIntegrityPledge: true,
+      academicIntegrityPledgeText: "Test academic integrity pledge.",
       seed: "test-seed",
     };
   });

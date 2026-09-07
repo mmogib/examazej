@@ -34,6 +34,8 @@ describe("Last question should vary across versions", () => {
     paper_size: "A4",
     instructions: "",
     includeCoverPage: true,
+    includeAcademicIntegrityPledge: true,
+    academicIntegrityPledgeText: "Test academic integrity pledge.",
     seed: "test",
   });
 

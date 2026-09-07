@@ -5,7 +5,9 @@ import {
   getDefaultSettings,
   generateSettingsBlock,
   generateTemplateSettings,
+  mergeSettingsWithDefaults,
 } from "../settings";
+import { DEFAULT_ACADEMIC_INTEGRITY_PLEDGE } from "../academic-integrity-pledge";
 import type { ExamSettings } from "../../types";
 
 describe("settings.ts", () => {
@@ -196,6 +198,12 @@ describe("settings.ts", () => {
       expect(settings).toHaveProperty("paper_size");
       expect(settings).toHaveProperty("instructions");
       expect(settings).toHaveProperty("includeCoverPage");
+      expect(settings).toHaveProperty("includeAcademicIntegrityPledge");
+      expect(settings).toHaveProperty("academicIntegrityPledgeText");
+      expect(settings.includeAcademicIntegrityPledge).toBe(true);
+      expect(settings.academicIntegrityPledgeText).toBe(
+        DEFAULT_ACADEMIC_INTEGRITY_PLEDGE
+      );
     });
 
     it("should set correct default values", () => {
@@ -251,6 +259,15 @@ describe("settings.ts", () => {
       const summerSettings = getDefaultSettings();
       expect(summerSettings.term).toBe("Term 243");
     });
+
+    it("adds pledge defaults to legacy settings", () => {
+      const merged = mergeSettingsWithDefaults({ includeCoverPage: true });
+
+      expect(merged.includeAcademicIntegrityPledge).toBe(true);
+      expect(merged.academicIntegrityPledgeText).toBe(
+        DEFAULT_ACADEMIC_INTEGRITY_PLEDGE
+      );
+    });
   });
 
   describe("generateSettingsBlock", () => {
@@ -273,6 +290,8 @@ describe("settings.ts", () => {
         paper_size: "A4",
         instructions: "Test instructions line 1\nTest instructions line 2",
         includeCoverPage: true,
+        includeAcademicIntegrityPledge: true,
+        academicIntegrityPledgeText: "Test academic integrity pledge.",
         seed: "test-seed-123",
       };
     });
