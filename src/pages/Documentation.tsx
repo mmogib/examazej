@@ -124,7 +124,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
           "Smart Seed Generation dynamic seeds automatic randomization refresh",
           "Question Grouping groups balanced mix randomization",
           "Smart Seed Generation dynamic seeds automatic randomization refresh",
-          "Cover Page Options master individual student cover pages includeCoverPage includeAcademicIntegrityPledge academicIntegrityPledgeText",
+          "Cover Page Options master individual student cover pages includeCoverPage Academic Integrity Pledge academic integrity includeAcademicIntegrityPledge academicIntegrityPledgeText",
           "Custom Preamble LaTeX packages styling amsmath graphicx tikz",
         ],
         count: 0,
@@ -585,7 +585,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
 
         <TabsContent value="template-format" className="space-y-6">
           {shouldShowContent(
-            "LaTeX Template Format markers question option settings"
+            "LaTeX Template Format markers question option settings Settings Block includeAcademicIntegrityPledge academicIntegrityPledgeText"
           ) && (
             <Card>
               <CardHeader>
@@ -1856,7 +1856,7 @@ Which is largest?
             )}
 
             {shouldShowContent(
-              "Cover Page Options master individual student cover pages includeCoverPage includeAcademicIntegrityPledge academicIntegrityPledgeText"
+              "Cover Page Options master individual student cover pages includeCoverPage Academic Integrity Pledge academic integrity includeAcademicIntegrityPledge academicIntegrityPledgeText"
             ) && (
               <Card>
                 <CardHeader>
