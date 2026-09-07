@@ -187,6 +187,15 @@ describe("generateLatexDocument", () => {
   // ============================================================================
 
   describe("Cover Page", () => {
+    const getStudentCoverMacro = (content: string) => {
+      const match = content.match(
+        /\\newcommand\{\\newcodecover\}\[1\]\{([\s\S]*?)\n\}\n\n\n%% put your preamble/
+      );
+
+      expect(match).not.toBeNull();
+      return match?.[1] ?? "";
+    };
+
     it("should generate cover page when includeCoverPage=true", () => {
       mockSettings.includeCoverPage = true;
 
@@ -243,12 +252,13 @@ describe("generateLatexDocument", () => {
         mockVersions,
         mockMappings
       );
+      const studentCoverMacro = getStudentCoverMacro(result.content);
 
-      expect(result.content).toContain(
+      expect(studentCoverMacro).toContain(
         "\\underline{\\textbf{Academic Integrity Pledge:}}"
       );
-      expect(result.content).toContain("Custom integrity pledge.");
-      expect(result.content).toContain("\\textbf{Signature:}");
+      expect(studentCoverMacro).toContain("Custom integrity pledge.");
+      expect(studentCoverMacro).toContain("\\textbf{Signature:}");
     });
 
     it.each([
@@ -263,14 +273,16 @@ describe("generateLatexDocument", () => {
         mockVersions,
         mockMappings
       );
+      const studentCoverMacro = getStudentCoverMacro(result.content);
 
-      expect(result.content).not.toContain(
+      expect(studentCoverMacro).not.toContain(
         "\\underline{\\textbf{Academic Integrity Pledge:}}"
       );
     });
 
     it("always escapes customized pledge text, including trusted LaTeX mode", () => {
-      mockSettings.academicIntegrityPledgeText = "Policy & conduct_100% #1";
+      mockSettings.academicIntegrityPledgeText =
+        "Policy & conduct_100% #1 {signed} \\required";
 
       const result = generateLatexDocument(
         mockSettings,
@@ -279,8 +291,24 @@ describe("generateLatexDocument", () => {
         mockMappings,
         true
       );
+      const studentCoverMacro = getStudentCoverMacro(result.content);
 
-      expect(result.content).toContain("Policy \\& conduct\\_100\\% \\#1");
+      expect(studentCoverMacro).toContain(
+        "Policy \\& conduct\\_100\\% \\#1 \\{signed\\} \\textbackslash\\{\\}required"
+      );
+    });
+
+    it("uses the compact student-cover spacing when the pledge is on", () => {
+      const result = generateLatexDocument(
+        mockSettings,
+        mockMasterExam,
+        mockVersions,
+        mockMappings
+      );
+      const studentCoverMacro = getStudentCoverMacro(result.content);
+
+      expect(studentCoverMacro).toContain("\\vspace*{1cm}");
+      expect(studentCoverMacro).toContain("\\vspace{0.6cm}");
     });
 
     it("preserves the existing student-cover spacing when the pledge is off", () => {
@@ -292,9 +320,7 @@ describe("generateLatexDocument", () => {
         mockVersions,
         mockMappings
       );
-      const studentCoverMacro = result.content.match(
-        /\\newcommand\{\\newcodecover\}\[1\]\{([\s\S]*?)\n\}\n\n\n%% put your preamble/
-      )?.[1];
+      const studentCoverMacro = getStudentCoverMacro(result.content);
 
       expect(studentCoverMacro).toContain("\\vspace*{4.5cm}");
       expect(studentCoverMacro).toContain("\\vspace{2cm}");
