@@ -114,6 +114,15 @@ describe("clean build runner", () => {
 });
 
 describe("release integration", () => {
+  it("excludes generated coverage output from strict lint", () => {
+    const eslintConfig = readFileSync(
+      resolve(repositoryRoot, "eslint.config.js"),
+      "utf8",
+    );
+
+    expect(eslintConfig).toMatch(/ignores:\s*\[[^\]]*"coverage"/s);
+  });
+
   it("pins every reviewed dependency install script", () => {
     const npmConfig = readFileSync(
       resolve(repositoryRoot, ".npmrc"),
