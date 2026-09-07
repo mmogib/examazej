@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import type ExcelJS from "exceljs";
 import type { ExamData, ExamSettings } from "../types";
 import { extractPlainInstructions } from "../parsers/adapter";
 import { createLogger } from "../utils/logger";
@@ -15,6 +15,7 @@ export async function generateExcelTemplate(
 ): Promise<Blob> {
   logger.debug("Generating Excel template");
 
+  const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
 
   // Sheet 1: Questions (REQUIRED)

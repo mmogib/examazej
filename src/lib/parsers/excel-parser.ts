@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import type ExcelJS from "exceljs";
 import type { Question, ExamSettings } from "../types";
 import { createLogger } from "../utils/logger";
 import { validateQuestionTags } from "../utils/tag-validator";
@@ -36,6 +36,7 @@ export async function parseExcel(file: File): Promise<ParsedExcelData> {
   logger.info("Starting Excel parsing", { filename: file.name });
 
   const arrayBuffer = await file.arrayBuffer();
+  const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(arrayBuffer);
 

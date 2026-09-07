@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
@@ -61,6 +61,59 @@ const desktopCsp = () => ({
   },
 });
 
+// vite-plugin-electron 1.1.x expresses two Rolldown-only hints before it
+// converts its configuration for Vite 6. Remove those already-converted hints
+// from the nested Rollup builds so Vite 6 receives only supported options.
+const electronRollupCompatibility = (): Plugin => ({
+  name: "examazej-electron-rollup-compatibility",
+  enforce: "post",
+  config(config) {
+    const rollupOptions = config.build?.rollupOptions;
+    if (!rollupOptions) return;
+
+    delete (rollupOptions as typeof rollupOptions & { platform?: unknown })
+      .platform;
+
+    const outputs = Array.isArray(rollupOptions.output)
+      ? rollupOptions.output
+      : [rollupOptions.output];
+    for (const output of outputs) {
+      if (output) {
+        delete (output as typeof output & { codeSplitting?: unknown })
+          .codeSplitting;
+      }
+    }
+  },
+});
+
+const rendererManualChunks = (id: string): string | undefined => {
+  const modulePath = id.replaceAll("\\", "/");
+  if (!modulePath.includes("node_modules")) return undefined;
+  if (modulePath.includes("katex") || modulePath.includes("react-katex")) {
+    return "vendor-math";
+  }
+  if (modulePath.includes("@tiptap") || modulePath.includes("prosemirror")) {
+    return "vendor-editor";
+  }
+  if (modulePath.includes("recharts") || modulePath.includes("d3-")) {
+    return "vendor-charts";
+  }
+  if (
+    ["react", "react-dom", "react-router", "react-router-dom", "scheduler"].some(
+      (packageName) => modulePath.includes(`/node_modules/${packageName}/`),
+    ) || modulePath.includes("/node_modules/@tanstack/")
+  ) {
+    return "vendor-react";
+  }
+  if (
+    modulePath.includes("/node_modules/@radix-ui/") ||
+    modulePath.includes("/node_modules/lucide-react/")
+  ) {
+    return "vendor-ui";
+  }
+  return undefined;
+};
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Desktop (Electron) build/dev is selected with `--mode desktop`.
@@ -80,15 +133,35 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
     },
+    build: {
+      // ExcelJS ships a pre-bundled browser module. It is isolated and loaded only
+      // when an Excel import/export is requested, so its known 940 kB chunk is not
+      // part of the initial application download.
+      chunkSizeWarningLimit: 950,
+      rollupOptions: {
+        output: {
+          manualChunks: rendererManualChunks,
+        },
+      },
+    },
     plugins: [
       react(),
       isDesktop && desktopCsp(),
       isDesktop &&
         electron({
-          main: { entry: "electron/main.ts", vite: emitMjs("main") },
+          main: {
+            entry: "electron/main.ts",
+            vite: {
+              ...emitMjs("main"),
+              plugins: [electronRollupCompatibility()],
+            },
+          },
           preload: {
             input: "electron/preload.ts",
-            vite: emitCjs("preload", "electron/preload.ts"),
+            vite: {
+              ...emitCjs("preload", "electron/preload.ts"),
+              plugins: [electronRollupCompatibility()],
+            },
           },
         }),
     ].filter(Boolean),
