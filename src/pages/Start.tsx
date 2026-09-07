@@ -23,7 +23,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PrivacyNotice } from "@/components/ui/privacy-notice";
-import { TemplateDialog } from "@/components/ui/template-dialog";
+import {
+  TemplateDialog,
+  type TemplateGenerationRequest,
+} from "@/components/ui/template-dialog";
 import { parseLatexTemplate, validateParsedTemplate } from "@/lib/core/parser";
 import {
   generateTemplateSettings,
@@ -334,16 +337,18 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
     }
   };
 
-  const generateTemplate = async (
-    format: "tex" | "csv" | "xlsx",
-    coursecode: string,
-    examname: string,
-    examdate: string,
-    term: string,
-    numQuestions: number,
-    includeImageQuestion: boolean,
-    includeCoverPage: boolean
-  ) => {
+  const generateTemplate = async ({
+    format,
+    coursecode,
+    examname,
+    examdate,
+    term,
+    numQuestions,
+    includeImageQuestion,
+    includeCoverPage,
+    includeAcademicIntegrityPledge,
+    academicIntegrityPledgeText,
+  }: TemplateGenerationRequest) => {
     logger.group(`Generating ${format.toUpperCase()} Template`, () => {
       logger.debug("Parameters", {
         format,
@@ -354,6 +359,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
         numQuestions,
         includeImageQuestion,
         includeCoverPage,
+        includeAcademicIntegrityPledge,
       });
     });
 
@@ -377,6 +383,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
       term,
       numQuestions,
       includeCoverPage,
+      includeAcademicIntegrityPledge,
+      academicIntegrityPledgeText,
     });
     const filename = `exam-${coursecode}-${examname}-${numQuestions}-questions.${format}`;
     logger.debug("Settings generated, seed:", mockSettings.seed);

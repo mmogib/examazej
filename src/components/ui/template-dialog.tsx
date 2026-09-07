@@ -12,27 +12,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { AcademicIntegrityPledgeControl } from "@/components/ui/academic-integrity-pledge-control";
 import { FileText, Download, Table2, FileSpreadsheet } from "lucide-react";
 import { getFormattedCurrentDate, getCurrentTerm } from "@/lib/core/settings";
+import { DEFAULT_ACADEMIC_INTEGRITY_PLEDGE } from "@/lib/core/academic-integrity-pledge";
 import { createLogger } from "@/lib/utils/logger";
 
 const logger = createLogger("TEMPLATE_DIALOG");
 
 type TemplateFormat = "tex" | "csv" | "xlsx";
 
+export interface TemplateGenerationRequest {
+  format: TemplateFormat;
+  coursecode: string;
+  examname: string;
+  examdate: string;
+  term: string;
+  numQuestions: number;
+  includeImageQuestion: boolean;
+  includeCoverPage: boolean;
+  includeAcademicIntegrityPledge: boolean;
+  academicIntegrityPledgeText: string;
+}
+
 interface TemplateDialogProps {
   format: TemplateFormat;
   triggerButton?: React.ReactNode;
-  onTemplateGenerate: (
-    format: TemplateFormat,
-    coursecode: string,
-    examname: string,
-    examdate: string,
-    term: string,
-    numQuestions: number,
-    includeImageQuestion: boolean,
-    includeCoverPage: boolean
-  ) => void;
+  onTemplateGenerate: (request: TemplateGenerationRequest) => void;
 }
 
 export function TemplateDialog({
@@ -47,6 +53,10 @@ export function TemplateDialog({
   const [numQuestions, setNumQuestions] = useState<number>(10);
   const [includeImageQuestion, setIncludeImageQuestion] = useState(false);
   const [includeCoverPage, setIncludeCoverPage] = useState(true);
+  const [includeAcademicIntegrityPledge, setIncludeAcademicIntegrityPledge] =
+    useState(true);
+  const [academicIntegrityPledgeText, setAcademicIntegrityPledgeText] =
+    useState(DEFAULT_ACADEMIC_INTEGRITY_PLEDGE);
   const [open, setOpen] = useState(false);
   const [touched, setTouched] = useState({
     coursecode: false,
@@ -87,10 +97,11 @@ export function TemplateDialog({
           numQuestions,
           includeImageQuestion,
           includeCoverPage,
+          includeAcademicIntegrityPledge,
         });
       });
 
-      onTemplateGenerate(
+      onTemplateGenerate({
         format,
         coursecode,
         examname,
@@ -98,8 +109,10 @@ export function TemplateDialog({
         term,
         numQuestions,
         includeImageQuestion,
-        includeCoverPage
-      );
+        includeCoverPage,
+        includeAcademicIntegrityPledge,
+        academicIntegrityPledgeText,
+      });
       setOpen(false);
       // Reset form
       setCoursecode("");
@@ -109,6 +122,8 @@ export function TemplateDialog({
       setNumQuestions(10);
       setIncludeImageQuestion(false);
       setIncludeCoverPage(true);
+      setIncludeAcademicIntegrityPledge(true);
+      setAcademicIntegrityPledgeText(DEFAULT_ACADEMIC_INTEGRITY_PLEDGE);
       setTouched({
         coursecode: false,
         examname: false,
@@ -139,6 +154,8 @@ export function TemplateDialog({
       setNumQuestions(10);
       setIncludeImageQuestion(false);
       setIncludeCoverPage(true);
+      setIncludeAcademicIntegrityPledge(true);
+      setAcademicIntegrityPledgeText(DEFAULT_ACADEMIC_INTEGRITY_PLEDGE);
       setTouched({
         coursecode: false,
         examname: false,
@@ -356,6 +373,14 @@ export function TemplateDialog({
                   onCheckedChange={setIncludeCoverPage}
                 />
               </div>
+
+              <AcademicIntegrityPledgeControl
+                coverPageEnabled={includeCoverPage}
+                included={includeAcademicIntegrityPledge}
+                text={academicIntegrityPledgeText}
+                onIncludedChange={setIncludeAcademicIntegrityPledge}
+                onTextChange={setAcademicIntegrityPledgeText}
+              />
             </div>
           </div>
 

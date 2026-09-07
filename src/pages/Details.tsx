@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import type { ExamJSON, ExamSettings } from "@/lib/types";
 import { InstructionsDialog } from "@/components/ui/instructions-dialog";
+import { AcademicIntegrityPledgeControl } from "@/components/ui/academic-integrity-pledge-control";
+import { normalizeAcademicIntegrityPledgeText } from "@/lib/core/academic-integrity-pledge";
 import { generateDynamicSeed, isDefaultSeed } from "@/lib/utils/seed-generator";
 import { validateSeparatePageGrouping } from "@/lib/utils/tag-validator";
 
@@ -201,6 +203,15 @@ export function DetailsPage({
     if (!settings.examname.trim()) errors.push("Exam name is required");
     if (!seed.trim())
       errors.push("Seed is required for deterministic generation");
+    if (
+      settings.includeCoverPage &&
+      settings.includeAcademicIntegrityPledge &&
+      !normalizeAcademicIntegrityPledgeText(
+        settings.academicIntegrityPledgeText
+      )
+    ) {
+      errors.push("Enter academic integrity pledge text or disable the pledge");
+    }
 
     setValidationErrors(errors);
     return errors.length === 0;
@@ -392,12 +403,28 @@ export function DetailsPage({
                   </div>
                   <Switch
                     id="includeCoverPage"
+                    aria-label="Include Cover Pages"
                     checked={settings.includeCoverPage}
                     onCheckedChange={(checked) =>
                       handleSettingChange("includeCoverPage", checked)
                     }
                   />
                 </div>
+
+                <AcademicIntegrityPledgeControl
+                  coverPageEnabled={settings.includeCoverPage}
+                  included={settings.includeAcademicIntegrityPledge}
+                  text={settings.academicIntegrityPledgeText}
+                  onIncludedChange={(included) =>
+                    handleSettingChange(
+                      "includeAcademicIntegrityPledge",
+                      included
+                    )
+                  }
+                  onTextChange={(text) =>
+                    handleSettingChange("academicIntegrityPledgeText", text)
+                  }
+                />
               </div>
             </CardContent>
           </Card>
