@@ -38,3 +38,6 @@ notes/
 
 # Claude Code local settings (per-machine permissions)
 .claude/settings.local.json
+
+# Isolated implementation worktrees
+.worktrees/
