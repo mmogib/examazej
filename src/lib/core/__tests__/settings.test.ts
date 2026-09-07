@@ -268,6 +268,18 @@ describe("settings.ts", () => {
         DEFAULT_ACADEMIC_INTEGRITY_PLEDGE
       );
     });
+
+    it("preserves explicit pledge values when merging legacy settings", () => {
+      const merged = mergeSettingsWithDefaults({
+        includeAcademicIntegrityPledge: false,
+        academicIntegrityPledgeText: "Custom legacy pledge.",
+      });
+
+      expect(merged.includeAcademicIntegrityPledge).toBe(false);
+      expect(merged.academicIntegrityPledgeText).toBe(
+        "Custom legacy pledge."
+      );
+    });
   });
 
   describe("generateSettingsBlock", () => {

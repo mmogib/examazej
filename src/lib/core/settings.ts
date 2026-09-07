@@ -1,8 +1,5 @@
 import type { ExamSettings } from "../types";
-import {
-  DEFAULT_ACADEMIC_INTEGRITY_PLEDGE,
-  normalizeAcademicIntegrityPledgeText,
-} from "./academic-integrity-pledge";
+import { DEFAULT_ACADEMIC_INTEGRITY_PLEDGE } from "./academic-integrity-pledge";
 import { generateDynamicSeed } from "@/lib/utils/seed-generator";
 import { createLogger } from "@/lib/utils/logger";
 
