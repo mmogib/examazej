@@ -9,6 +9,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:desktop": "vite build --mode desktop",
+    "build:clean": "node scripts/run-clean-build.mjs web",
+    "build:desktop:clean": "node scripts/run-clean-build.mjs desktop",
     "electron:dev": "vite --mode desktop",
     "electron:build": "vite build --mode desktop && electron-builder",
     "electron:build:local": "node scripts/build-desktop-local.mjs",
@@ -16,10 +19,15 @@
     "electron:clean": "node scripts/clean-desktop-build.mjs",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:strict": "eslint . --max-warnings=0",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:run": "vitest run",
+    "typecheck": "tsc -b --pretty false",
+    "audit:security": "node scripts/npm-audit.mjs",
+    "verify:release": "node scripts/verify-release.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
