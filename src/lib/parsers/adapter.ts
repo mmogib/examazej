@@ -92,7 +92,7 @@ export function validateGroupsMatchQuestions(
   const groupSizes = groups.split(",").map((g) => {
     const trimmed = g.trim();
     // Remove parentheses and square brackets if present
-    const cleaned = trimmed.replace(/[\(\)\[\]]/g, "");
+    const cleaned = trimmed.replace(/[()[\]]/g, "");
     return parseInt(cleaned, 10);
   });
 

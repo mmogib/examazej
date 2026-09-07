@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -103,7 +103,7 @@ export function DetailsPage({
   //   setValidationErrors(errors);
   //   return errors.length === 0;
   // };
-  const validateSettings = () => {
+  const validateSettings = useCallback(() => {
     const errors: string[] = [];
 
     // Parse group partition - handle parentheses and square brackets
@@ -153,7 +153,7 @@ export function DetailsPage({
       }
 
       // Remove parentheses and brackets if present and parse number
-      const cleaned = token.replace(/[\(\)\[\]]/g, "");
+      const cleaned = token.replace(/[()[\]]/g, "");
       const num = parseInt(cleaned);
 
       if (isNaN(num)) {
@@ -215,10 +215,10 @@ export function DetailsPage({
 
     setValidationErrors(errors);
     return errors.length === 0;
-  };
+  }, [examData.exam.questions, groupPartition, seed, settings, versions]);
   useEffect(() => {
     validateSettings();
-  }, [settings, groupPartition, versions, seed]);
+  }, [validateSettings]);
 
   const handleSettingChange = (
     key: keyof ExamSettings,
@@ -247,7 +247,7 @@ export function DetailsPage({
   const groupSizes = groupPartition
     .split(",")
     .map((g) => {
-      const cleaned = g.trim().replace(/[\(\)\[\]]/g, "");
+      const cleaned = g.trim().replace(/[()[\]]/g, "");
       return parseInt(cleaned);
     })
     .filter((n) => !isNaN(n));
