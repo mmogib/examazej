@@ -4,6 +4,7 @@ import type {
   ExamData,
   VersionMapping,
   ExamSettings,
+  QuestionChoice,
 } from "../types";
 
 /**
@@ -262,7 +263,7 @@ export function generateExamVersions(
       if (!config.shuffleQuestionsWithin) {
         // No shuffling within group - process questions in original order
         group.forEach((question) => {
-          let shuffledChoices: any[];
+          let shuffledChoices: QuestionChoice[];
           let newCorrectIndex: number;
           let permString: string;
 
@@ -351,7 +352,7 @@ export function generateExamVersions(
         });
 
         finalQuestions.forEach((question) => {
-          let shuffledChoices: any[];
+          let shuffledChoices: QuestionChoice[];
           let newCorrectIndex: number;
           let permString: string;
 

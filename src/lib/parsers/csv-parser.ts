@@ -151,7 +151,7 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
           }: 'numberofvestions' must be a number, got '${value}'`
         );
       }
-      (settings as any)[key] = num;
+      assignSetting(settings, key as keyof ExamSettings, num);
     } else if (
       key === "includeCoverPage" ||
       key === "includeAcademicIntegrityPledge"
@@ -160,7 +160,7 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
         value.toLowerCase() === "yes" ||
         value.toLowerCase() === "true" ||
         value === "1";
-      (settings as any)[key] = boolValue;
+      assignSetting(settings, key as keyof ExamSettings, boolValue);
     } else if (key === "code_numbering") {
       if (!["ALPHA", "NUMERIC", "ROMAN"].includes(value)) {
         throw new Error(
@@ -169,7 +169,7 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
           }: 'code_numbering' must be ALPHA, NUMERIC, or ROMAN, got '${value}'`
         );
       }
-      (settings as any)[key] = value;
+      assignSetting(settings, key as keyof ExamSettings, value);
     } else if (key === "paper_size") {
       if (!["A4", "Letter"].includes(value)) {
         throw new Error(
@@ -178,14 +178,22 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
           }: 'paper_size' must be A4 or Letter, got '${value}'`
         );
       }
-      (settings as any)[key] = value;
+      assignSetting(settings, key as keyof ExamSettings, value);
     } else {
-      (settings as any)[key] = value;
+      assignSetting(settings, key as keyof ExamSettings, value);
     }
   }
 
   logger.debug("Parsed settings", settings);
   return settings;
+}
+
+function assignSetting(
+  settings: Partial<ExamSettings>,
+  key: keyof ExamSettings,
+  value: ExamSettings[keyof ExamSettings]
+): void {
+  Object.assign(settings, { [key]: value });
 }
 
 /**

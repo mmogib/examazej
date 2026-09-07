@@ -41,13 +41,17 @@ export interface ExamData {
   ordering: null;
   preamble: string;
   questions: Question[];
-  kept_in_one_page: any[];
+  kept_in_one_page: unknown[];
+}
+
+export interface ExamVersion extends ExamData {
+  code?: string;
 }
 
 export interface ExamJSON {
   setting: ExamSettings;
   exam: ExamData;
-  options_order: Record<string, any>;
+  options_order: Record<string, unknown>;
 }
 
 export interface ParsedLatexTemplate {

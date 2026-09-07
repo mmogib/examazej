@@ -176,7 +176,7 @@ describe("generateExamVersions - Group Shuffling", () => {
 
       for (const version of versions) {
         const firstQuestion = version.questions[0];
-        const optionTexts = firstQuestion.choices[0].map((c: any) => c.text);
+        const optionTexts = firstQuestion.choices[0].map((choice) => choice.text);
 
         // Original order is A, B, C, D, E
         const originalOrder = [
@@ -284,7 +284,7 @@ describe("generateExamVersions - Group Shuffling", () => {
 
       for (const version of versions) {
         const firstQuestion = version.questions[0];
-        const optionTexts = firstQuestion.choices[0].map((c: any) => c.text);
+        const optionTexts = firstQuestion.choices[0].map((choice) => choice.text);
 
         // Original order is A, B, C, D, E
         const originalOrder = [
@@ -705,7 +705,7 @@ describe("generateExamVersions - Group Shuffling", () => {
       // First question's options should NOT be shuffled
       versions.forEach((version) => {
         const firstQuestion = version.questions[0];
-        const optionTexts = firstQuestion.choices[0].map((c: any) => c.text);
+        const optionTexts = firstQuestion.choices[0].map((choice) => choice.text);
 
         expect(optionTexts).toEqual([
           "Option A",

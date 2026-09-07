@@ -412,7 +412,7 @@ describe("generateLatexDocument", () => {
             fixedOptions: false,
             keepOnSeparatePage: true, // Forces separate page
           },
-          ...Array.from({ length: 4 }, (_, i) => ({
+          ...Array.from({ length: 4 }, (_, i): Question => ({
             text: `Q${i + 2}`,
             group: 1,
             order: i + 2,

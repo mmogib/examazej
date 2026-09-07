@@ -35,7 +35,7 @@ function createQuestionObject(
   correctLetter: string | undefined,
   questionNumber: number,
   errors: string[]
-): any {
+): Omit<Question, "group" | "order"> {
   // Validate tags (catch errors instead of throwing)
   let validatedTags: QuestionTags;
 
@@ -61,7 +61,7 @@ function createQuestionObject(
   }
 
   // Create question object
-  const question: any = {
+  const question: Omit<Question, "group" | "order"> = {
     text: questionText,
     choices: [
       options.map((text) => ({ text })),
@@ -108,16 +108,18 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         const cleanKey = key.trim();
 
         if (cleanKey === "numberofvestions") {
-          (settings as any)[cleanKey] = parseInt(value) || 1;
+          assignSetting(settings, cleanKey as keyof ExamSettings, parseInt(value) || 1);
         } else if (
           cleanKey === "includeCoverPage" ||
           cleanKey === "includeAcademicIntegrityPledge"
         ) {
-          (settings as any)[cleanKey] = ["yes", "true", "1"].includes(
-            value.toLowerCase()
+          assignSetting(
+            settings,
+            cleanKey as keyof ExamSettings,
+            ["yes", "true", "1"].includes(value.toLowerCase())
           );
         } else {
-          (settings as any)[cleanKey] = value;
+          assignSetting(settings, cleanKey as keyof ExamSettings, value);
         }
       }
     }
@@ -514,6 +516,14 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   }
 
   return result;
+}
+
+function assignSetting(
+  settings: Partial<ExamSettings>,
+  key: keyof ExamSettings,
+  value: ExamSettings[keyof ExamSettings]
+): void {
+  Object.assign(settings, { [key]: value });
 }
 
 export function validateParsedTemplate(parsed: ParsedLatexTemplate): string[] {

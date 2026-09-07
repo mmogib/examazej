@@ -34,7 +34,7 @@ class Logger {
   /**
    * Format log messages with timestamp and prefix
    */
-  private format(level: string, ...args: any[]) {
+  private format(level: string, ...args: unknown[]) {
     const timestamp = new Date().toISOString().split('T')[1].slice(0, 12);
     return [`[${timestamp}] [${this.prefix}] [${level}]`, ...args];
   }
@@ -43,7 +43,7 @@ class Logger {
    * Debug-level logging (most verbose)
    * Only shown in development
    */
-  debug(...args: any[]) {
+  debug(...args: unknown[]) {
     if (canLog) {
       console.log(...this.format("DEBUG", ...args));
     }
@@ -53,7 +53,7 @@ class Logger {
    * Info-level logging
    * Only shown in development
    */
-  info(...args: any[]) {
+  info(...args: unknown[]) {
     if (canLog) {
       console.info(...this.format("INFO", ...args));
     }
@@ -63,7 +63,7 @@ class Logger {
    * Warning-level logging
    * Only shown in development
    */
-  warn(...args: any[]) {
+  warn(...args: unknown[]) {
     if (canLog) {
       console.warn(...this.format("WARN", ...args));
     }
@@ -73,7 +73,7 @@ class Logger {
    * Error-level logging
    * ALWAYS shown (even in production) for critical issues
    */
-  error(...args: any[]) {
+  error(...args: unknown[]) {
     console.error(...this.format("ERROR", ...args));
   }
 
@@ -120,7 +120,7 @@ class Logger {
    * Example:
    *   logger.table([{ id: 1, name: "Q1" }, { id: 2, name: "Q2" }]);
    */
-  table(data: any, columns?: string[]) {
+  table(data: unknown, columns?: string[]) {
     if (canLog) {
       if (columns) {
         console.table(data, columns);

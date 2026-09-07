@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Eye } from 'lucide-react';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
-import type { ExamData, ExamSettings } from '@/lib/types';
+import type { ExamData, ExamSettings, Question, QuestionChoice } from '@/lib/types';
 
 // Component to render LaTeX content
 function LaTeXRenderer({ content }: { content: string }) {
@@ -56,7 +56,7 @@ export function ExamPreviewSheet({ versions, settings, children }: ExamPreviewSh
 
   const currentVersion = versions[parseInt(selectedVersion)] || versions[0];
 
-  const renderQuestion = (question: any, index: number) => {
+  const renderQuestion = (question: Question, index: number) => {
     const questionNumber = index + 1;
     const choices = question.choices?.[0] || [];
     
@@ -78,7 +78,7 @@ export function ExamPreviewSheet({ versions, settings, children }: ExamPreviewSh
 
         {choices.length > 0 && (
           <div className="pl-11 space-y-3">
-            {choices.map((choice: any, choiceIndex: number) => {
+            {choices.map((choice: QuestionChoice, choiceIndex: number) => {
               const optionLetter = String.fromCharCode(65 + choiceIndex);
               return (
                 <div key={choiceIndex} className="flex items-start gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">

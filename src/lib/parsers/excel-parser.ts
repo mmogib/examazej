@@ -15,10 +15,10 @@ export interface ParsedExcelData {
 /**
  * Convert an ExcelJS worksheet into a 2D array (like sheet_to_json with header:1)
  */
-function worksheetToArray(worksheet: ExcelJS.Worksheet): any[][] {
-  const rows: any[][] = [];
+function worksheetToArray(worksheet: ExcelJS.Worksheet): ExcelJS.CellValue[][] {
+  const rows: ExcelJS.CellValue[][] = [];
   worksheet.eachRow({ includeEmpty: false }, (row) => {
-    const values: any[] = [];
+    const values: ExcelJS.CellValue[] = [];
     // ExcelJS row.values is 1-indexed (index 0 is undefined)
     for (let col = 1; col <= row.cellCount; col++) {
       const cell = row.getCell(col);
@@ -145,7 +145,7 @@ function parseSettingsSheet(
           `Settings sheet row ${i + 1}: 'numberofvestions' must be a number, got '${value}'`
         );
       }
-      (settings as any)[key] = num;
+      assignSetting(settings, key as keyof ExamSettings, num);
     } else if (
       key === "includeCoverPage" ||
       key === "includeAcademicIntegrityPledge"
@@ -154,28 +154,36 @@ function parseSettingsSheet(
         value.toLowerCase() === "yes" ||
         value.toLowerCase() === "true" ||
         value === "1";
-      (settings as any)[key] = boolValue;
+      assignSetting(settings, key as keyof ExamSettings, boolValue);
     } else if (key === "code_numbering") {
       if (!["ALPHA", "NUMERIC", "ROMAN"].includes(value)) {
         throw new Error(
           `Settings sheet row ${i + 1}: 'code_numbering' must be ALPHA, NUMERIC, or ROMAN, got '${value}'`
         );
       }
-      (settings as any)[key] = value;
+      assignSetting(settings, key as keyof ExamSettings, value);
     } else if (key === "paper_size") {
       if (!["A4", "Letter"].includes(value)) {
         throw new Error(
           `Settings sheet row ${i + 1}: 'paper_size' must be A4 or Letter, got '${value}'`
         );
       }
-      (settings as any)[key] = value;
+      assignSetting(settings, key as keyof ExamSettings, value);
     } else {
-      (settings as any)[key] = value;
+      assignSetting(settings, key as keyof ExamSettings, value);
     }
   }
 
   logger.debug("Parsed settings from Excel", settings);
   return settings;
+}
+
+function assignSetting(
+  settings: Partial<ExamSettings>,
+  key: keyof ExamSettings,
+  value: ExamSettings[keyof ExamSettings]
+): void {
+  Object.assign(settings, { [key]: value });
 }
 
 /**
@@ -251,7 +259,7 @@ function parseQuestionsSheet(
   }
 
   // Parse header
-  const headers = data[0].map((h: any) => String(h || "").trim());
+  const headers = data[0].map((header) => String(header || "").trim());
 
   // Validate required columns
   const requiredColumns = ["Question Text", "Correct"];
@@ -308,7 +316,7 @@ function parseQuestionsSheet(
  * Parse a single question row
  */
 function parseQuestionRow(
-  row: any[],
+  row: ExcelJS.CellValue[],
   colIndices: Record<string, number>,
   rowNumber: number
 ): Omit<Question, "group" | "order"> {
