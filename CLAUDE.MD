@@ -13,7 +13,7 @@
 
 ## Desktop App (Examazej) — v1.6.5 SHIPPED ✅ (Phases 0–5 done; auto-update proven on personal + KFUPM-managed machines; Phase 6 signing now OPTIONAL for KFUPM)
 
-**Live as of 2026-07-05 — v0.1 pilot functionally complete; latest shipped v1.6.5.** The Windows desktop app ships as a thin **Electron** shell around the *same* web build. Shipping is one command — `./scripts/release.sh patch` bumps + tags + pushes, which triggers Netlify (web deploy) **and** CI (`.github/workflows/desktop-release.yml`, windows-latest) that builds the unsigned NSIS installer and auto-publishes it to the GitHub Release. The guided **`/download`** page serves the latest `.exe` + sha256 from `/releases/latest`. **Auto-update is proven end-to-end** (electron-updater: check-on-launch → silent download → subtle "Restart now" toast → install-on-quit; verified live v1.6.3→v1.6.4, and v1.6.4→v1.6.5 on **both a personal machine and a KFUPM-managed machine** — AD domain-joined, Netskope TLS-inspection proxy, standard non-admin user — both updated flawlessly). `npm audit` is clean (0).
+**Live as of 2026-07-05 — v0.1 pilot functionally complete; latest shipped v1.6.5.** The Windows desktop app ships as a thin **Electron** shell around the *same* web build. Shipping is one command — `./scripts/release.sh patch` runs the strict pre-release quality gate, then bumps + tags + pushes, which triggers Netlify (web deploy) **and** CI (`.github/workflows/desktop-release.yml`, windows-latest) that builds the unsigned NSIS installer and auto-publishes it to the GitHub Release. The guided **`/download`** page serves the latest `.exe` + sha256 from `/releases/latest`. **Auto-update is proven end-to-end** (electron-updater: check-on-launch → silent download → subtle "Restart now" toast → install-on-quit; verified live v1.6.3→v1.6.4, and v1.6.4→v1.6.5 on **both a personal machine and a KFUPM-managed machine** — AD domain-joined, Netskope TLS-inspection proxy, standard non-admin user — both updated flawlessly). The gate requires a zero-vulnerability production audit.
 
 **Phase 6 (code signing) — reassessed 2026-07-05, now OPTIONAL for KFUPM.** On-machine checks proved KFUPM managed machines run the **unsigned per-user installer + auto-update fine**: no WDAC, permissive (audit-only) AppLocker, PowerShell FullLanguage, SmartScreen only a one-time "Run anyway", and the sole real gate (local admin) is sidestepped by the per-user install. So signing is **not needed for internal users** — only for **external / other-university / personal** machines. If pursued: **Azure Trusted Signing is geo-blocked for KSA and issues no EV**, and **EV no longer bypasses SmartScreen** (removed 2024) → lean = **cloud-HSM OV cert under KFUPM's identity**, or **KFUPM's own internal CA** (ADCS root trusted domain-wide) for internal signing. Full analysis + university-meeting checklist: `notes/desktop-code-signing.md` (local/gitignored). Full plan: `notes/desktop-app-plan.md`. Key decisions:
 
@@ -113,9 +113,9 @@ src/
 npm install          # Install dependencies
 npm run dev          # Dev server (localhost:8080)
 npm run build        # Production build
-npm run lint         # ESLint
-npm test             # Run all 166 tests
-npm test -- --coverage  # Coverage report
+npm run verify:release  # Canonical audit, lint, typecheck, test, and build gate
+npm run test:run     # Run the complete test suite once
+npm run test:coverage  # Coverage report
 ```
 
 ### Git Branches
@@ -128,18 +128,19 @@ npm test -- --coverage  # Coverage report
 ./scripts/release.sh patch    # patch (1.5.1 -> 1.5.2)
 ./scripts/release.sh major    # major (1.5.1 -> 2.0.0)
 ```
-Bumps version, commits, tags, merges to main, pushes. Run from feature branch.
+Bumps version, commits, tags, merges to main, and pushes. Run from a clean feature
+branch. Before changing any release state, the script requires
+`npm run verify:release` to pass.
 
 ## Testing
 
-**166/166 tests passing** in `src/lib/core/__tests__/`:
-- `settings.test.ts` (51)
-- `latex.test.ts` (31)
-- `rng.test.ts` (29)
-- `versioning.test.ts` (21)
-- `parser.test.ts` (17)
-- `separate-page-grouping.test.ts` (13)
-- `bug-last-question.test.ts` (4) -- regression tests for RNG fix
+Run `npm run verify:release` before release or integration. It enforces:
+
+- zero production dependency vulnerabilities at the configured audit level
+- zero ESLint errors or warnings
+- a clean TypeScript project build
+- the complete Vitest and quality-runner test suites
+- warning-free clean builds for both web and Electron targets
 
 ## File Reference
 

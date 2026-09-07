@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { getNpmInvocation } from "../npm-command.mjs";
 import { ensureSystemCa, runNpmAudit } from "../npm-audit.mjs";
@@ -7,6 +10,8 @@ import {
   findBuildProblem,
 } from "../run-clean-build.mjs";
 import { RELEASE_CHECKS, runReleaseChecks } from "../verify-release.mjs";
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 describe("release verification", () => {
   it("runs every release check in the approved order", () => {
@@ -105,5 +110,37 @@ describe("clean build runner", () => {
 
   it("accepts warning-free successful output", () => {
     expect(findBuildProblem({ output: "built in 4.2s", status: 0 })).toBeNull();
+  });
+});
+
+describe("release integration", () => {
+  it("runs verification after the clean-tree check and before version mutation", () => {
+    const releaseScript = readFileSync(
+      resolve(repositoryRoot, "scripts", "release.sh"),
+      "utf8",
+    );
+    const cleanTreeCheck = releaseScript.indexOf("git status --porcelain");
+    const verification = releaseScript.indexOf("npm run verify:release");
+    const versionRead = releaseScript.indexOf("CURRENT_VERSION=");
+
+    expect(cleanTreeCheck).toBeGreaterThan(-1);
+    expect(verification).toBeGreaterThan(cleanTreeCheck);
+    expect(verification).toBeLessThan(versionRead);
+  });
+
+  it("runs the same read-only gate in CI", () => {
+    const workflow = readFileSync(
+      resolve(repositoryRoot, ".github", "workflows", "quality.yml"),
+      "utf8",
+    );
+
+    expect(workflow).toContain("contents: read");
+    expect(workflow).toContain("pull_request:");
+    expect(workflow).toContain("push:");
+    expect(workflow).toContain("main");
+    expect(workflow).toContain("new-feat");
+    expect(workflow).toContain("node-version: 22");
+    expect(workflow).toContain("npm ci");
+    expect(workflow).toContain("npm run verify:release");
   });
 });

@@ -26,6 +26,10 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
+echo "Running pre-release quality gate..."
+npm run verify:release
+echo "Pre-release quality gate passed."
+
 # Get current version
 CURRENT_VERSION=$(node -e "console.log(require('./package.json').version)")
 echo "Current version: $CURRENT_VERSION"

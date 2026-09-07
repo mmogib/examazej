@@ -176,11 +176,17 @@ This project is actively maintained. For questions or suggestions:
 ### Local Development
 
 ```sh
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run lint     # Run ESLint
+npm run dev             # Start development server
+npm run build           # Build the web application
+npm run build:desktop   # Build the shared application for Electron
+npm run preview         # Preview the web production build
+npm run verify:release  # Run the complete pre-release quality gate
 ```
+
+`npm run verify:release` is the canonical verification command. It audits production
+dependencies, requires zero ESLint warnings, checks TypeScript, runs all tests, and
+performs clean web and desktop builds. The release script runs this command before
+any version, tag, merge, or push operation.
 
 ## 📄 License
 

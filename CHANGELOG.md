@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Optional, editable Academic Integrity Pledge on student-version cover pages, enabled by default and preserved across LaTeX, CSV, Excel, JSON, web, and desktop workflows.
+- A strict `npm run verify:release` quality gate covering production dependency audit, zero-warning lint, TypeScript checks, the complete test suite, and clean web and desktop builds.
+- A Windows CI quality workflow for pushes to `new-feat` and pull requests targeting `new-feat` or `main`.
+
+### Changed
+
+- Upgraded Tiptap to 3.31.3 and React Router to 7.18.3 to remove known production dependency vulnerabilities.
+- Deferred ExcelJS loading until spreadsheet import or export is used, keeping it out of the initial application preload path.
+- The release script now requires the complete quality gate to pass before it calculates or creates a release version.
+
+### Fixed
+
+- Removed TypeScript and ESLint errors and warnings, including unsafe parser types and stale component exports.
+- Removed web and desktop production-build warnings while retaining a single shared application codebase for both targets.
 
 ## [1.5.0] - 2026-01-06
 
