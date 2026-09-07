@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-08
+
 ### Added
 
 - Optional, editable Academic Integrity Pledge on student-version cover pages, enabled by default and preserved across LaTeX, CSV, Excel, JSON, web, and desktop workflows.
@@ -200,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
+[1.7.0]: https://github.com/mmogib/examazej/compare/v1.6.5...v1.7.0
 [1.5.0]: https://github.com/yourusername/exam-shuffler/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/yourusername/exam-shuffler/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/yourusername/exam-shuffler/compare/v1.2.1...v1.3.0
