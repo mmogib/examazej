@@ -15,6 +15,12 @@ export const APP_VERSION: string = __APP_VERSION__;
  */
 export const PINNED_OPTIONS_VERSION = "1.8.0";
 
+/**
+ * v1.8.0: a `fixed` question inside a `(n)` group keeps its options in order. Before, they
+ * were shuffled by mistake, so such a question's answers differ from older answer keys.
+ */
+export const FIXED_IN_PAREN_GROUP_VERSION = "1.8.0";
+
 /** The newest version whose file rules this code applies. Bump it with each new rule. */
 const NEWEST_RULES_VERSION = PINNED_OPTIONS_VERSION;
 

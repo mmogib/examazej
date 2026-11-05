@@ -1,7 +1,7 @@
 import type { Question, ExamSettings } from "../types";
 import { unescapeNewlines } from "../utils";
 import { createLogger } from "../utils/logger";
-import { validateQuestionTags } from "../utils/tag-validator";
+import { formatRowErrors, validateQuestionTags } from "../utils/tag-validator";
 
 const logger = createLogger("CSV_PARSER");
 
@@ -45,7 +45,11 @@ export function parseCSV(content: string): ParsedCSVData {
   }
 
   const warnings: string[] = [];
-  const questions = parseQuestionsSection(sections.questions, warnings);
+  const questions = parseQuestionsSection(
+    sections.questions,
+    warnings,
+    sections.questionLineNumbers ?? []
+  );
 
   logger.info("CSV parsing completed", {
     settingsCount: Object.keys(settings).length,
@@ -65,11 +69,15 @@ function splitIntoSections(lines: string[]): {
   instructions?: string[];
   preamble?: string[];
   questions?: string[];
+  /** The file line (1-based) of each line in `questions`, for messages. */
+  questionLineNumbers?: number[];
 } {
   const sections: Record<string, string[]> = {};
+  const lineNumbers: Record<string, number[]> = {};
   let currentSection: string | null = null;
 
-  for (const line of lines) {
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
     if (!line || line.trim() === "") continue;
 
     // Check for section marker
@@ -81,9 +89,11 @@ function splitIntoSections(lines: string[]): {
         .replace(/\s+/g, "");
       currentSection = sectionName;
       sections[sectionName] = [];
+      lineNumbers[sectionName] = [];
       logger.debug(`Found section: ${sectionName}`);
     } else if (currentSection) {
       sections[currentSection].push(line);
+      lineNumbers[currentSection].push(index + 1);
     }
   }
 
@@ -92,6 +102,7 @@ function splitIntoSections(lines: string[]): {
     instructions: sections.instructions,
     preamble: sections.preamble,
     questions: sections.questions,
+    questionLineNumbers: lineNumbers.questions,
   };
 }
 
@@ -229,7 +240,8 @@ function parsePreambleSection(lines: string[]): string {
  */
 function parseQuestionsSection(
   lines: string[],
-  warnings: string[]
+  warnings: string[],
+  lineNumbers: number[]
 ): Omit<Question, "group" | "order">[] {
   if (lines.length === 0) {
     throw new Error("Questions section is empty");
@@ -267,21 +279,26 @@ function parseQuestionsSection(
 
   const questions: Omit<Question, "group" | "order">[] = [];
 
-  // Parse data rows
+  // Parse data rows. Every bad row is reported together, so one upload shows all problems.
+  const errors: string[] = [];
+  let questionNumber = 0;
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     if (!line || line.trim() === "") continue;
+    questionNumber++;
+    const location = lineNumbers[i]
+      ? `Question ${questionNumber} (line ${lineNumbers[i]})`
+      : `Question ${questionNumber}`;
 
     try {
-      const question = parseQuestionRow(line, colIndices, i + 1, warnings);
+      const question = parseQuestionRow(line, colIndices, location, warnings);
       questions.push(question);
     } catch (error) {
-      throw new Error(
-        `Question row ${i + 1}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      errors.push(error instanceof Error ? error.message : String(error));
     }
+  }
+  if (errors.length > 0) {
+    throw new Error(formatRowErrors(errors));
   }
 
   if (questions.length === 0) {
@@ -323,14 +340,14 @@ function parseCSVLine(line: string): string[] {
 function parseQuestionRow(
   line: string,
   colIndices: Record<string, number>,
-  rowNumber: number,
+  location: string,
   warnings: string[]
 ): Omit<Question, "group" | "order"> {
   const cells = parseCSVLine(line);
 
   const questionText = cells[colIndices.questionText]?.trim();
   if (!questionText) {
-    throw new Error("Question text is empty");
+    throw new Error(`${location}: Question text is empty`);
   }
 
   // Parse options
@@ -348,14 +365,14 @@ function parseQuestionRow(
 
   if (options.length > 0) {
     if (!correctLetter) {
-      throw new Error("Question has options but no correct answer specified");
+      throw new Error(`${location}: Question has options but no correct answer specified`);
     }
 
     correctIndex = correctLetter.charCodeAt(0) - 65; // A=0, B=1, etc.
 
     if (correctIndex < 0 || correctIndex >= options.length) {
       throw new Error(
-        `Invalid correct answer '${correctLetter}'. Question has ${
+        `${location}: Invalid correct answer '${correctLetter}'. Question has ${
           options.length
         } options (A-${String.fromCharCode(65 + options.length - 1)})`
       );
@@ -364,18 +381,16 @@ function parseQuestionRow(
 
   // Parse and validate tags
   const tagsStr = cells[colIndices.tags]?.trim() || "";
-  const tagList = tagsStr
-    ? tagsStr.split(",").map((t) => t.trim().toLowerCase())
-    : [];
+  const tagList = tagsStr ? tagsStr.split(",").map((t) => t.trim()) : [];
 
-  // Validate tags using shared validator
+  // Validate tags using shared validator (any case; messages quote them as written)
   const validatedTags = validateQuestionTags(tagList, {
-    questionNumber: rowNumber,
+    location,
     format: 'csv',
     optionCount: options.length,
   });
   for (const warning of validatedTags.warnings) {
-    warnings.push(`Question row ${rowNumber}: ${warning}`);
+    warnings.push(`${location}: ${warning}`);
   }
 
   return {

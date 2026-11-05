@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (324 tests)
+- **Testing**: Vitest (338 tests)
 
 ## Architecture Constraints
 
@@ -77,7 +77,8 @@ Lock tags are independent; "position" means the slot within the question's group
 ### File Versions (`app_version`)
 - Every template the app writes (LaTeX `%app_version=`, CSV/Excel settings row, session JSON) carries `app_version`; logic in `src/lib/core/app-version.ts`
 - Missing or unreadable stamp = file made before v1.8.0. **Any change to what a tag means must be gated on the file's version** (add a constant like `PINNED_OPTIONS_VERSION` and bump `NEWEST_RULES_VERSION`)
-- The only rule today: in a pre-1.8 LaTeX file, `fixed-options:X` without `correct:` takes X as the answer (v1.7 meaning), with one explanatory note. Such questions get `legacyPin`, and the answer key page shows a red warning: their option shuffle consumes RNG draws v1.7 never made, so the whole exam differs from v1.7's for the same seed. `fixed-options` + `correct:X` reproduces v1.7 exactly (verified against the v1.7.0 code)
+- Rule 2 (all formats): in a pre-1.8 file, `fixed` questions get `legacyFixed`. One inside a `(n)` group had its options shuffled by v1.7's bug, so its key differs: a Details note (file's groups) and the answer-key warning (the groups generated with) say so; `fixed-position` reproduces v1.7 exactly. Group parsing lives in `src/lib/core/group-config.ts`
+- Rule 1: in a pre-1.8 LaTeX file, `fixed-options:X` without `correct:` takes X as the answer (v1.7 meaning), with one explanatory note. Such questions get `legacyPin`, and the answer key page shows a red warning: their option shuffle consumes RNG draws v1.7 never made, so the whole exam differs from v1.7's for the same seed. `fixed-options` + `correct:X` reproduces v1.7 exactly (verified against the v1.7.0 code)
 - `getTemplateVersion()` stamps max(package version, newest rules version), so dev builds before the release bump still write a v1.8 stamp
 - **Grouping rule**: A `separate-page` question must be alone in its own size-1 group. Sharing a group with other questions causes version-dependent page counts (Details page hard-errors this)
 

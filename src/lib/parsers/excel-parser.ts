@@ -1,7 +1,7 @@
 import type ExcelJS from "exceljs";
 import type { Question, ExamSettings } from "../types";
 import { createLogger } from "../utils/logger";
-import { validateQuestionTags } from "../utils/tag-validator";
+import { formatRowErrors, validateQuestionTags } from "../utils/tag-validator";
 
 const logger = createLogger("EXCEL_PARSER");
 
@@ -19,9 +19,13 @@ export interface ParsedExcelData {
 /**
  * Convert an ExcelJS worksheet into a 2D array (like sheet_to_json with header:1)
  */
-function worksheetToArray(worksheet: ExcelJS.Worksheet): ExcelJS.CellValue[][] {
+function worksheetToArray(
+  worksheet: ExcelJS.Worksheet,
+  rowNumbers?: number[] // filled with each returned row's sheet row number, for messages
+): ExcelJS.CellValue[][] {
   const rows: ExcelJS.CellValue[][] = [];
   worksheet.eachRow({ includeEmpty: false }, (row) => {
+    rowNumbers?.push(row.number);
     const values: ExcelJS.CellValue[] = [];
     // ExcelJS row.values is 1-indexed (index 0 is undefined)
     for (let col = 1; col <= row.cellCount; col++) {
@@ -266,7 +270,8 @@ function parseQuestionsSheet(
   worksheet: ExcelJS.Worksheet,
   warnings: string[]
 ): Omit<Question, "group" | "order">[] {
-  const data = worksheetToArray(worksheet);
+  const rowNumbers: number[] = [];
+  const data = worksheetToArray(worksheet, rowNumbers);
 
   if (data.length < 2) {
     throw new Error("Questions sheet is empty or has no data rows");
@@ -303,19 +308,24 @@ function parseQuestionsSheet(
 
   const questions: Omit<Question, "group" | "order">[] = [];
 
-  // Parse data rows
+  // Parse data rows. Every bad row is reported together, so one upload shows all problems.
+  const errors: string[] = [];
+  let questionNumber = 0;
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row || row.length === 0) continue;
+    questionNumber++;
+    const location = `Question ${questionNumber} (row ${rowNumbers[i] ?? i + 1})`;
 
     try {
-      const question = parseQuestionRow(row, colIndices, i + 1, warnings);
+      const question = parseQuestionRow(row, colIndices, location, warnings);
       questions.push(question);
     } catch (error) {
-      throw new Error(
-        `Questions sheet row ${i + 1}: ${error instanceof Error ? error.message : String(error)}`
-      );
+      errors.push(error instanceof Error ? error.message : String(error));
     }
+  }
+  if (errors.length > 0) {
+    throw new Error(formatRowErrors(errors));
   }
 
   if (questions.length === 0) {
@@ -332,12 +342,12 @@ function parseQuestionsSheet(
 function parseQuestionRow(
   row: ExcelJS.CellValue[],
   colIndices: Record<string, number>,
-  rowNumber: number,
+  location: string,
   warnings: string[]
 ): Omit<Question, "group" | "order"> {
   const questionText = String(row[colIndices.questionText] || "").trim();
   if (!questionText) {
-    throw new Error("Question text is empty");
+    throw new Error(`${location}: Question text is empty`);
   }
 
   // Parse options
@@ -358,7 +368,7 @@ function parseQuestionRow(
   if (options.length > 0) {
     if (!correctLetter) {
       throw new Error(
-        "Question has options but no correct answer specified"
+        `${location}: Question has options but no correct answer specified`
       );
     }
 
@@ -366,25 +376,23 @@ function parseQuestionRow(
 
     if (correctIndex < 0 || correctIndex >= options.length) {
       throw new Error(
-        `Invalid correct answer '${correctLetter}'. Question has ${options.length} options (A-${String.fromCharCode(65 + options.length - 1)})`
+        `${location}: Invalid correct answer '${correctLetter}'. Question has ${options.length} options (A-${String.fromCharCode(65 + options.length - 1)})`
       );
     }
   }
 
   // Parse and validate tags
   const tagsStr = String(row[colIndices.tags] || "").trim();
-  const tagList = tagsStr
-    ? tagsStr.split(",").map((t) => t.trim().toLowerCase())
-    : [];
+  const tagList = tagsStr ? tagsStr.split(",").map((t) => t.trim()) : [];
 
-  // Validate tags using shared validator
+  // Validate tags using shared validator (any case; messages quote them as written)
   const validatedTags = validateQuestionTags(tagList, {
-    questionNumber: rowNumber,
+    location,
     format: 'excel',
     optionCount: options.length,
   });
   for (const warning of validatedTags.warnings) {
-    warnings.push(`Questions sheet row ${rowNumber}: ${warning}`);
+    warnings.push(`${location}: ${warning}`);
   }
 
   return {

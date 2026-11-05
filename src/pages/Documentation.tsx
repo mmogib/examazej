@@ -1129,7 +1129,13 @@ Which number is prime?
                     The position is the question's place within its group: in a{" "}
                     <code className="bg-muted px-1 rounded">(n)</code> or{" "}
                     <code className="bg-muted px-1 rounded">[n]</code> group the whole
-                    group can move, and the question moves with it.
+                    group can move, and the question moves with it. Before v1.8 a{" "}
+                    <code className="bg-muted px-1 rounded">fixed</code> question inside a{" "}
+                    <code className="bg-muted px-1 rounded">(n)</code> group still had its
+                    options shuffled by mistake; for files made before v1.8 the Details
+                    page and the answer key page point this out, and using{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#fixed-position}`}</code>{" "}
+                    there makes exactly the exams made before v1.8.
                   </p>
                   <pre className="text-sm bg-muted p-3 rounded">
                     {`\\item

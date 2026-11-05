@@ -49,6 +49,12 @@ export interface Question {
     answerFromLetter: boolean;
   };
   /**
+   * Set on a `fixed` question from a file made before v1.8. Inside a `(n)` group, v1.7
+   * shuffled such a question's options by mistake, so the answer key page warns when it
+   * lands in one.
+   */
+  legacyFixed?: boolean;
+  /**
    * @deprecated Read the answer from `choices[1]` (see `getCorrectLetter`). Older session
    * files carry this field; nothing writes or reads it any more.
    */

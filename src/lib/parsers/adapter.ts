@@ -2,8 +2,18 @@ import type { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import type { ParsedCSVData } from "./csv-parser";
 import type { ParsedExcelData } from "./excel-parser";
 import { getDefaultSettings } from "../core/settings";
-import { getFileVersionNotes, readFileVersion } from "../core/app-version";
-import { findPinnedAnswerQuestions, pinnedAnswerNote } from "../core/import-notes";
+import {
+  FIXED_IN_PAREN_GROUP_VERSION,
+  getFileVersionNotes,
+  isFileBefore,
+  readFileVersion,
+} from "../core/app-version";
+import {
+  findLegacyFixedInParenGroups,
+  findPinnedAnswerQuestions,
+  legacyFixedNote,
+  pinnedAnswerNote,
+} from "../core/import-notes";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("PARSER_ADAPTER");
@@ -68,16 +78,23 @@ ${items}
     logger.debug("Using default instructions");
   }
 
+  // CSV/Excel never accepted %{#fixed-options:X} before v1.8 and always required the Correct
+  // column, so pins follow no older rule here. A `fixed` question in a `(n)` group did change
+  // in v1.8 (its options were shuffled before), so a pre-1.8 file marks its `fixed` questions.
+  const fileVersion = readFileVersion(parsed.appVersion);
+  const questions = isFileBefore(fileVersion, FIXED_IN_PAREN_GROUP_VERSION)
+    ? parsed.questions.map((q) => (q.fixed ? { ...q, legacyFixed: true } : q))
+    : parsed.questions;
   const result: ParsedLatexTemplate = {
     settings,
-    questions: parsed.questions,
+    questions,
     preamble: parsed.preamble || "",
   };
-  // CSV/Excel never accepted %{#fixed-options:X} before v1.8 and always required the Correct
-  // column, so the file's version changes no rules here; it only adds notes about the stamp.
-  const pinnedAnswers = findPinnedAnswerQuestions(parsed.questions);
+  const legacyFixed = findLegacyFixedInParenGroups(questions, settings.groups);
+  const pinnedAnswers = findPinnedAnswerQuestions(questions);
   const warnings = [
-    ...getFileVersionNotes(readFileVersion(parsed.appVersion)),
+    ...getFileVersionNotes(fileVersion),
+    ...(legacyFixed.length > 0 ? [legacyFixedNote(legacyFixed, "spreadsheet", fileVersion)] : []),
     ...(parsed.warnings ?? []),
     ...(pinnedAnswers.length > 0 ? [pinnedAnswerNote(pinnedAnswers)] : []),
   ];

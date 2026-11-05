@@ -1,5 +1,6 @@
 import { DeterministicRNG } from "./rng";
 import { areOptionsLocked, isPositionLocked } from "./question-flags";
+import { parseGroupConfigs } from "./group-config";
 import type {
   Question,
   ExamData,
@@ -200,39 +201,7 @@ export function generateExamVersions(
   baseSeed: string
 ): { versions: ExamData[]; mappings: VersionMapping[] } {
   // Parse group configurations with shuffle flags
-  type GroupConfig = {
-    size: number;
-    shuffleGroupPosition: boolean;   // true for (5) and [5]
-    shuffleQuestionsWithin: boolean; // true for 5 and [5], false for (5)
-  };
-
-  const groupConfigs: GroupConfig[] = settings.groups.split(",").map((g) => {
-    const trimmed = g.trim();
-
-    // Check for parentheses: (5)
-    const hasParens = trimmed.startsWith("(") && trimmed.endsWith(")");
-
-    // Check for square brackets: [5]
-    const hasBrackets = trimmed.startsWith("[") && trimmed.endsWith("]");
-
-    // Extract size
-    let size: number;
-    if (hasParens) {
-      size = parseInt(trimmed.slice(1, -1));
-    } else if (hasBrackets) {
-      size = parseInt(trimmed.slice(1, -1));
-    } else {
-      size = parseInt(trimmed);
-    }
-
-    // Determine shuffling behavior
-    // - shuffleGroupPosition: true for (5) and [5], false for 5
-    // - shuffleQuestionsWithin: false only for (5), true for 5 and [5]
-    const shuffleGroupPosition = hasParens || hasBrackets;
-    const shuffleQuestionsWithin = !hasParens; // false only for (5)
-
-    return { size, shuffleGroupPosition, shuffleQuestionsWithin };
-  });
+  const groupConfigs = parseGroupConfigs(settings.groups);
 
   // Use existing partitionQuestions with just the sizes
   const groupSizes = groupConfigs.map((c) => c.size);

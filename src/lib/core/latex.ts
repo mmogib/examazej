@@ -9,7 +9,7 @@ import { generateSettingsBlock } from "./settings";
 import { normalizeAcademicIntegrityPledgeText } from "./academic-integrity-pledge";
 import { getCorrectLetter, getLockTags } from "./question-flags";
 import { APP_VERSION } from "./app-version";
-import { legacyPinAnswerKeyWarning } from "./import-notes";
+import { legacyAnswerKeyWarning } from "./import-notes";
 import {
   calculateQuestionPages,
   detectPageCountVariations,
@@ -607,8 +607,9 @@ ${versionQuestionsSection}`;
     })
     .join("");
 
-  // Generate answer key. A pre-1.8 file that pinned options gets a red warning above the key.
-  const legacyPinWarning = legacyPinAnswerKeyWarning(masterExam.questions) ?? "";
+  // Generate answer key. A pre-1.8 file whose key differs from v1.7's (pinned options, or a
+  // `fixed` question in a `(n)` group) gets a red warning above the key.
+  const legacyPinWarning = legacyAnswerKeyWarning(masterExam.questions, settings.groups) ?? "";
   const answerKeyPage = `
 %% KEY ANSWER Page
 \\newpage

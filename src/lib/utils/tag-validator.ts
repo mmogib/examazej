@@ -29,6 +29,8 @@ export const VALID_TAGS = ['fixed', 'fixed-position', 'fixed-options', 'separate
 export type ValidTag = typeof VALID_TAGS[number];
 
 export interface ValidationContext {
+  /** Where the question is, used as the message prefix, e.g. "Question 3 (line 14)". */
+  location?: string;
   questionNumber?: number;
   lineNumber?: number;
   format?: 'latex' | 'csv' | 'excel';
@@ -53,14 +55,16 @@ export function validateQuestionTags(
   tags: string[],
   context: ValidationContext = {}
 ): TagValidationResult {
-  const contextStr = context.questionNumber
+  const contextStr = context.location
+    ? context.location
+    : context.questionNumber
     ? `Question ${context.questionNumber}`
     : context.lineNumber
       ? `Line ${context.lineNumber}`
       : 'Question';
 
-  // Normalize tags (lowercase, trim)
-  const normalizedTags = tags.map(t => t.toLowerCase().trim()).filter(t => t !== '');
+  // Tags match in any case; messages quote them as written.
+  const writtenTags = tags.map(t => t.trim()).filter(t => t !== '');
 
   const names: string[] = [];
   const invalidTags: string[] = [];
@@ -68,9 +72,9 @@ export function validateQuestionTags(
   const pins = new Set<number>();
   const pinTags: string[] = [];
 
-  for (const tag of normalizedTags) {
+  for (const tag of writtenTags) {
     const colon = tag.indexOf(':');
-    const name = colon === -1 ? tag : tag.slice(0, colon).trim();
+    const name = (colon === -1 ? tag : tag.slice(0, colon)).trim().toLowerCase();
     const value = colon === -1 ? undefined : tag.slice(colon + 1).trim();
 
     if (!VALID_TAGS.includes(name as ValidTag)) {
@@ -86,7 +90,7 @@ export function validateQuestionTags(
       names.push(name);
       continue;
     }
-    if (!/^[a-e]+$/.test(value)) {
+    if (!/^[a-e]+$/i.test(value)) {
       errors.push(
         `'${tag}' needs option letters A-E written together, e.g. 'fixed-options:E' or 'fixed-options:DE'.`
       );
@@ -118,10 +122,10 @@ export function validateQuestionTags(
       `Invalid tag${invalidTags.length > 1 ? 's' : ''}: ${invalidTags.join(', ')}. ` +
       `Valid tags: ${validList}`;
     const isSpreadsheet = context.format === 'csv' || context.format === 'excel';
-    if (isSpreadsheet && invalidTags.some(t => /^correct:/.test(t))) {
+    if (isSpreadsheet && invalidTags.some(t => /^correct:/i.test(t))) {
       message += `. In CSV/Excel files the correct answer goes in the Correct column.`;
     }
-    if (invalidTags.some(t => /^[a-e]$/.test(t))) {
+    if (invalidTags.some(t => /^[a-e]$/i.test(t))) {
       message += `. To keep several options in place, write the letters together, e.g. 'fixed-options:DE'.`;
     }
     errors.unshift(message);
@@ -177,6 +181,14 @@ export function validateQuestionTags(
     separatePage: names.includes('separate-page'),
     warnings,
   };
+}
+
+/** "Found 2 errors in the questions:" followed by a numbered list, as the LaTeX reader does (CSV/Excel rows). */
+export function formatRowErrors(errors: string[]): string {
+  return (
+    `Found ${errors.length} error${errors.length > 1 ? "s" : ""} in the questions:\n\n` +
+    errors.map((err, idx) => `${idx + 1}. ${err}`).join("\n\n")
+  );
 }
 
 /**

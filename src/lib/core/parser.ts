@@ -11,13 +11,16 @@ import {
 import { createLogger } from "@/lib/utils/logger";
 import { getDefaultSettings } from "./settings";
 import {
+  FIXED_IN_PAREN_GROUP_VERSION,
   getFileVersionNotes,
   isFileBefore,
   PINNED_OPTIONS_VERSION,
   readFileVersion,
 } from "./app-version";
 import {
+  findLegacyFixedInParenGroups,
   findPinnedAnswerQuestions,
+  legacyFixedNote,
   legacyPinNote,
   missingAnswerPinNote,
   pinnedAnswerNote,
@@ -84,6 +87,8 @@ interface PinState {
   legacyEntries: LegacyPinEntry[];
   /** Questions that pin options, have no %{#correct:X} and so fall back to answer A. */
   missingAnswer: number[];
+  /** The file predates v1.8, when `fixed` inside a `(n)` group still shuffled the options. */
+  legacyFixed: boolean;
 }
 
 /**
@@ -224,6 +229,7 @@ function createQuestionObject(
   if (pinned.length > 0 && pins.legacy) {
     question.legacyPin = { answerFromLetter: inferredAnswer !== undefined };
   }
+  if (flags.fixed && pins.legacyFixed) question.legacyFixed = true;
 
   return question;
 }
@@ -353,6 +359,7 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     legacy: isFileBefore(fileVersion, PINNED_OPTIONS_VERSION),
     legacyEntries: [],
     missingAnswer: [],
+    legacyFixed: isFileBefore(fileVersion, FIXED_IN_PAREN_GROUP_VERSION),
   };
   // How many of currentTags were written up to the end of the current question's text.
   let tagsOwnedByCurrent = 0;
@@ -588,6 +595,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   const notes = getFileVersionNotes(fileVersion);
   if (pins.legacyEntries.length > 0) {
     notes.push(legacyPinNote(pins.legacyEntries, fileVersion));
+  }
+  const legacyFixed = findLegacyFixedInParenGroups(result.questions, result.settings?.groups);
+  if (legacyFixed.length > 0) {
+    notes.push(legacyFixedNote(legacyFixed, "latex", fileVersion));
   }
   allWarnings.unshift(...notes);
   if (pins.missingAnswer.length > 0) {

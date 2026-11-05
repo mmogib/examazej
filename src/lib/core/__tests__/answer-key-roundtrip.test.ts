@@ -101,13 +101,14 @@ describe("answer key", () => {
   });
 });
 
-describe("answer key of a pre-1.8 file with %{#fixed-options:X}", () => {
+describe("answer key of a pre-1.8 file whose key differs from v1.7's", () => {
   const item = (tags: string[], text: string) =>
     ["\\item", ...tags, `%{#q}${text}%{/q}`, "\\begin{enumerate}",
       "\\item %{#o}a%{/o}", "\\item %{#o}b%{/o}", "\\item %{#o}c%{/o}", "\\item %{#o}d%{/o}",
       "\\end{enumerate}"].join("\n");
-  const keyFor = (...blocks: string[]) => {
-    const latex = ["%{#setting}", "%groups=3", "%seed=legacy-key", "%{/setting}",
+  const keyFor = (...blocks: string[]) => keyWithGroups("3", ...blocks);
+  const keyWithGroups = (groups: string, ...blocks: string[]) => {
+    const latex = ["%{#setting}", `%groups=${groups}`, "%seed=legacy-key", "%{/setting}",
       "\\begin{enumerate}", ...blocks, "\\end{enumerate}"].join("\n");
     const { settings, exam } = toExam(parseLatexTemplate(latex));
     const { versions, mappings } = generateExamVersions(exam.questions, settings, settings.seed!);
@@ -126,15 +127,56 @@ describe("answer key of a pre-1.8 file with %{#fixed-options:X}", () => {
     expect(page).toContain("WARNING: this answer key differs from keys made before Examazej 1.8");
     expect(page).toContain("Master questions 1 and 3 use \\texttt{\\%\\{\\#fixed-options:X\\}}");
     expect(page).toContain("use the answer key and mapping files saved then");
-    expect(page).toContain("\\texttt{\\%\\{\\#fixed-options\\}} and \\texttt{\\%\\{\\#correct:X\\}} in these questions");
+    expect(page).toContain("\\texttt{\\%\\{\\#fixed-options\\}} and \\texttt{\\%\\{\\#correct:X\\}} in master questions 1 and 3.");
     expect(page).toContain("no \\texttt{\\%\\{\\#correct:X\\}} for master question 1, so its answer was taken from the letter in the tag (1: B)");
   });
 
   it("leaves out the answer line when every pinned question has %{#correct:X}", () => {
     const page = keyFor(item(["%{#fixed-options:B}", "%{#correct:C}"], "Q1"), item([], "Q2"), item([], "Q3"));
     expect(page).toContain("Master question 1 uses");
-    expect(page).toContain("in this question.");
+    expect(page).toContain("in master question 1.");
     expect(page).not.toContain("taken from the letter");
+  });
+
+  it("warns about a fixed question inside a (n) group and suggests fixed-position", () => {
+    const page = keyWithGroups("1,(2)", item([], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"));
+    expect(page).toContain("WARNING: this answer key differs from keys made before Examazej 1.8");
+    expect(page).toContain("Master question 2 is \\texttt{fixed} inside a (n) group");
+    expect(page).toContain("This does not affect the other questions.");
+    expect(page).toContain("use the tag \\texttt{fixed-position} instead of \\texttt{fixed} in master question 2.");
+    expect(page).not.toContain("fixed-options:X");
+  });
+
+  it("does not warn about a fixed question outside (n) groups", () => {
+    expect(keyWithGroups("1,[2]", item([], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"))).not.toContain("WARNING");
+    expect(keyWithGroups("3", item(["%{#fixed}"], "Q1"), item([], "Q2"), item([], "Q3"))).not.toContain("WARNING");
+  });
+
+  it("uses the groups the exam is generated with, not the file's", () => {
+    // The file says one standard group; the exam is generated with Q2 in a (2) group.
+    const latex = ["%{#setting}", "%groups=3", "%seed=legacy-key", "%{/setting}", "\\begin{enumerate}",
+      item([], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"), "\\end{enumerate}"].join("\n");
+    const parsed = parseLatexTemplate(latex);
+    expect(parsed.warnings ?? []).toEqual([]);
+    const { settings, exam } = toExam(parsed);
+    settings.groups = "1,(2)";
+    const { versions, mappings } = generateExamVersions(exam.questions, settings, settings.seed!);
+    expect(generateLatexDocument(settings, exam, versions, mappings).content).toContain("Master question 2 is \\texttt{fixed}");
+  });
+
+  it("names both causes and both remedies when a file has both", () => {
+    const page = keyWithGroups("1,(2)", item(["%{#fixed-options:C}"], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"));
+    expect(page).toContain("Master question 1 uses");
+    expect(page).toContain("Master question 2 is \\texttt{fixed}");
+    expect(page).toContain("in master question 1; and use the tag \\texttt{fixed-position} instead of \\texttt{fixed} in master question 2.");
+  });
+
+  it("no warning for a v1.8 file", () => {
+    const latex = ["%{#setting}", "%app_version=1.8.0", "%groups=1,(2)", "%seed=legacy-key", "%{/setting}",
+      "\\begin{enumerate}", item([], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"), "\\end{enumerate}"].join("\n");
+    const { settings, exam } = toExam(parseLatexTemplate(latex));
+    const { versions, mappings } = generateExamVersions(exam.questions, settings, settings.seed!);
+    expect(generateLatexDocument(settings, exam, versions, mappings).content).not.toContain("WARNING");
   });
 });
 

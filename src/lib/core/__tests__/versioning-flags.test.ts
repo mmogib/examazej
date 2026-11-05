@@ -55,6 +55,17 @@ describe("shuffle output is unchanged by the tag rework (seed reproducibility)",
     "golden-seed"
   );
 
+  it("fixed-position instead of fixed in the (n) group reproduces v1.7.0 exactly", () => {
+    // What the answer-key warning suggests for files made before v1.8.
+    const swapped = questions.map((question) =>
+      question.text.startsWith("Q5") ? { ...question, fixed: false, fixedPosition: true } : question
+    );
+    const swappedRun = generateExamVersions(swapped, settingsFor("3,(3),[3],(2)", 5), "golden-seed");
+    for (const label of Object.keys(v170)) {
+      expect(rowsOf(swappedRun.mappings, label), label).toBe(v170[label].rows);
+    }
+  });
+
   it.each(Object.keys(v170))("version %s matches v1.7.0 except the fixed (n) question", (label) => {
     const version = versions.find((v) => v.name === `version_${label}`)!;
     expect(version.questions.map((x) => x.text.split(" ")[0]).join(" ")).toBe(v170[label].order);

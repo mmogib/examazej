@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseLatexTemplate } from "../parser";
 import { parseCSV } from "../../parsers/csv-parser";
 import { convertToLatexFormat } from "../../parsers/adapter";
+import { parseExcel } from "../../parsers/excel-parser";
 import { validateQuestionTags } from "../../utils/tag-validator";
 import {
   describeFileVersion,
@@ -102,6 +103,15 @@ describe("validateQuestionTags: fixed-options:X keeps options in place", () => {
     for (const tag of ["fixed-options:d,e", "fixed-options:", "fixed-options:F", "fixed-options:D E"]) {
       expect(() => validateQuestionTags([tag]), tag).toThrow(/needs option letters A-E written together/);
     }
+  });
+
+  it("quotes the tag as written, in LaTeX too", () => {
+    expect(() => parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options:F}"], 5)))).toThrow(
+      "Question 1: 'fixed-options:F' needs option letters A-E"
+    );
+    expect(() => parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options:D,E}"], 5)))).toThrow(
+      "'fixed-options:D,E' needs option letters"
+    );
   });
 
   it("explains CSV's comma-split 'fixed-options:D,E' instead of only rejecting 'e'", () => {
@@ -352,6 +362,49 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
   });
 });
 
+describe("%{#fixed} inside a (n) group in a file from before v1.8", () => {
+  const groups = (g: string, ...blocks: string[][]) =>
+    ["%{#setting}", `%groups=${g}`, "%{/setting}", doc(...blocks)].join("\n");
+
+  it("marks fixed questions and explains the change for those in (n) groups only", () => {
+    const result = parseLatexTemplate(
+      groups("2,(2)", mcq("Q1", ["%{#fixed}"]), mcq("Q2"), mcq("Q3", ["%{#fixed}"]), mcq("Q4"))
+    );
+    expect(result.questions.map((q) => q.legacyFixed)).toEqual([true, undefined, true, undefined]);
+    expect(result.warnings).toHaveLength(1);
+    const note = result.warnings?.[0] ?? "";
+    expect(note).toMatch(/^Question 3 is %\{#fixed\} inside a \(n\) group\. Before v1\.8 the options/);
+    expect(note).toContain("This file has no app_version");
+    expect(note).toContain("using %{#fixed-position} instead of %{#fixed} in this question");
+  });
+
+  it("says nothing for a v1.8 file", () => {
+    const result = parseLatexTemplate(
+      ["%{#setting}", "%app_version=1.8.0", "%groups=(2)", "%{/setting}", doc(mcq("Q1", ["%{#fixed}"]), mcq("Q2"))].join("\n")
+    );
+    expect(result.questions[0].legacyFixed).toBeUndefined();
+    expect(result.warnings ?? []).toEqual([]);
+  });
+
+  it("CSV: the same note, in Tags-column words", () => {
+    const csv = [
+      "# settings", "groups,(2)", "",
+      "# questions",
+      "Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags",
+      '"Q1","a","b","c","","",A,fixed',
+      '"Q2","a","b","c","","",B,',
+    ].join("\n");
+    const result = convertToLatexFormat(parseCSV(csv));
+    expect(result.questions[0].legacyFixed).toBe(true);
+    expect(result.warnings?.[0]).toMatch(/^Question 1 is 'fixed' inside a \(n\) group/);
+    expect(result.warnings?.[0]).toContain("using 'fixed-position' instead of 'fixed'");
+    expect(result.warnings?.[0]).toContain("add an app_version row with 1.8.0 to the settings");
+    const stamped = convertToLatexFormat(parseCSV(csv.replace("# settings", "# settings\napp_version,1.8.0")));
+    expect(stamped.questions[0].legacyFixed).toBeUndefined();
+    expect(stamped.warnings ?? []).toEqual([]);
+  });
+});
+
 describe("app_version stamp", () => {
   it("reads an unreadable stamp as a file from before v1.8, with a note", () => {
     const result = parseLatexTemplate(docV("soon", mcq("Q", ["%{#fixed-options:B}"])));
@@ -451,6 +504,42 @@ describe("LaTeX: which question a tag belongs to", () => {
   });
 });
 
+describe("Excel: Questions sheet messages", () => {
+  async function workbookFile(rows: (string | null)[][]) {
+    const { default: ExcelJS } = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Questions");
+    rows.forEach((row, index) => {
+      if (row.length > 0) sheet.getRow(index + 1).values = row;
+    });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const file = new File([buffer], "questions.xlsx");
+    Object.defineProperty(file, "arrayBuffer", { value: async () => buffer });
+    return file;
+  }
+  const header = ["Question Text", "Option A", "Option B", "Option C", "Option D", "Option E", "Correct", "Tags"];
+
+  it("names the question and its real sheet row, even after an empty row", async () => {
+    const file = await workbookFile([
+      header,
+      ["Q1", "a", "b", "c", "", "", "A", "fixed-options:F"],
+      [],
+      ["Q2", "a", "b", "c", "", "", "B", "Shuffle"],
+    ]);
+    await expect(parseExcel(file)).rejects.toThrow(
+      [
+        "Found 2 errors in the questions:",
+        "",
+        "1. Question 1 (row 2): 'fixed-options:F' needs option letters A-E written together, " +
+          "e.g. 'fixed-options:E' or 'fixed-options:DE'.",
+        "",
+        "2. Question 2 (row 4): Invalid tag: Shuffle. Valid tags: fixed, fixed-position, fixed-options, " +
+          "separate-page, fixed-options:X",
+      ].join("\n")
+    );
+  });
+});
+
 describe("CSV: Tags column", () => {
   const csv = (rows: string[]) =>
     ["# questions", "Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags", ...rows].join("\n");
@@ -464,7 +553,45 @@ describe("CSV: Tags column", () => {
   it("warns (instead of failing) when fixed and fixed-options are combined", () => {
     const parsed = parseCSV(csv(['"Q1","a","b","","","",A,"fixed, fixed-options"']));
     expect(parsed.questions[0].fixed).toBe(true);
-    expect(parsed.warnings?.[0]).toMatch(/^Question row 2: 'fixed' already locks the option order/);
+    // The question number, and the file line it is on (line 1 is "# questions").
+    expect(parsed.warnings?.[0]).toMatch(/^Question 1 \(line 3\): 'fixed' already locks the option order/);
+  });
+
+  it("reports every bad row at once, by question number and file line, quoting tags as written", () => {
+    const content = [
+      "# settings", "coursecode,MATH 101", "",
+      "# questions",
+      "Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags",
+      '"Q1","a","b","c","d","",A,correct:B',
+      "",
+      '"Q2","a","b","c","d","e",A,fixed-options:F',
+      '"Q3","a","b","c","","",A,fixed-options:E',
+      '"Q4","a","b","c","d","",C,"fixed-position, fixed-options:D"',
+    ].join("\n");
+    expect(() => parseCSV(content)).toThrow(
+      [
+        "Found 3 errors in the questions:",
+        "",
+        "1. Question 1 (line 6): Invalid tag: correct:B. Valid tags: fixed, fixed-position, fixed-options, " +
+          "separate-page, fixed-options:X. In CSV/Excel files the correct answer goes in the Correct column.",
+        "",
+        "2. Question 2 (line 8): 'fixed-options:F' needs option letters A-E written together, " +
+          "e.g. 'fixed-options:E' or 'fixed-options:DE'.",
+        "",
+        "3. Question 3 (line 9): 'fixed-options:E' keeps option E in place, but this question has 3 options (A-C).",
+      ].join("\n")
+    );
+  });
+
+  it("still reads tags in any case", () => {
+    const parsed = parseCSV(csv(['"Q1","a","b","c","d","e",B,"Fixed-Position, FIXED-OPTIONS:e"']));
+    expect(parsed.questions[0]).toMatchObject({ fixedPosition: true, pinnedOptions: [4] });
+  });
+
+  it("puts a row's own problems (answer letter) in the same list", () => {
+    expect(() => parseCSV(csv(['"Q1","a","b","","","",D,', '"Q2","a","b","","","",,']))).toThrow(
+      /^Found 2 errors in the questions:\n\n1\. Question 1 \(line 3\): Invalid correct answer 'D'.*\n\n2\. Question 2 \(line 4\): Question has options but no correct answer/s
+    );
   });
 
   it("warns when fixed-options is set on an open-ended question", () => {
