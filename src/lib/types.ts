@@ -40,6 +40,15 @@ export interface Question {
    */
   pinnedOptions?: number[];
   /**
+   * Set when the pin came from `%{#fixed-options:X}` in a file made before v1.8, where that
+   * tag locked every option. Versions made from such a file differ from the ones made before
+   * v1.8 with the same seed, so the answer key page warns about it.
+   */
+  legacyPin?: {
+    /** True when the file had no `%{#correct:X}` and the answer was taken from the letter. */
+    answerFromLetter: boolean;
+  };
+  /**
    * @deprecated Read the answer from `choices[1]` (see `getCorrectLetter`). Older session
    * files carry this field; nothing writes or reads it any more.
    */

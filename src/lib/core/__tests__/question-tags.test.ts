@@ -287,7 +287,39 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
     expect(note).toMatch(/^Questions 1 and 3 use %\{#fixed-options:X\}, which changed meaning in v1\.8/);
     expect(note).toContain("This file has no app_version");
     expect(note).toContain("Q1 B, Q3 C.");
-    expect(note).toContain("To keep all options in order instead, use %{#fixed-options}.");
+    expect(note).toContain("differs from the versions made before v1.8 with the same seed, in all questions");
+    expect(note).toContain(
+      "make the same exams again by replacing %{#fixed-options:X} with %{#fixed-options} and %{#correct:X} in these questions"
+    );
+  });
+
+  it("marks the questions so the answer key page can warn", () => {
+    const result = parseLatexTemplate(
+      doc(mcq("Q1", ["%{#fixed-options:B}"]), mcq("Q2"), mcq("Q3", ["%{#fixed-options:C}", "%{#correct:A}"]))
+    );
+    expect(result.questions.map((q) => q.legacyPin)).toEqual([
+      { answerFromLetter: true },
+      undefined,
+      { answerFromLetter: false },
+    ]);
+  });
+
+  it("does not mark pins in a v1.8 file", () => {
+    const result = parseLatexTemplate(docV("1.8.0", mcq("Q", ["%{#fixed-options:B}", "%{#correct:B}"])));
+    expect(result.questions[0].pinnedOptions).toEqual([1]);
+    expect(result.questions[0].legacyPin).toBeUndefined();
+  });
+
+  it("the suggested replacement reads as the v1.7 meaning, with no notes", () => {
+    // %{#fixed-options} + %{#correct:X} gives exactly the flags v1.7 gave %{#fixed-options:X},
+    // so (with the v1.7.0 output pinned in versioning-flags.test.ts) it makes the same exams.
+    const result = parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options}", "%{#correct:B}"])));
+    const q = result.questions[0];
+    expect(q.fixedOptions).toBe(true);
+    expect(q.choices[1]).toBe(1);
+    expect(q.pinnedOptions).toBeUndefined();
+    expect(q.legacyPin).toBeUndefined();
+    expect(result.warnings ?? []).toEqual([]);
   });
 
   it("names the version when the file is stamped with an older one", () => {

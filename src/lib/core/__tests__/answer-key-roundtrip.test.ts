@@ -95,6 +95,47 @@ describe("answer key", () => {
   it("says which app version made the exam file", () => {
     expect(content.startsWith(`% Made with Examazej ${APP_VERSION}\n%{#setting}`)).toBe(true);
   });
+
+  it("has no warning box when no question comes from a pre-1.8 pin", () => {
+    expect(content).not.toContain("WARNING: this answer key differs");
+  });
+});
+
+describe("answer key of a pre-1.8 file with %{#fixed-options:X}", () => {
+  const item = (tags: string[], text: string) =>
+    ["\\item", ...tags, `%{#q}${text}%{/q}`, "\\begin{enumerate}",
+      "\\item %{#o}a%{/o}", "\\item %{#o}b%{/o}", "\\item %{#o}c%{/o}", "\\item %{#o}d%{/o}",
+      "\\end{enumerate}"].join("\n");
+  const keyFor = (...blocks: string[]) => {
+    const latex = ["%{#setting}", "%groups=3", "%seed=legacy-key", "%{/setting}",
+      "\\begin{enumerate}", ...blocks, "\\end{enumerate}"].join("\n");
+    const { settings, exam } = toExam(parseLatexTemplate(latex));
+    const { versions, mappings } = generateExamVersions(exam.questions, settings, settings.seed!);
+    const { content } = generateLatexDocument(settings, exam, versions, mappings);
+    const page = content.slice(content.indexOf("%% KEY ANSWER Page"));
+    return page.slice(0, page.indexOf("\\begin{tabular}"));
+  };
+
+  it("puts a red warning box above the key, naming the questions and the answers taken from the letter", () => {
+    const page = keyFor(
+      item(["%{#fixed-options:B}"], "Q1"),
+      item([], "Q2"),
+      item(["%{#fixed-options:D}", "%{#correct:A}"], "Q3")
+    );
+    expect(page).toContain("\\begin{tcolorbox}[colback=red!6, colframe=red!75!black");
+    expect(page).toContain("WARNING: this answer key differs from keys made before Examazej 1.8");
+    expect(page).toContain("Master questions 1 and 3 use \\texttt{\\%\\{\\#fixed-options:X\\}}");
+    expect(page).toContain("use the answer key and mapping files saved then");
+    expect(page).toContain("\\texttt{\\%\\{\\#fixed-options\\}} and \\texttt{\\%\\{\\#correct:X\\}} in these questions");
+    expect(page).toContain("no \\texttt{\\%\\{\\#correct:X\\}} for master question 1, so its answer was taken from the letter in the tag (1: B)");
+  });
+
+  it("leaves out the answer line when every pinned question has %{#correct:X}", () => {
+    const page = keyFor(item(["%{#fixed-options:B}", "%{#correct:C}"], "Q1"), item([], "Q2"), item([], "Q3"));
+    expect(page).toContain("Master question 1 uses");
+    expect(page).toContain("in this question.");
+    expect(page).not.toContain("taken from the letter");
+  });
 });
 
 describe("LaTeX template export", () => {

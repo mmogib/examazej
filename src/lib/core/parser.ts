@@ -198,8 +198,8 @@ function createQuestionObject(
   // then keeps that answer when it has no %{#correct:X}; every other pinned question without
   // one falls back to A, and a note says so.
   const pinned = flags.pinnedOptions;
+  let inferredAnswer: string | undefined;
   if (pinned.length > 0) {
-    let inferredAnswer: string | undefined;
     if (!correctLetter) {
       if (pins.legacy && pinned.length === 1) {
         correctIndex = pinned[0];
@@ -221,6 +221,9 @@ function createQuestionObject(
   if (flags.fixedPosition) question.fixedPosition = true;
   if (flags.fixedOptions) question.fixedOptions = true;
   if (pinned.length > 0) question.pinnedOptions = pinned;
+  if (pinned.length > 0 && pins.legacy) {
+    question.legacyPin = { answerFromLetter: inferredAnswer !== undefined };
+  }
 
   return question;
 }

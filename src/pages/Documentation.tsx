@@ -1252,7 +1252,10 @@ Which letter represents the correct answer?
                       v1.8 it kept all options in order and made X the answer. Files made
                       before v1.8 (no <code className="bg-muted px-1 rounded">app_version</code>{" "}
                       in the settings) still take the answer from the letter, and the
-                      Details page explains the change. To keep all options in order, use{" "}
+                      Details page explains the change. Their versions are no longer the
+                      same as the ones made before v1.8 with the same seed, so the answer
+                      key page shows a red warning. To keep all options in order (and make
+                      exactly the exams made before v1.8), use{" "}
                       <code className="bg-muted px-1 rounded">%{`{#fixed-options}`}</code>{" "}
                       with{" "}
                       <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>.

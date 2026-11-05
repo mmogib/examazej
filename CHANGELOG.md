@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`%{#fixed-options:X}` has a new meaning.** Before v1.8 it kept all options in order and made X the answer; it now keeps only option X in place. Files made before v1.8 (no `app_version`) still take the answer from the letter when there is no `%{#correct:X}`, so their answer keys stay correct; only the other options now shuffle. One note on the Details page lists those questions and the answers it took, and explains how to keep all options in order (`%{#fixed-options}` with `%{#correct:X}`).
+- **`%{#fixed-options:X}` has a new meaning.** Before v1.8 it kept all options in order and made X the answer; it now keeps only option X in place. Files made before v1.8 (no `app_version`) still take the answer from the letter when there is no `%{#correct:X}`. Because those questions' other options now shuffle, every version made from such a file differs from the versions made before v1.8 with the same seed, in all questions. One note on the Details page lists those questions and the answers it took, and a red warning box on the answer key page says the key differs from keys made before v1.8. Both explain that replacing `%{#fixed-options:X}` with `%{#fixed-options}` and `%{#correct:X}` makes exactly the exams made before v1.8.
 - Replaced the unmaintained `react-katex` wrapper with a direct KaTeX renderer in the exam preview. `react-katex` pinned KaTeX 0.16 and blocked the security update.
 - Upgraded the unused-but-declared `@hookform/resolvers` to 5.x so it stays compatible with Zod 4.
 - Combining `fixed` with `fixed-options` (or `fixed-position`) is now a redundancy note instead of an error, in every format.

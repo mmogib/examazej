@@ -9,6 +9,7 @@ import { generateSettingsBlock } from "./settings";
 import { normalizeAcademicIntegrityPledgeText } from "./academic-integrity-pledge";
 import { getCorrectLetter, getLockTags } from "./question-flags";
 import { APP_VERSION } from "./app-version";
+import { legacyPinAnswerKeyWarning } from "./import-notes";
 import {
   calculateQuestionPages,
   detectPageCountVariations,
@@ -606,7 +607,8 @@ ${versionQuestionsSection}`;
     })
     .join("");
 
-  // Generate answer key
+  // Generate answer key. A pre-1.8 file that pinned options gets a red warning above the key.
+  const legacyPinWarning = legacyPinAnswerKeyWarning(masterExam.questions) ?? "";
   const answerKeyPage = `
 %% KEY ANSWER Page
 \\newpage
@@ -618,7 +620,7 @@ ${versionQuestionsSection}`;
 \\begin{normalsize}
 \\setcounter{page}{1}
 \\vspace {1cm}
-
+${legacyPinWarning}
 \\begin{center}
 
   \\begin{tabular}{|c||c | ${versions.map((v) => "c").join("|")}|}
