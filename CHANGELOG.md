@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Cleared every known dependency vulnerability, production and development (`npm audit` reports 0): upgraded KaTeX to 0.19.1, Zod to 4.6.7, and Vitest to 4.1.12; refreshed transitive packages; and added reviewed `overrides` for `postcss-selector-parser` and `minimatch` (see `docs/dependency-notices.md`).
+
+### Changed
+
+- Replaced the unmaintained `react-katex` wrapper with a direct KaTeX renderer in the exam preview. `react-katex` pinned KaTeX 0.16 and blocked the security update.
+- Upgraded the unused-but-declared `@hookform/resolvers` to 5.x so it stays compatible with Zod 4.
+
+### Fixed
+
+- Invalid LaTeX in the exam preview now shows the highlighted raw source as intended; the previous error fallback could never trigger.
+
 ## [1.7.0] - 2026-09-08
 
 ### Added

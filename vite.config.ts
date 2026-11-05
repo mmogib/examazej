@@ -89,7 +89,7 @@ const electronRollupCompatibility = (): Plugin => ({
 const rendererManualChunks = (id: string): string | undefined => {
   const modulePath = id.replaceAll("\\", "/");
   if (!modulePath.includes("node_modules")) return undefined;
-  if (modulePath.includes("katex") || modulePath.includes("react-katex")) {
+  if (modulePath.includes("/node_modules/katex/")) {
     return "vendor-math";
   }
   if (modulePath.includes("@tiptap") || modulePath.includes("prosemirror")) {
