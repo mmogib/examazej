@@ -5,6 +5,7 @@ import {
 } from "./academic-integrity-pledge";
 import { generateDynamicSeed } from "@/lib/utils/seed-generator";
 import { createLogger } from "@/lib/utils/logger";
+import { getTemplateVersion } from "./app-version";
 
 const logger = createLogger("SETTINGS");
 
@@ -130,6 +131,7 @@ export function generateSettingsBlock(
     actualVersions !== undefined ? actualVersions : settings.numberofvestions;
 
   return `%{#setting}
+%		app_version=${getTemplateVersion()}
 %		university=${settings.university}
 %		department=${settings.department}
 %		term=${settings.term}

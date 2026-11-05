@@ -204,7 +204,7 @@ Student ID question
       expect(result.questions[0].fixed).toBe(true);
     });
 
-    it("should parse 'fixed-options' tag with correct answer", () => {
+    it("should parse 'fixed-options:B' in a file without app_version (pins B, answer B as before v1.8)", () => {
       const latex = `
 \\begin{enumerate}
 
@@ -230,9 +230,13 @@ Which is correct?
 
       const result = parseLatexTemplate(latex);
 
+      // Option B stays B in every version; with no %{#correct:} and no app_version, the
+      // answer comes from the letter, as v1.7 read this tag.
       expect(result.questions).toHaveLength(1);
-      expect(result.questions[0].fixedOptions).toBe(true);
-      expect(result.questions[0].correctOptionLetter).toBe("B");
+      expect(result.questions[0].fixedOptions).toBeFalsy();
+      expect(result.questions[0].pinnedOptions).toEqual([1]);
+      expect(result.questions[0].choices[1]).toBe(1);
+      expect(result.warnings?.[0]).toMatch(/^Question 1 uses %\{#fixed-options:X\}, which changed meaning in v1\.8/);
     });
 
     it("should parse 'separate-page' tag", () => {
@@ -287,15 +291,15 @@ Cover page question
   // ============================================================================
 
   describe("Tag Validation", () => {
-    it("should throw error for conflicting tags (fixed + fixed-options)", () => {
+    it("treats fixed + fixed-options as redundant (a warning, not an error)", () => {
       const latex = `
 \\begin{enumerate}
 
 \\item
 %{#fixed}
-%{#fixed-options:A}
+%{#fixed-options}
 %{#q}
-Invalid question
+Redundant question
 %{/q}
   \\begin{enumerate}
     \\item
@@ -307,7 +311,12 @@ Invalid question
 \\end{enumerate}
       `.trim();
 
-      expect(() => parseLatexTemplate(latex)).toThrow(/cannot use both.*fixed.*fixed-options.*together/i);
+      const result = parseLatexTemplate(latex);
+      expect(result.questions[0].fixed).toBe(true);
+      expect(result.questions[0].fixedOptions).toBeFalsy();
+      expect(result.warnings).toEqual(
+        expect.arrayContaining([expect.stringMatching(/'fixed' already locks the option order/)])
+      );
     });
 
     it("should throw error for invalid tag name", () => {
@@ -326,14 +335,14 @@ Test question
       expect(() => parseLatexTemplate(latex)).toThrow(/invalid tag/i);
     });
 
-    it("should throw error for fixed-options without correct answer letter", () => {
+    it("accepts fixed-options without a letter (answer defaults to A)", () => {
       const latex = `
 \\begin{enumerate}
 
 \\item
 %{#fixed-options}
 %{#q}
-Missing correct answer
+No answer tag
 %{/q}
   \\begin{enumerate}
     \\item
@@ -345,7 +354,10 @@ Missing correct answer
 \\end{enumerate}
       `.trim();
 
-      expect(() => parseLatexTemplate(latex)).toThrow(/requires a correct answer letter/i);
+      const result = parseLatexTemplate(latex);
+      expect(result.questions[0].fixedOptions).toBe(true);
+      expect(result.questions[0].choices[1]).toBe(0);
+      expect(result.warnings).toBeUndefined();
     });
   });
 

@@ -2,82 +2,225 @@
 
 import { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import { generateDynamicSeed } from "../utils/seed-generator";
-import { validateQuestionTags, QuestionTags } from "../utils/tag-validator";
+import {
+  validateQuestionTags,
+  VALID_TAGS,
+  type QuestionTags,
+  type ValidTag,
+} from "../utils/tag-validator";
 import { createLogger } from "@/lib/utils/logger";
 import { getDefaultSettings } from "./settings";
+import {
+  getFileVersionNotes,
+  isFileBefore,
+  PINNED_OPTIONS_VERSION,
+  readFileVersion,
+} from "./app-version";
+import {
+  findPinnedAnswerQuestions,
+  legacyPinNote,
+  missingAnswerPinNote,
+  pinnedAnswerNote,
+  type LegacyPinEntry,
+} from "./import-notes";
 
 const logger = createLogger("PARSER");
 
 /**
- * Tag with its source line number for better error messages
+ * A tag read from a `%{#name}` or `%{#name:value}` marker, with its source line.
  */
 interface TagWithLocation {
-  tag: string;
+  name: string; // lower-cased
+  value?: string; // text after the colon, if any
   lineNumber: number;
 }
 
+/** Markers that are document structure, never question tags. */
+const STRUCTURAL_MARKERS = new Set(["q", "o", "setting", "preamble", "instructions"]);
+const TAG_TOKEN = /^%\{#([A-Za-z][A-Za-z0-9_-]*)(?::([^}]*))?\}\s*/;
+const ANSWER_LETTER = /^[A-Ea-e]$/;
+
+type TagLineResult =
+  | { tags: Omit<TagWithLocation, "lineNumber">[]; remainder: string }
+  | { error: string };
+
 /**
- * Create a question object from current parsing state
- * Validates tags and collects errors without throwing immediately
+ * Read one or more tag markers at the start of `content` (already trimmed, with any leading
+ * `\item` removed). Returns null when the line does not start with a tag at all.
+ * A trailing LaTeX comment is allowed; a `%{#q}` after the tags is returned as `remainder`.
+ */
+function readTagLine(content: string): TagLineResult | null {
+  if (!content.startsWith("%{#")) return null;
+  const firstName = content.match(/^%\{#([^}:]*)/)?.[1].trim().toLowerCase() ?? "";
+  if (STRUCTURAL_MARKERS.has(firstName)) return null;
+
+  const tags: Omit<TagWithLocation, "lineNumber">[] = [];
+  let rest = content;
+  let match: RegExpMatchArray | null;
+  while ((match = rest.match(TAG_TOKEN))) {
+    const name = match[1].toLowerCase();
+    if (STRUCTURAL_MARKERS.has(name)) break;
+    tags.push({ name, value: match[2]?.trim() });
+    rest = rest.slice(match[0].length);
+  }
+
+  if (tags.length === 0) {
+    return {
+      error: `Could not read the tag "${content}". Tags look like %{#fixed} or %{#correct:B}.`,
+    };
+  }
+  if (rest === "" || /^%(?!\{)/.test(rest)) return { tags, remainder: "" };
+  if (rest.startsWith("%{#q}")) return { tags, remainder: rest };
+  return {
+    error: `Unexpected text after the tag in "${content}". Put tags on their own line, before %{#q}.`,
+  };
+}
+
+/** Per-file state for pinned options (`%{#fixed-options:X}`), filled while questions are read. */
+interface PinState {
+  /** The file predates v1.8, when %{#fixed-options:X} also set the answer. */
+  legacy: boolean;
+  /** Legacy-file questions that pin options (for the "changed meaning" note). */
+  legacyEntries: LegacyPinEntry[];
+  /** Questions that pin options, have no %{#correct:X} and so fall back to answer A. */
+  missingAnswer: number[];
+}
+
+/**
+ * Create a question object from current parsing state.
+ * Resolves its tags (including the answer letter) and collects errors and warnings
+ * without throwing, so every problem in the file is reported at once.
  *
  * @param questionText - The question text
  * @param options - Array of option texts
- * @param tags - Array of tags with their line numbers
- * @param correctLetter - Correct answer letter (for fixed-options)
+ * @param tags - Tags collected for this question, with their line numbers
  * @param questionNumber - Question number (1-indexed)
- * @param errors - Output array to collect validation errors
- * @returns Question object (may have invalid tags if errors occurred)
+ * @param errors - Output array for validation errors
+ * @param warnings - Output array for non-blocking warnings
+ * @param pins - Per-file pinned-option state (read and updated)
  */
 function createQuestionObject(
   questionText: string,
   options: string[],
   tags: TagWithLocation[],
-  correctLetter: string | undefined,
   questionNumber: number,
-  errors: string[]
+  errors: string[],
+  warnings: string[],
+  pins: PinState
 ): Omit<Question, "group" | "order"> {
-  // Validate tags (catch errors instead of throwing)
-  let validatedTags: QuestionTags;
+  const where = `Question ${questionNumber}`;
+  const names: string[] = [];
+  let correctLetter: string | undefined;
+  let correctSource = "";
 
+  const setCorrect = (tag: TagWithLocation, raw: string) => {
+    const written = `%{#${tag.name}:${raw}}`;
+    if (!ANSWER_LETTER.test(raw)) {
+      errors.push(
+        `${where} (line ${tag.lineNumber}): "${raw}" in ${written} is not an answer letter. Use a single letter A-E.`
+      );
+      return;
+    }
+    const letter = raw.toUpperCase();
+    if (correctLetter && correctLetter !== letter) {
+      errors.push(
+        `${where} (line ${tag.lineNumber}): conflicting correct answers ${correctLetter} (${correctSource}) and ${letter} (${written}).`
+      );
+      return;
+    }
+    correctLetter = letter;
+    correctSource = written;
+  };
+
+  for (const tag of tags) {
+    if (tag.name === "correct") {
+      if (!tag.value) {
+        errors.push(
+          `${where} (line ${tag.lineNumber}): %{#correct} needs a letter, e.g. %{#correct:B}.`
+        );
+        continue;
+      }
+      setCorrect(tag, tag.value);
+    } else if (tag.name === "fixed-options" && tag.value !== undefined) {
+      // %{#fixed-options:DE} keeps those options in place; the validator reads the letters.
+      names.push(`fixed-options:${tag.value}`);
+    } else {
+      if (tag.value !== undefined && VALID_TAGS.includes(tag.name as ValidTag)) {
+        errors.push(
+          `${where} (line ${tag.lineNumber}): %{#${tag.name}} does not take a value (found %{#${tag.name}:${tag.value}}).`
+        );
+      }
+      names.push(tag.name);
+    }
+  }
+
+  let flags: QuestionTags;
   try {
-    const tagNames = tags.map((t) => t.tag);
-    const firstTagLine = tags.length > 0 ? tags[0].lineNumber : undefined;
-
-    validatedTags = validateQuestionTags(tagNames, {
+    const validated = validateQuestionTags(names, {
       questionNumber,
-      lineNumber: firstTagLine,
+      format: "latex",
+      optionCount: options.length,
     });
+    flags = validated;
+    for (const warning of validated.warnings) warnings.push(`${where}: ${warning}`);
   } catch (error) {
-    // Collect error, continue with best-effort tags
+    // Collect error, continue with best-effort tags so every problem is reported
     errors.push(error instanceof Error ? error.message : String(error));
-
-    // Best-effort: apply tags without validation (allows parsing to continue)
-    const tagNames = tags.map((t) => t.tag);
-    validatedTags = {
-      fixed: tagNames.includes("fixed"),
-      fixedOptions: tagNames.includes("fixed-options"),
-      separatePage: tagNames.includes("separate-page"),
+    flags = {
+      fixed: names.includes("fixed"),
+      fixedPosition: names.includes("fixed-position"),
+      fixedOptions: names.includes("fixed-options"),
+      pinnedOptions: [],
+      separatePage: names.includes("separate-page"),
     };
   }
 
-  // Create question object
+  // No answer tag means the first option is correct (A).
+  let correctIndex = 0;
+  if (correctLetter) {
+    const index = correctLetter.charCodeAt(0) - 65;
+    if (options.length === 0) {
+      warnings.push(
+        `${where}: ${correctSource} is ignored because this question has no options (open-ended).`
+      );
+    } else if (index >= options.length) {
+      const last = String.fromCharCode(64 + options.length);
+      errors.push(
+        `${where}: the correct answer ${correctLetter} (${correctSource}) is out of range; ` +
+          `this question has ${options.length} option${options.length === 1 ? "" : "s"} (A-${last}).`
+      );
+    } else {
+      correctIndex = index;
+    }
+  }
+
+  // Pinned options. Before v1.8, %{#fixed-options:X} also made X the answer, so a file from
+  // then keeps that answer when it has no %{#correct:X}; every other pinned question without
+  // one falls back to A, and a note says so.
+  const pinned = flags.pinnedOptions;
+  if (pinned.length > 0) {
+    let inferredAnswer: string | undefined;
+    if (!correctLetter) {
+      if (pins.legacy && pinned.length === 1) {
+        correctIndex = pinned[0];
+        inferredAnswer = String.fromCharCode(65 + pinned[0]);
+      } else {
+        pins.missingAnswer.push(questionNumber);
+      }
+    }
+    if (pins.legacy) pins.legacyEntries.push({ questionNumber, inferredAnswer });
+  }
+
   const question: Omit<Question, "group" | "order"> = {
     text: questionText,
-    choices: [
-      options.map((text) => ({ text })),
-      correctLetter ? correctLetter.charCodeAt(0) - 65 : 0,
-      null,
-    ],
-    keepOnSeparatePage: validatedTags.separatePage,
+    choices: [options.map((text) => ({ text })), correctIndex, null],
+    keepOnSeparatePage: flags.separatePage,
   };
 
-  if (validatedTags.fixed) {
-    question.fixed = true;
-  }
-  if (validatedTags.fixedOptions) {
-    question.fixedOptions = true;
-    question.correctOptionLetter = correctLetter;
-  }
+  if (flags.fixed) question.fixed = true;
+  if (flags.fixedPosition) question.fixedPosition = true;
+  if (flags.fixedOptions) question.fixedOptions = true;
+  if (pinned.length > 0) question.pinnedOptions = pinned;
 
   return question;
 }
@@ -107,7 +250,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         const value = valueParts.join("=").trim();
         const cleanKey = key.trim();
 
-        if (cleanKey === "numberofvestions") {
+        if (cleanKey === "app_version") {
+          // File metadata, not an exam setting
+          result.appVersion = value;
+        } else if (cleanKey === "numberofvestions") {
           assignSetting(settings, cleanKey as keyof ExamSettings, parseInt(value) || 1);
         } else if (
           cleanKey === "includeCoverPage" ||
@@ -191,14 +337,41 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Parse questions with proper marker handling
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
-  let currentTags: TagWithLocation[] = []; // NEW: Track tags with line numbers
-  let currentCorrectLetter: string | undefined;
+  let currentTags: TagWithLocation[] = [];
   let enumerateDepth = 0;
   let inQuestionEnumerate = false;
   let inQuestionBlock = false;
   let inOptionBlock = false;
   let currentOptionText = "";
-  const allValidationErrors: string[] = []; // NEW: Collect all tag validation errors
+  const allValidationErrors: string[] = []; // Every tag problem, reported together
+  const allWarnings: string[] = [];
+  const fileVersion = readFileVersion(result.appVersion);
+  const pins: PinState = {
+    legacy: isFileBefore(fileVersion, PINNED_OPTIONS_VERSION),
+    legacyEntries: [],
+    missingAnswer: [],
+  };
+  // How many of currentTags were written up to the end of the current question's text.
+  let tagsOwnedByCurrent = 0;
+
+  // Save the question being built and reset the per-question state.
+  const saveCurrentQuestion = () => {
+    result.questions.push(
+      createQuestionObject(
+        currentQuestion ?? "",
+        currentOptions,
+        currentTags,
+        result.questions.length + 1,
+        allValidationErrors,
+        allWarnings,
+        pins
+      )
+    );
+    currentQuestion = null;
+    currentOptions = [];
+    currentTags = [];
+    tagsOwnedByCurrent = 0;
+  };
 
   // console.log('Starting question parsing with', lines.length, 'lines');
 
@@ -245,52 +418,14 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
         currentQuestion &&
         currentOptions.length >= 0
       ) {
-        // console.log("🔥 SAVING QUESTION FROM ENUMERATE END:", {
-        //   questionText: currentQuestion,
-        //   optionsCount: currentOptions.length,
-        //   questionNumber: result.questions.length + 1,
-        //   line: i + 1,
-        // });
-
-        const question = createQuestionObject(
-          currentQuestion,
-          currentOptions,
-          currentTags,
-          currentCorrectLetter,
-          result.questions.length + 1,
-          allValidationErrors
-        );
-
-        result.questions.push(question);
-        // console.log(
-        //   "✅ Question saved! Total questions now:",
-        //   result.questions.length
-        // );
-
-        // Reset state for next question
-        currentQuestion = null;
-        currentOptions = [];
-        currentTags = [];
-        currentCorrectLetter = undefined;
+        saveCurrentQuestion();
         inOptionBlock = false;
         currentOptionText = "";
       }
 
       // Save pending open-ended question when outer enumerate closes
       if (enumerateDepth === 1 && currentQuestion !== null) {
-        const question = createQuestionObject(
-          currentQuestion,
-          currentOptions,
-          currentTags,
-          currentCorrectLetter,
-          result.questions.length + 1,
-          allValidationErrors
-        );
-        result.questions.push(question);
-        currentQuestion = null;
-        currentOptions = [];
-        currentTags = [];
-        currentCorrectLetter = undefined;
+        saveCurrentQuestion();
       }
 
       enumerateDepth--;
@@ -304,71 +439,64 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     // Process both inside enumerate blocks and standalone question blocks
     const shouldProcess = inQuestionEnumerate || inQuestionBlock;
 
-    // Generic tag detection: matches %{#tag-name} or %{#tag-name:value}
-    // Excludes question/option markers (q, o) to prevent conflicts
-    if (shouldProcess) {
-      // Match pattern: %{#tag-name} or %{#tag-name:value}
-      // Negative lookahead (?!q\}|o\}|/q\}|/o\}) prevents matching question/option markers
-      const tagMatch = trimmed.match(/^%\{#(?!q\}|o\}|\/q\}|\/o\})([\w-]+)(?::([A-E]))?\}$/);
+    // `content` is the line with any leading top-level \item (and tags) consumed.
+    let content = trimmed;
 
-      if (tagMatch) {
-        const tagName = tagMatch[1]; // e.g., "fixed", "fixed-options", "separate-page"
-        const tagValue = tagMatch[2]; // e.g., "B" for fixed-options:B
-
-        // console.log("Found tag marker at line:", i + 1, "tag:", tagName);
-
-        // Special handling for fixed-options (needs correct letter)
-        if (tagName === "fixed-options") {
-          if (tagValue) {
-            currentTags.push({ tag: tagName, lineNumber: i + 1 });
-            currentCorrectLetter = tagValue;
-          } else {
-            // Invalid format: fixed-options without letter - collect error
-            allValidationErrors.push(
-              `Line ${i + 1}: 'fixed-options' tag requires a correct answer letter (e.g., %{#fixed-options:B})`
-            );
-          }
-        } else {
-          // All other tags
-          currentTags.push({ tag: tagName, lineNumber: i + 1 });
-        }
-
-        continue;
+    // A top-level \item starts the next question. Finish a pending open-ended question
+    // first, so tags written after this \item belong to the NEW question (an open-ended
+    // question has no options block to close it).
+    if (
+      enumerateDepth === 1 &&
+      !inQuestionBlock &&
+      !inOptionBlock
+    ) {
+      const itemMatch = trimmed.match(/^\\item(?![A-Za-z@])\s*/);
+      if (itemMatch) {
+        if (currentQuestion !== null) saveCurrentQuestion();
+        content = trimmed.slice(itemMatch[0].length);
+        if (content === "") continue;
       }
     }
+
+    // Tag markers: %{#name} or %{#name:value}, one or more per line (q/o markers excluded)
+    if (shouldProcess) {
+      const tagLine = readTagLine(content);
+      if (tagLine) {
+        if ("error" in tagLine) {
+          allValidationErrors.push(`Line ${i + 1}: ${tagLine.error}`);
+          continue;
+        }
+        for (const tag of tagLine.tags) {
+          currentTags.push({ ...tag, lineNumber: i + 1 });
+        }
+        if (tagLine.remainder === "") continue;
+        content = tagLine.remainder; // a %{#q} on the same line as the tags
+      }
+    }
+
     // Handle question start marker (process even outside enumerate blocks)
-
-    if (trimmed.includes("%{#q}")) {
-      // console.log("Found question start marker at line:", i + 1);
-
-      // Save pending open-ended question inside enumerate before starting a new one
+    if (content.includes("%{#q}")) {
+      // Save pending open-ended question inside enumerate before starting a new one.
+      // Tags written after its text closed sit directly above this %{#q}: they are
+      // the new question's, not the pending one's.
       if (inQuestionEnumerate && currentQuestion !== null) {
-        const question = createQuestionObject(
-          currentQuestion,
-          currentOptions,
-          currentTags,
-          currentCorrectLetter,
-          result.questions.length + 1,
-          allValidationErrors
-        );
-        result.questions.push(question);
-        currentQuestion = null;
-        currentOptions = [];
-        currentTags = [];
-        currentCorrectLetter = undefined;
+        const tagsForNewQuestion = currentTags.slice(tagsOwnedByCurrent);
+        currentTags = currentTags.slice(0, tagsOwnedByCurrent);
+        saveCurrentQuestion();
+        currentTags = tagsForNewQuestion;
       }
 
       inQuestionBlock = true;
 
       // Check if question is on same line
-      const sameLineMatch = trimmed.match(/%\{#q\}(.*?)%\{\/q\}/);
+      const sameLineMatch = content.match(/%\{#q\}(.*?)%\{\/q\}/);
       if (sameLineMatch) {
         currentQuestion = sameLineMatch[1].trim();
-        // console.log("Found complete inline question:", currentQuestion);
         inQuestionBlock = false;
+        tagsOwnedByCurrent = currentTags.length;
       } else {
         // Extract any text after the opening tag
-        const afterTag = trimmed.replace("%{#q}", "").trim();
+        const afterTag = content.replace("%{#q}", "").trim();
         currentQuestion = afterTag || "";
       }
 
@@ -383,37 +511,12 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
           ? currentQuestion + " " + beforeTag
           : beforeTag;
       }
-      // console.log("Complete question text:", currentQuestion);
       inQuestionBlock = false;
+      tagsOwnedByCurrent = currentTags.length;
 
       // If not in enumerate block, save question immediately (for open-ended questions)
       if (!inQuestionEnumerate && currentQuestion !== null) {
-        // console.log("🔥 SAVING OPEN-ENDED QUESTION:", {
-        //   questionText: currentQuestion,
-        //   questionNumber: result.questions.length + 1,
-        //   line: i + 1,
-        // });
-
-        const question = createQuestionObject(
-          currentQuestion,
-          currentOptions, // Empty array for open-ended
-          currentTags,
-          currentCorrectLetter,
-          result.questions.length + 1,
-          allValidationErrors
-        );
-
-        result.questions.push(question);
-        // console.log(
-        //   "✅ Open-ended question saved! Total questions now:",
-        //   result.questions.length
-        // );
-
-        // Reset state for next question
-        currentQuestion = null;
-        currentOptions = [];
-        currentTags = [];
-        currentCorrectLetter = undefined;
+        saveCurrentQuestion();
       }
       continue;
     }
@@ -475,26 +578,28 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
 
   // Save the last question if exists and complete
   if (currentQuestion !== null) {
-    // console.log("🔥 SAVING FINAL QUESTION:", {
-    //   questionText: currentQuestion,
-    //   optionsCount: currentOptions.length,
-    //   questionNumber: result.questions.length + 1,
-    // });
+    saveCurrentQuestion();
+  }
 
-    const question = createQuestionObject(
-      currentQuestion,
-      currentOptions,
-      currentTags,
-      currentCorrectLetter,
-      result.questions.length + 1,
-      allValidationErrors
-    );
-
-    result.questions.push(question);
-    // console.log(
-    //   "✅ Final question saved! Total questions now:",
-    //   result.questions.length
-    // );
+  // File-level notes first, then per-question warnings, then the pinned-option summaries.
+  const notes = getFileVersionNotes(fileVersion);
+  if (pins.legacyEntries.length > 0) {
+    notes.push(legacyPinNote(pins.legacyEntries, fileVersion));
+  }
+  allWarnings.unshift(...notes);
+  if (pins.missingAnswer.length > 0) {
+    allWarnings.push(missingAnswerPinNote(pins.missingAnswer));
+  }
+  // Questions whose answer came from a legacy tag are already covered by the legacy note.
+  const inferred = new Set(
+    pins.legacyEntries.filter((e) => e.inferredAnswer).map((e) => e.questionNumber)
+  );
+  const pinnedAnswers = findPinnedAnswerQuestions(result.questions).filter((n) => !inferred.has(n));
+  if (pinnedAnswers.length > 0) {
+    allWarnings.push(pinnedAnswerNote(pinnedAnswers));
+  }
+  if (allWarnings.length > 0) {
+    result.warnings = allWarnings;
   }
 
   // console.log("==== PARSING COMPLETE ====");

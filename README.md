@@ -13,7 +13,7 @@
 - **Answer Keys**: Automatic generation of answer keys for each version
 - **Question Groups**: Organize questions into balanced groups for structured randomization
 - **Three Grouping Modes**: Standard, Parentheses (dependent questions), and Square Brackets (topic-based shuffling)
-- **Multiple Question Types**: Support for regular, fixed, fixed-options, open-ended, separate-page, and image questions
+- **Multiple Question Types**: Support for regular, fixed, fixed-position, fixed-options, open-ended, separate-page, and image questions, with an explicit correct-answer tag and options that keep their letter while the rest shuffle (e.g. "None of the above")
 - **Page Count Variation Warnings**: Smart detection and warnings when different exam versions have different page counts, preventing exam hall confusion
 - **Cover Pages**: Optional individual or master cover pages
 - **Version Tracking**: CSV mapping of question distribution across versions
@@ -79,25 +79,30 @@ Users need a valid access code provided by the administrator. Access codes are m
 ### Template Formats
 
 #### LaTeX Format (Advanced)
-Questions should be marked with special tags:
+Questions and options are marked with `%{#q}...%{/q}` and `%{#o}...%{/o}`; tags go between `\item` and `%{#q}`:
 
 ```latex
-%% Question: Regular
-What is 2 + 2?
-%% Option:
-Three
-%% Option: *
-Four
-%% Option:
-Five
-%% End Question
+\begin{enumerate}
+\item %{#correct:B}
+%{#q}What is $2 + 2$?%{/q}
+\begin{enumerate}
+\item %{#o}Three%{/o}
+\item %{#o}Four%{/o}
+\item %{#o}Five%{/o}
+\end{enumerate}
+\end{enumerate}
 ```
+
+- `%{#correct:X}` gives the correct option; without it the answer is A
+- `%{#fixed}`, `%{#fixed-position}`, `%{#fixed-options}` lock the question's position and/or its option order
+- `%{#fixed-options:E}` keeps option E as E in every version while the others shuffle
+- `%{#separate-page}` puts the question on its own page
 
 #### Excel Format
 Four sheets: Settings, Instructions, Preamble, Questions
 - Easy to edit in Excel or Google Sheets
 - Supports LaTeX math in cells: `$x^2 + y^2 = z^2$`
-- Questions sheet has columns: Question Text, Option A-E, Correct, Type, Tags
+- Questions sheet has columns: Question Text, Option A-E, Correct, Tags (no options = open-ended)
 
 #### CSV Format
 Four sections marked with `# settings`, `# instructions`, `# preamble`, `# questions`

@@ -2,6 +2,8 @@ import type { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import type { ParsedCSVData } from "./csv-parser";
 import type { ParsedExcelData } from "./excel-parser";
 import { getDefaultSettings } from "../core/settings";
+import { getFileVersionNotes, readFileVersion } from "../core/app-version";
+import { findPinnedAnswerQuestions, pinnedAnswerNote } from "../core/import-notes";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("PARSER_ADAPTER");
@@ -71,6 +73,20 @@ ${items}
     questions: parsed.questions,
     preamble: parsed.preamble || "",
   };
+  // CSV/Excel never accepted %{#fixed-options:X} before v1.8 and always required the Correct
+  // column, so the file's version changes no rules here; it only adds notes about the stamp.
+  const pinnedAnswers = findPinnedAnswerQuestions(parsed.questions);
+  const warnings = [
+    ...getFileVersionNotes(readFileVersion(parsed.appVersion)),
+    ...(parsed.warnings ?? []),
+    ...(pinnedAnswers.length > 0 ? [pinnedAnswerNote(pinnedAnswers)] : []),
+  ];
+  if (warnings.length > 0) {
+    result.warnings = warnings;
+  }
+  if (parsed.appVersion !== undefined) {
+    result.appVersion = parsed.appVersion;
+  }
 
   logger.debug("Conversion complete", {
     hasSettings: Object.keys(settings).length > 0,

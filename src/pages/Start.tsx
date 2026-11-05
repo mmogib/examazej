@@ -39,8 +39,10 @@ import type {
   ExamSettings,
   Question,
   ExamData,
+  ImportInfo,
 } from "@/lib/types";
 import { generateLatexTemplate } from "@/lib/core/latex";
+import { describeFileVersion, readFileVersion } from "@/lib/core/app-version";
 import { parseCSV } from "@/lib/parsers/csv-parser";
 import { parseExcel } from "@/lib/parsers/excel-parser";
 import {
@@ -54,7 +56,8 @@ import { createLogger } from "@/lib/utils/logger";
 const logger = createLogger("START_PAGE");
 
 interface StartPageProps {
-  onDataLoaded: (data: ExamJSON) => void;
+  /** `info` holds non-blocking notes about the file and which app version made it. */
+  onDataLoaded: (data: ExamJSON, info?: ImportInfo) => void;
 }
 
 // Add this helper function inside Start.tsx, before generateTemplate()
@@ -192,6 +195,14 @@ x - y &= 1
   return questions;
 };
 
+/** Notes and "made with" text for the Details page. */
+function importInfoFor(parsed: ParsedLatexTemplate): ImportInfo {
+  return {
+    warnings: parsed.warnings ?? [],
+    madeWith: describeFileVersion(readFileVersion(parsed.appVersion)),
+  };
+}
+
 export function StartPage({ onDataLoaded }: StartPageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -242,11 +253,16 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
       if (extension === "json") {
         const content = await file.text();
-        const jsonData = JSON.parse(content) as ExamJSON;
-        onDataLoaded({
-          ...jsonData,
-          setting: mergeSettingsWithDefaults(jsonData.setting) as ExamSettings,
-        });
+        const { app_version: appVersion, ...jsonData } = JSON.parse(content) as ExamJSON & {
+          app_version?: string;
+        };
+        onDataLoaded(
+          {
+            ...jsonData,
+            setting: mergeSettingsWithDefaults(jsonData.setting) as ExamSettings,
+          },
+          { warnings: [], madeWith: describeFileVersion(readFileVersion(appVersion)) }
+        );
       } else if (extension === "tex") {
         // Existing LaTeX flow - UNCHANGED
         const content = await file.text();
@@ -265,7 +281,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
           });
 
           const examData = createExamFromTemplate(parsed);
-          onDataLoaded(examData);
+          onDataLoaded(examData, importInfoFor(parsed));
         }
       } else if (extension === "csv") {
         // NEW: CSV parsing
@@ -293,7 +309,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
         // Create exam data
         const examData = createExamFromTemplate(latexFormat);
-        onDataLoaded(examData);
+        onDataLoaded(examData, importInfoFor(latexFormat));
       } else if (extension === "xlsx") {
         // NEW: Excel parsing
         const parsed = await parseExcel(file);
@@ -319,7 +335,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
         // Create exam data
         const examData = createExamFromTemplate(latexFormat);
-        onDataLoaded(examData);
+        onDataLoaded(examData, importInfoFor(latexFormat));
       } else {
         setError(
           "Unsupported file type. Please upload a .tex, .csv, .xlsx, or .json file."

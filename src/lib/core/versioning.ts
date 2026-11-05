@@ -1,4 +1,5 @@
 import { DeterministicRNG } from "./rng";
+import { areOptionsLocked, isPositionLocked } from "./question-flags";
 import type {
   Question,
   ExamData,
@@ -6,6 +7,36 @@ import type {
   ExamSettings,
   QuestionChoice,
 } from "../types";
+
+/**
+ * Shuffle one question's options for a version. Pinned options (`%{#fixed-options:E}`) keep
+ * their slot; the others fill the remaining slots in shuffled order.
+ *
+ * The RNG is always drawn exactly as for a plain shuffle of every option, so pinning or
+ * unpinning one question never changes how any other question is shuffled for the same seed.
+ */
+function shuffleOptions(
+  question: Question,
+  rng: DeterministicRNG
+): { shuffledChoices: QuestionChoice[]; newCorrectIndex: number; permString: string } {
+  const options = question.choices[0];
+  const slots = Array.from({ length: options.length }, (_, i) => i);
+  const shuffled = rng.shuffle(slots);
+
+  const pinned = new Set((question.pinnedOptions ?? []).filter((i) => i < options.length));
+  let order = shuffled;
+  if (pinned.size > 0) {
+    const free = shuffled.filter((i) => !pinned.has(i));
+    let next = 0;
+    order = slots.map((slot) => (pinned.has(slot) ? slot : free[next++]));
+  }
+
+  return {
+    shuffledChoices: order.map((index) => options[index]),
+    newCorrectIndex: order.indexOf(question.choices[1]),
+    permString: order.map((i) => String.fromCharCode(65 + i)).join(""),
+  };
+}
 
 /**
  * Generates a 2D array mapping questions and options from master to all versions
@@ -272,21 +303,22 @@ export function generateExamVersions(
             shuffledChoices = question.choices[0];
             newCorrectIndex = question.choices[1];
             permString = "ABCDE";
+          } else if (question.fixed) {
+            // `fixed` locks the options here too. Draw the shuffle anyway and discard it:
+            // versions generated before this fix consumed this draw, so discarding it keeps
+            // every OTHER question's shuffle identical for the same seed.
+            rng.shuffle(
+              Array.from({ length: question.choices[0].length }, (_, i) => i)
+            );
+            shuffledChoices = question.choices[0];
+            newCorrectIndex = question.choices[1];
+            permString = "ABCDE";
           } else {
-            // Shuffle options for regular questions
-            const actualOptionCount = question.choices[0].length;
-            const optionIndices = Array.from(
-              { length: actualOptionCount },
-              (_, i) => i
-            );
-            const shuffledIndices = rng.shuffle(optionIndices);
-            shuffledChoices = shuffledIndices.map(
-              (index) => question.choices[0][index]
-            );
-            newCorrectIndex = shuffledIndices.indexOf(question.choices[1]);
-            permString = shuffledIndices
-              .map((i) => String.fromCharCode(65 + i))
-              .join("");
+            // Shuffle options for regular questions (pinned options keep their slot)
+            ({ shuffledChoices, newCorrectIndex, permString } = shuffleOptions(
+              question,
+              rng
+            ));
           }
 
           const versionQuestion: Question = {
@@ -314,13 +346,15 @@ export function generateExamVersions(
           questionCounter++;
         });
       } else {
-        // Standard mode (5) and bracket mode [5]: shuffle questions within group
-        const fixedPositionQuestions = group.filter((q) => q.fixed);
+        // Standard mode (5) and bracket mode [5]: shuffle questions within group.
+        // Position-locked questions (`fixed` / `fixed-position`) keep their slot; the rest
+        // are shuffled into the remaining slots. The list order below (options-locked
+        // first, then regular) is part of the deterministic output: do not reorder it.
         const fixedOptionsQuestions = group.filter(
-          (q) => q.fixedOptions && !q.fixed
+          (q) => q.fixedOptions && !isPositionLocked(q)
         );
         const regularQuestions = group.filter(
-          (q) => !q.fixed && !q.fixedOptions
+          (q) => !isPositionLocked(q) && !q.fixedOptions
         );
 
         const shufflableQuestions = [
@@ -329,51 +363,25 @@ export function generateExamVersions(
         ];
         const shuffledQuestions = rng.shuffle(shufflableQuestions);
 
-        const combinedQuestions = [...group].sort((a, b) => {
-          if (a.fixed && b.fixed) {
-            return group.indexOf(a) - group.indexOf(b);
-          }
-          if (a.fixed && !b.fixed) {
-            return group.indexOf(a) - group.indexOf(b);
-          }
-          if (!a.fixed && b.fixed) {
-            return group.indexOf(a) - group.indexOf(b);
-          }
-          return group.indexOf(a) - group.indexOf(b);
-        });
-
         let shuffledIndex = 0;
-        const finalQuestions = combinedQuestions.map((q) => {
-          if (q.fixed) {
-            return q;
-          } else {
-            return shuffledQuestions[shuffledIndex++];
-          }
-        });
+        const finalQuestions = group.map((q) =>
+          isPositionLocked(q) ? q : shuffledQuestions[shuffledIndex++]
+        );
 
         finalQuestions.forEach((question) => {
           let shuffledChoices: QuestionChoice[];
           let newCorrectIndex: number;
           let permString: string;
 
-          if (question.fixed || question.fixedOptions) {
+          if (areOptionsLocked(question)) {
             shuffledChoices = question.choices[0];
             newCorrectIndex = question.choices[1];
             permString = "ABCDE";
           } else {
-            const actualOptionCount = question.choices[0].length;
-            const optionIndices = Array.from(
-              { length: actualOptionCount },
-              (_, i) => i
-            );
-            const shuffledIndices = rng.shuffle(optionIndices);
-            shuffledChoices = shuffledIndices.map(
-              (index) => question.choices[0][index]
-            );
-            newCorrectIndex = shuffledIndices.indexOf(question.choices[1]);
-            permString = shuffledIndices
-              .map((i) => String.fromCharCode(65 + i))
-              .join("");
+            ({ shuffledChoices, newCorrectIndex, permString } = shuffleOptions(
+              question,
+              rng
+            ));
           }
 
           const versionQuestion: Question = {

@@ -7,6 +7,8 @@ import type {
 } from "../types";
 import { generateSettingsBlock } from "./settings";
 import { normalizeAcademicIntegrityPledgeText } from "./academic-integrity-pledge";
+import { getCorrectLetter, getLockTags } from "./question-flags";
+import { APP_VERSION } from "./app-version";
 import {
   calculateQuestionPages,
   detectPageCountVariations,
@@ -626,7 +628,8 @@ ${versionQuestionsSection}`;
     .join("&")} \\\\ \\hline
   ${masterExam.questions
     .map((mQ, qIndex) => {
-      const masterAnswer = mQ.correctOptionLetter || "A";
+      // Open-ended questions have no answer letter: show a dash.
+      const masterAnswer = getCorrectLetter(mQ) ?? "--";
 
       const versionAnswers = versions.map((version) => {
         // Find which master question appears at position (qIndex + 1) in this version
@@ -635,9 +638,14 @@ ${versionQuestionsSection}`;
             m.versionQNo === qIndex + 1 &&
             m.version === version.name.replace("version_", "").toUpperCase()
         );
+        const versionQuestion = version.questions[qIndex];
+        const answer =
+          versionQuestion && getCorrectLetter(versionQuestion) === null
+            ? "--"
+            : mapping?.correct;
 
         return mapping
-          ? `${mapping.correct}\\; {\\tiny $_{${mapping.masterQNo}}$}`
+          ? `${answer}\\; {\\tiny $_{${mapping.masterQNo}}$}`
           : `A\\; {\\tiny $_{${qIndex + 1}}$}`;
       });
 
@@ -653,7 +661,9 @@ ${versionQuestionsSection}`;
   // Calculate answer counts
   const answerCounts = versions.map((version, vIndex) => {
     const counts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
-    masterExam.questions.forEach((_, qIndex) => {
+    masterExam.questions.forEach((masterQuestion, qIndex) => {
+      // Open-ended questions have no answer letter to count.
+      if (getCorrectLetter(masterQuestion) === null) return;
       const mapping = mappings.find(
         (m) =>
           m.masterQNo === qIndex + 1 &&
@@ -707,7 +717,8 @@ Answer Counts \\\\
 \\end{normalsize}
 \\newpage`;
 
-  const latexContent = `${settingsBlock}
+  const latexContent = `% Made with Examazej ${APP_VERSION}
+${settingsBlock}
 ${warningCommentBlock}${documentPreamble}
 
 
@@ -763,16 +774,18 @@ export function generateLatexTemplate(
     const questions = exam.questions.map((question, i) => {
       const questionNumber = i + 1;
 
-      // Generate the question tags based on question properties
+      // Generate the question tags based on question properties. Every multiple-choice
+      // question states its answer explicitly, so re-importing never falls back to "A".
       let questionTags = "";
-      if (question.fixed) {
-        questionTags = "\n%{#fixed}";
-      } else if (question.fixedOptions && question.correctOptionLetter) {
-        questionTags = `\n%{#fixed-options:${question.correctOptionLetter}}`;
+      for (const lockTag of getLockTags(question)) {
+        questionTags += `\n%{#${lockTag}}`;
       }
-
+      const correctLetter = getCorrectLetter(question);
+      if (correctLetter) {
+        questionTags += `\n%{#correct:${correctLetter}}`;
+      }
       if (question.keepOnSeparatePage) {
-        questionTags = questionTags + `\n%{#separate-page}`;
+        questionTags += `\n%{#separate-page}`;
       }
 
       const questionText = question.text || `Question ${questionNumber} text`;
@@ -997,84 +1010,165 @@ ${templateQuestions}
 %% ================================ RANDOMIZATION EXAMPLES ================================
 %% The following are examples showing different types of question randomization.
 %% Uncomment and modify these examples as needed for your exam.
+%%
+%% QUESTION TAGS (each on its own line, between \\item and %{#q}):
+%%   %{#correct:X}       the correct option letter (A-E). Without it, option A is correct.
+%%   %{#fixed-position}  keep the question's place within its group; options still shuffle
+%%   %{#fixed-options}   keep the option order; the question can still move
+%%   %{#fixed-options:E} keep only option E in place (e.g. "None of the above"); the
+%%                       other options shuffle. Several letters: %{#fixed-options:DE}
+%%   %{#fixed}           keep both the place and the option order
+%%   %{#separate-page}   put the question on its own page (it must be alone in its group)
 
 %% EXAMPLE 1: Completely Fixed Question (position and option order)
-%% Use %{#fixed} when you want a question to appear in the same position 
+%% Use %{#fixed} when you want a question to appear in the same position
 %% in all versions with the same option order
 %
-% \\item 
+% \\item
 % %{#fixed}
+% %{#correct:A}
 % %{#q}
 % This question will always appear in the same position in all exam versions.
 % The option order will also remain the same across all versions.
 % %{/q}
-% 
+%
 %   \\begin{enumerate}
-% 
+%
 %     \\item
 %     %{#o}
-%     Correct answer (will always be option A)
+%     Correct answer (option A, as set by %{#correct:A})
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 1
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 2
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 3
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 4
 %     %{/o}
-% 
+%
 %   \\end{enumerate}
 
 %% EXAMPLE 2: Fixed Options with Random Position
-%% Use %{#fixed-options:X} where X is the correct option letter (A, B, C, D, E)
-%% This keeps the option order the same but allows the question position to be randomized
+%% Use %{#fixed-options} to keep the option order while the question position is
+%% randomized, and %{#correct:X} to say which option is correct
 %
-% \\item %{#fixed-options:C}
+% \\item
+% %{#fixed-options}
+% %{#correct:C}
 % %{#q}
 % This question can appear in different positions across versions,
 % but the option order will remain the same. The correct answer is option C.
 % %{/q}
-% 
+%
 %   \\begin{enumerate}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 1 (always option A)
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 2 (always option B)
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Correct answer (always option C)
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 3 (always option D)
 %     %{/o}
-% 
+%
 %     \\item
 %     %{#o}
 %     Wrong answer option 4 (always option E)
 %     %{/o}
-% 
+%
+%   \\end{enumerate}
+
+%% EXAMPLE 2b: Fixed Position with Shuffled Options
+%% Use %{#fixed-position} to keep the question in its place while its options shuffle
+%
+% \\item
+% %{#fixed-position}
+% %{#correct:B}
+% %{#q}
+% This question always appears in the same place, but its options are shuffled.
+% %{/q}
+%
+%   \\begin{enumerate}
+%
+%     \\item
+%     %{#o}
+%     Wrong answer
+%     %{/o}
+%
+%     \\item
+%     %{#o}
+%     Correct answer (option B in this master copy)
+%     %{/o}
+%
+%     \\item
+%     %{#o}
+%     Another wrong answer
+%     %{/o}
+%
+%   \\end{enumerate}
+
+%% EXAMPLE 2c: One Option Kept in Place
+%% Use %{#fixed-options:E} to keep option E as E in every version (for example
+%% "None of the above") while options A-D shuffle. Say the answer with %{#correct:X}.
+%
+% \\item
+% %{#fixed-options:E}
+% %{#correct:B}
+% %{#q}
+% Which of these numbers is prime?
+% %{/q}
+%
+%   \\begin{enumerate}
+%
+%     \\item
+%     %{#o}
+%     $9$
+%     %{/o}
+%
+%     \\item
+%     %{#o}
+%     $7$
+%     %{/o}
+%
+%     \\item
+%     %{#o}
+%     $15$
+%     %{/o}
+%
+%     \\item
+%     %{#o}
+%     $21$
+%     %{/o}
+%
+%     \\item
+%     %{#o}
+%     None of the above (always option E)
+%     %{/o}
+%
 %   \\end{enumerate}
 
 %% EXAMPLE 3: True/False question (2 options)

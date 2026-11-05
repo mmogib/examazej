@@ -29,7 +29,9 @@ import {
   Shuffle,
   FileText,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ExamJSON, ExamSettings } from "@/lib/types";
 import { InstructionsDialog } from "@/components/ui/instructions-dialog";
 import { AcademicIntegrityPledgeControl } from "@/components/ui/academic-integrity-pledge-control";
@@ -42,6 +44,10 @@ interface DetailsPageProps {
   onDataUpdated: (data: ExamJSON) => void;
   onBack: () => void;
   onContinue: (seed: string) => void;
+  /** Non-blocking problems found while reading the uploaded file. */
+  importWarnings?: string[];
+  /** Which app made the uploaded file, e.g. "Examazej 1.8.0"; hidden when unknown. */
+  madeWith?: string;
 }
 
 export function DetailsPage({
@@ -49,6 +55,8 @@ export function DetailsPage({
   onDataUpdated,
   onBack,
   onContinue,
+  importWarnings = [],
+  madeWith,
 }: DetailsPageProps) {
   const [settings, setSettings] = useState<ExamSettings>(examData.setting);
   const [groupPartition, setGroupPartition] = useState<string>(
@@ -274,6 +282,30 @@ export function DetailsPage({
           </p>
         </div>
       </div>
+
+      {importWarnings.length > 0 && (
+        <Alert
+          className="mb-6 border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400"
+          data-testid="import-warnings"
+        >
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>
+            {importWarnings.length === 1
+              ? "1 note about your file"
+              : `${importWarnings.length} notes about your file`}
+          </AlertTitle>
+          <AlertDescription>
+            <p className="mb-2 text-sm">
+              The file loaded and nothing here stops you from continuing, but check these:
+            </p>
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {importWarnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Settings */}
@@ -687,6 +719,12 @@ export function DetailsPage({
                 <div className="font-medium">Output</div>
                 <div className="text-muted-foreground">Single LaTeX file</div>
               </div>
+              {madeWith && (
+                <div className="text-sm" data-testid="made-with">
+                  <div className="font-medium">Made with</div>
+                  <div className="text-muted-foreground">{madeWith}</div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

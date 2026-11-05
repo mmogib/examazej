@@ -7,18 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `%{#correct:X}` LaTeX tag: sets the correct option (A-E) on any multiple-choice question, with or without other tags. Without it, the first option is correct, as before.
+- `fixed-position` tag (LaTeX, CSV, Excel): keeps a question's place within its group while its options still shuffle. `fixed` keeps its meaning (position and options).
+- `%{#fixed-options}` now works without a letter.
+- Options kept in place: `%{#fixed-options:E}` keeps option E as E in every version while the other options shuffle (for "None of the above" and similar). Several letters go together, e.g. `%{#fixed-options:DE}`. Works in LaTeX, CSV and Excel, in every group mode, and can be combined with `fixed-position`. Pinning never changes how any other question is shuffled for the same seed.
+- `app_version` in the settings of every template the app writes (LaTeX, CSV, Excel) and in the session JSON, so each file is read by the rules of the version that made it. A file without it is read as one made before v1.8. A file from a newer app gets a note to update; the Details summary shows which version made the file; generated exams start with a `% Made with Examazej` comment.
+- Non-blocking import notes: ignored tags, older files, and other things worth checking are listed on the Details page. Pinned questions get two notes: one when the answer is a pinned option (it has the same letter in every version), and one when a pinned question has no `%{#correct:X}` (its answer is A).
+
 ### Security
 
 - Cleared every known dependency vulnerability, production and development (`npm audit` reports 0): upgraded KaTeX to 0.19.1, Zod to 4.6.7, and Vitest to 4.1.12; refreshed transitive packages; and added reviewed `overrides` for `postcss-selector-parser` and `minimatch` (see `docs/dependency-notices.md`).
 
 ### Changed
 
+- **`%{#fixed-options:X}` has a new meaning.** Before v1.8 it kept all options in order and made X the answer; it now keeps only option X in place. Files made before v1.8 (no `app_version`) still take the answer from the letter when there is no `%{#correct:X}`, so their answer keys stay correct; only the other options now shuffle. One note on the Details page lists those questions and the answers it took, and explains how to keep all options in order (`%{#fixed-options}` with `%{#correct:X}`).
 - Replaced the unmaintained `react-katex` wrapper with a direct KaTeX renderer in the exam preview. `react-katex` pinned KaTeX 0.16 and blocked the security update.
 - Upgraded the unused-but-declared `@hookform/resolvers` to 5.x so it stays compatible with Zod 4.
+- Combining `fixed` with `fixed-options` (or `fixed-position`) is now a redundancy note instead of an error, in every format.
+- Downloaded templates (LaTeX, CSV, Excel) write one lock tag per question and, in LaTeX, `%{#correct:X}` on every multiple-choice question, so a re-uploaded template reproduces the same versions for the same seed. The template's built-in examples teach the new tags.
+- Badges on the Results page and in the preview show the question's lock tags (Fixed, Fixed Position, Fixed Options, "Option E fixed"); the Fixed Options badge no longer shows the answer letter.
+- The Template Features list in the template dialog shows the current tags; the CSV/Excel list no longer mentions a Type column, which the templates no longer have.
 
 ### Fixed
 
 - Invalid LaTeX in the exam preview now shows the highlighted raw source as intended; the previous error fallback could never trigger.
+- The answer key's MASTER column showed "A" for CSV/Excel questions whose answer was another letter; it now shows the real answer.
+- The LaTeX template in the Exam Package (and the Overleaf "Template" button) lost the correct answer of CSV/Excel questions whose answer was not "A"; re-uploading it marked the first option correct.
+- A `fixed` question inside a `(n)` group had its options shuffled. Its options are now locked; every other question in such exams keeps the exact same shuffle for the same seed.
+- A tag written after an open-ended question (for example the next question's `%{#fixed}`) was applied to the open-ended question instead of the next one.
+- LaTeX tags that were silently ignored now work or report an error: lowercase answer letters, capitalised tag names, several tags on one line, and tags on the `\item` line now work; an answer letter beyond the question's options and any unreadable `%{#...}` line are now errors.
+- Open-ended questions showed "@" in the answer key's version columns and were counted as "A" answers on the answer counts page; they now show "--" and are not counted.
 
 ## [1.7.0] - 2026-09-08
 

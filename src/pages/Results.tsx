@@ -54,6 +54,8 @@ import {
   type GenerateLatexResult,
 } from "@/lib/core/latex";
 import { generateSettingsBlock } from "@/lib/core/settings";
+import { getLockLabels } from "@/lib/core/question-flags";
+import { getTemplateVersion } from "@/lib/core/app-version";
 import type { PageCountWarning } from "@/lib/utils/page-count-analyzer";
 import type {
   ExamJSON,
@@ -171,6 +173,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
     const sessionData = {
       ...examData,
+      app_version: getTemplateVersion(),
       generation: {
         seed,
         generated_at: new Date().toISOString(),
@@ -551,7 +554,7 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                   <div className="space-y-4">
                     {correctnessSummary.map((summary, index) => {
                       const masterQuestion = examData.exam.questions[index];
-                      const isFixed = masterQuestion?.fixed;
+                      const lockLabels = masterQuestion ? getLockLabels(masterQuestion) : [];
                       const hasOptions = masterQuestion?.choices[0]?.length > 0;
                       return (
                         <div key={index} className="space-y-2">
@@ -562,17 +565,11 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                             >
                               {summary.questionNo}
                             </Badge>
-                            {isFixed && (
-                              <Badge variant="secondary" className="text-xs">
-                                Fixed
+                            {lockLabels.map((label) => (
+                              <Badge key={label} variant="secondary" className="text-xs">
+                                {label}
                               </Badge>
-                            )}
-                            {masterQuestion?.fixedOptions && (
-                              <Badge variant="outline" className="text-xs">
-                                Fixed Options (
-                                {masterQuestion.correctOptionLetter})
-                              </Badge>
-                            )}
+                            ))}
                             {!hasOptions && (
                               <Badge variant="outline" className="text-xs">
                                 Open-ended
@@ -635,31 +632,22 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
                             {version.questions
                               .slice(0, 3)
                               .map((question, qIndex) => {
-                                const isFixed = question.fixed;
-                                const isFixedOptions = question.fixedOptions;
+                                const lockLabels = getLockLabels(question);
                                 return (
                                   <div key={qIndex} className="text-sm">
                                     <div className="font-medium mb-1 flex items-center gap-2">
                                       <span>
                                         {qIndex + 1}. {question.text}
                                       </span>
-                                      {isFixed && (
+                                      {lockLabels.map((label) => (
                                         <Badge
+                                          key={label}
                                           variant="secondary"
                                           className="text-xs h-4"
                                         >
-                                          Fixed
+                                          {label}
                                         </Badge>
-                                      )}
-                                      {isFixedOptions && (
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs h-4"
-                                        >
-                                          Fixed Options (
-                                          {question.correctOptionLetter})
-                                        </Badge>
-                                      )}
+                                      ))}
                                     </div>
                                     <div className="ml-4 space-y-1">
                                       {question.choices[0].map(

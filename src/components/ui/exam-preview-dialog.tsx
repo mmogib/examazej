@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Eye } from 'lucide-react';
 import 'katex/dist/katex.min.css';
+import { getLockLabels } from '@/lib/core/question-flags';
 import type { ExamData, ExamSettings, Question, QuestionChoice } from '@/lib/types';
 
 // Renders one math expression with KaTeX; invalid LaTeX falls back to the raw source, highlighted.
@@ -66,6 +67,7 @@ export function ExamPreviewSheet({ versions, settings, children }: ExamPreviewSh
   const renderQuestion = (question: Question, index: number) => {
     const questionNumber = index + 1;
     const choices = question.choices?.[0] || [];
+    const lockLabels = getLockLabels(question);
     
     return (
       <div key={index} className="group p-5 border border-border/50 rounded-xl bg-card/50 hover:bg-card transition-colors">
@@ -74,8 +76,9 @@ export function ExamPreviewSheet({ versions, settings, children }: ExamPreviewSh
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <span className="text-sm font-bold text-primary">{questionNumber}</span>
             </div>
-            {question.fixed && <Badge variant="default" className="text-xs">Fixed Position</Badge>}
-            {question.fixedOptions && <Badge variant="secondary" className="text-xs">Fixed Options</Badge>}
+            {lockLabels.map((label) => (
+              <Badge key={label} variant="secondary" className="text-xs">{label}</Badge>
+            ))}
           </div>
         </div>
         

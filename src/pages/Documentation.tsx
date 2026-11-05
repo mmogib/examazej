@@ -39,6 +39,9 @@ import {
   Target,
   Clock,
   Table as TableIcon,
+  Anchor,
+  Info,
+  Pin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -106,8 +109,11 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
       "question-types": {
         content: [
           "Regular Questions randomized shuffle fixed options open-ended separate page image mathematical",
+          "Correct Answer correct:X answer letter first option A",
           "Fixed Questions same position option order",
-          "Fixed-Options Questions randomized position fixed option order",
+          "Fixed-Position Questions same position shuffled options",
+          "Fixed-Options Questions randomized position fixed option order changed v1.8",
+          "Options Kept in Place fixed-options:X None of the above All of the above pinned letter",
           "Open-Ended Questions essay short-answer written responses",
           "Separate Page Questions complex space diagrams calculations",
           "Image Questions graphics advanced LaTeX formatting",
@@ -662,6 +668,7 @@ Option text goes here
                       <CollapsibleContent className="mt-2">
                         <CodeBlock
                           code={`%{#setting}
+%app_version=1.8.0
 %university=Your University Name
 %department=Department Name
 %term=Fall 2024
@@ -687,6 +694,15 @@ Option text goes here
                           <AlertDescription>
                             Leave <code>seed</code> empty or use default values
                             to enable automatic dynamic seed generation.
+                          </AlertDescription>
+                        </Alert>
+                        <Alert className="mt-3">
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            <code>app_version</code> records which Examazej version wrote
+                            the file, so it is always read by that version&apos;s rules.
+                            Templates from v1.8 on include it; leave it as it is. A file
+                            without it is read as one made before v1.8.
                           </AlertDescription>
                         </Alert>
                       </CollapsibleContent>
@@ -815,7 +831,8 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
                     <div className="flex gap-2">
                       <Badge variant="secondary">Tags</Badge>
                       <span className="text-muted-foreground">
-                        Comma-separated: fixed, fixed-options, separate-page
+                        Comma-separated: fixed, fixed-position, fixed-options,
+                        fixed-options:E (letters together, e.g. fixed-options:DE), separate-page
                       </span>
                     </div>
                   </div>
@@ -1034,6 +1051,60 @@ Which planet is closest to the Sun?
             )}
 
             {shouldShowContent(
+              "Correct Answer correct:X answer letter first option A"
+            ) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    Correct Answer
+                  </CardTitle>
+                  <CardDescription>
+                    Which option is correct, in the order you wrote them
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm mb-3">
+                    Use{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>{" "}
+                    where X is the letter (A-E) of the correct option. Without it,
+                    the <strong>first option (A)</strong> is the correct one. It works
+                    with every other tag, and it is ignored (with a note) on
+                    open-ended questions. In CSV and Excel files, use the{" "}
+                    <strong>Correct</strong> column instead.
+                  </p>
+                  <pre className="text-sm bg-muted p-3 rounded">
+                    {`\\item
+%{#correct:C}
+%{#q}
+Which number is prime?
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    4
+    %{/o}
+    \\item
+    %{#o}
+    6
+    %{/o}
+    \\item
+    %{#o}
+    7
+    %{/o}
+  \\end{enumerate}`}
+                  </pre>
+                  <p className="text-sm mt-3 text-muted-foreground">
+                    Templates downloaded from Examazej always include{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>{" "}
+                    on every multiple-choice question.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {shouldShowContent(
               "Fixed Questions same position option order"
             ) && (
               <Card>
@@ -1051,7 +1122,14 @@ Which planet is closest to the Sun?
                     Use{" "}
                     <code className="bg-muted px-1 rounded">%{`{#fixed}`}</code>{" "}
                     for questions that must appear in the same position with the
-                    same option order.
+                    same option order. It is shorthand for{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#fixed-position}`}</code>{" "}
+                    plus{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#fixed-options}`}</code>.
+                    The position is the question's place within its group: in a{" "}
+                    <code className="bg-muted px-1 rounded">(n)</code> or{" "}
+                    <code className="bg-muted px-1 rounded">[n]</code> group the whole
+                    group can move, and the question moves with it.
                   </p>
                   <pre className="text-sm bg-muted p-3 rounded">
                     {`\\item
@@ -1072,7 +1150,54 @@ What is your student ID number?
             )}
 
             {shouldShowContent(
-              "Fixed-Options Questions randomized position fixed option order"
+              "Fixed-Position Questions same position shuffled options"
+            ) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Anchor className="h-5 w-5 text-purple-500" />
+                    Fixed-Position Questions
+                  </CardTitle>
+                  <CardDescription>
+                    Same position, but the options still shuffle
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm mb-3">
+                    Use{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#fixed-position}`}</code>{" "}
+                    to keep a question in its place (within its group) while its
+                    options are still shuffled in each version.
+                  </p>
+                  <pre className="text-sm bg-muted p-3 rounded">
+                    {`\\item
+%{#fixed-position}
+%{#correct:B}
+%{#q}
+This question always appears in the same place.
+%{/q}
+
+  \\begin{enumerate}
+    \\item
+    %{#o}
+    Wrong answer
+    %{/o}
+    \\item
+    %{#o}
+    Correct answer
+    %{/o}
+    \\item
+    %{#o}
+    Another wrong answer
+    %{/o}
+  \\end{enumerate}`}
+                  </pre>
+                </CardContent>
+              </Card>
+            )}
+
+            {shouldShowContent(
+              "Fixed-Options Questions randomized position fixed option order changed v1.8"
             ) && (
               <Card>
                 <CardHeader>
@@ -1088,13 +1213,17 @@ What is your student ID number?
                   <p className="text-sm mb-3">
                     Use{" "}
                     <code className="bg-muted px-1 rounded">
-                      %{`{#fixed-options:X}`}
+                      %{`{#fixed-options}`}
                     </code>{" "}
-                    where X is the correct answer letter.
+                    to keep the option order, and{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>{" "}
+                    to say which option is correct. It is ignored (with a note) on
+                    open-ended questions.
                   </p>
                   <pre className="text-sm bg-muted p-3 rounded">
                     {`\\item
-%{#fixed-options:B}
+%{#fixed-options}
+%{#correct:B}
 %{#q}
 Which letter represents the correct answer?
 %{/q}
@@ -1114,15 +1243,84 @@ Which letter represents the correct answer?
     %{/o}
   \\end{enumerate}`}
                   </pre>
-                  <Alert className="mt-4 bg-red-50 dark:bg-red-950 border-red-200">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-900 dark:text-red-100">
-                      <strong>Invalid Combination:</strong> Cannot use both <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed</code> and{" "}
-                      <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed-options</code> tags together.
-                      Use <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed</code> to lock position AND options,
-                      or <code className="bg-red-100 dark:bg-red-900 px-1 rounded">fixed-options</code> to lock options only.
+                  <Alert className="mt-4 bg-amber-50 dark:bg-amber-950">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Changed in v1.8:</strong> with a letter,{" "}
+                      <code className="bg-muted px-1 rounded">%{`{#fixed-options:X}`}</code>{" "}
+                      now keeps only option X in place (see Options Kept in Place). Before
+                      v1.8 it kept all options in order and made X the answer. Files made
+                      before v1.8 (no <code className="bg-muted px-1 rounded">app_version</code>{" "}
+                      in the settings) still take the answer from the letter, and the
+                      Details page explains the change. To keep all options in order, use{" "}
+                      <code className="bg-muted px-1 rounded">%{`{#fixed-options}`}</code>{" "}
+                      with{" "}
+                      <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>.
+                      Adding <code className="bg-muted px-1 rounded">fixed-options</code>{" "}
+                      to a <code className="bg-muted px-1 rounded">fixed</code> question
+                      is allowed but redundant.
                     </AlertDescription>
                   </Alert>
+                </CardContent>
+              </Card>
+            )}
+
+            {shouldShowContent(
+              "Options Kept in Place fixed-options:X None of the above All of the above pinned letter"
+            ) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Pin className="h-5 w-5 text-orange-500" />
+                    Options Kept in Place
+                  </CardTitle>
+                  <CardDescription>
+                    Chosen options keep their letter; the others shuffle
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm mb-3">
+                    Use{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#fixed-options:E}`}</code>{" "}
+                    to keep option E as E in every version, for example &quot;None of
+                    the above&quot;, while the other options shuffle. Write several letters
+                    together:{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#fixed-options:DE}`}</code>.
+                    Say the answer with{" "}
+                    <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>;
+                    without it the answer is A, and the Details page says so.
+                  </p>
+                  <pre className="text-sm bg-muted p-3 rounded">
+                    {`\\item
+%{#fixed-options:E}
+%{#correct:B}
+%{#q}
+Which of these numbers is prime?
+%{/q}
+
+  \\begin{enumerate}
+    \\item %{#o}$9$%{/o}
+    \\item %{#o}$7$%{/o}
+    \\item %{#o}$15$%{/o}
+    \\item %{#o}$21$%{/o}
+    \\item %{#o}None of the above%{/o}
+  \\end{enumerate}`}
+                  </pre>
+                  <ul className="text-sm mt-3 space-y-1 list-disc pl-5 text-muted-foreground">
+                    <li>
+                      When the answer is itself a kept option, it has the same letter in
+                      every version. The Details page lists those questions.
+                    </li>
+                    <li>
+                      In CSV/Excel, put{" "}
+                      <code className="bg-muted px-1 rounded">fixed-options:E</code> in the
+                      Tags column; the answer stays in the Correct column.
+                    </li>
+                    <li>
+                      Can be combined with{" "}
+                      <code className="bg-muted px-1 rounded">%{`{#fixed-position}`}</code>.
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             )}

@@ -10,6 +10,10 @@ export interface ParsedExcelData {
   instructions: string[];
   preamble: string;
   questions: Omit<Question, "group" | "order">[];
+  /** Non-blocking problems found while reading the file. */
+  warnings?: string[];
+  /** The `app_version` setting as written (file metadata, not an exam setting). */
+  appVersion?: string;
 }
 
 /**
@@ -63,7 +67,8 @@ export async function parseExcel(file: File): Promise<ParsedExcelData> {
 
   // Parse each sheet
   const settingsSheet = findSheet("settings");
-  const settings = settingsSheet ? parseSettingsSheet(settingsSheet) : {};
+  const meta: { appVersion?: string } = {};
+  const settings = settingsSheet ? parseSettingsSheet(settingsSheet, meta) : {};
 
   const instructionsSheet = findSheet("instructions");
   const instructions = instructionsSheet
@@ -74,7 +79,8 @@ export async function parseExcel(file: File): Promise<ParsedExcelData> {
   const preamble = preambleSheet ? parsePreambleSheet(preambleSheet) : "";
 
   const questionsSheet = findSheet("questions")!;
-  const questions = parseQuestionsSheet(questionsSheet);
+  const warnings: string[] = [];
+  const questions = parseQuestionsSheet(questionsSheet, warnings);
 
   logger.info("Excel parsing completed", {
     settingsCount: Object.keys(settings).length,
@@ -83,14 +89,15 @@ export async function parseExcel(file: File): Promise<ParsedExcelData> {
     questionsCount: questions.length,
   });
 
-  return { settings, instructions, preamble, questions };
+  return { settings, instructions, preamble, questions, warnings, appVersion: meta.appVersion };
 }
 
 /**
  * Parse Settings sheet (2 columns: Key, Value)
  */
 function parseSettingsSheet(
-  worksheet: ExcelJS.Worksheet
+  worksheet: ExcelJS.Worksheet,
+  meta: { appVersion?: string }
 ): Partial<ExamSettings> {
   const data = worksheetToArray(worksheet);
 
@@ -110,6 +117,11 @@ function parseSettingsSheet(
     const value = String(row[1] ?? "").trim();
 
     if (!key || !value) continue;
+
+    if (key === "app_version") {
+      meta.appVersion = value;
+      continue;
+    }
 
     // Validate key
     const validKeys = [
@@ -251,7 +263,8 @@ function parsePreambleSheet(worksheet: ExcelJS.Worksheet): string {
  * Parse Questions sheet (table format)
  */
 function parseQuestionsSheet(
-  worksheet: ExcelJS.Worksheet
+  worksheet: ExcelJS.Worksheet,
+  warnings: string[]
 ): Omit<Question, "group" | "order">[] {
   const data = worksheetToArray(worksheet);
 
@@ -296,7 +309,7 @@ function parseQuestionsSheet(
     if (!row || row.length === 0) continue;
 
     try {
-      const question = parseQuestionRow(row, colIndices, i + 1);
+      const question = parseQuestionRow(row, colIndices, i + 1, warnings);
       questions.push(question);
     } catch (error) {
       throw new Error(
@@ -319,7 +332,8 @@ function parseQuestionsSheet(
 function parseQuestionRow(
   row: ExcelJS.CellValue[],
   colIndices: Record<string, number>,
-  rowNumber: number
+  rowNumber: number,
+  warnings: string[]
 ): Omit<Question, "group" | "order"> {
   const questionText = String(row[colIndices.questionText] || "").trim();
   if (!questionText) {
@@ -367,14 +381,21 @@ function parseQuestionRow(
   const validatedTags = validateQuestionTags(tagList, {
     questionNumber: rowNumber,
     format: 'excel',
+    optionCount: options.length,
   });
+  for (const warning of validatedTags.warnings) {
+    warnings.push(`Questions sheet row ${rowNumber}: ${warning}`);
+  }
 
   return {
     text: questionText,
     choices: [options.map((text) => ({ text })), correctIndex, null],
     fixed: validatedTags.fixed,
+    fixedPosition: validatedTags.fixedPosition,
     fixedOptions: validatedTags.fixedOptions,
-    correctOptionLetter: validatedTags.fixedOptions ? correctLetter : undefined,
+    ...(validatedTags.pinnedOptions.length > 0 && {
+      pinnedOptions: validatedTags.pinnedOptions,
+    }),
     keepOnSeparatePage: validatedTags.separatePage,
   };
 }

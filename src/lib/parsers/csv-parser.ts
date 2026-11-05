@@ -10,6 +10,10 @@ export interface ParsedCSVData {
   instructions: string[];
   preamble: string;
   questions: Omit<Question, "group" | "order">[];
+  /** Non-blocking problems found while reading the file. */
+  warnings?: string[];
+  /** The `app_version` setting as written (file metadata, not an exam setting). */
+  appVersion?: string;
 }
 
 /**
@@ -21,8 +25,9 @@ export function parseCSV(content: string): ParsedCSVData {
   const lines = content.split("\n").map((line) => line.trim());
   const sections = splitIntoSections(lines);
 
+  const meta: { appVersion?: string } = {};
   const settings = sections.settings
-    ? parseSettingsSection(sections.settings)
+    ? parseSettingsSection(sections.settings, meta)
     : {};
 
   const instructions = sections.instructions
@@ -39,7 +44,8 @@ export function parseCSV(content: string): ParsedCSVData {
     );
   }
 
-  const questions = parseQuestionsSection(sections.questions);
+  const warnings: string[] = [];
+  const questions = parseQuestionsSection(sections.questions, warnings);
 
   logger.info("CSV parsing completed", {
     settingsCount: Object.keys(settings).length,
@@ -48,7 +54,7 @@ export function parseCSV(content: string): ParsedCSVData {
     questionsCount: questions.length,
   });
 
-  return { settings, instructions, preamble, questions };
+  return { settings, instructions, preamble, questions, warnings, appVersion: meta.appVersion };
 }
 
 /**
@@ -92,7 +98,10 @@ function splitIntoSections(lines: string[]): {
 /**
  * Parse settings section (key,value pairs)
  */
-function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
+function parseSettingsSection(
+  lines: string[],
+  meta: { appVersion?: string }
+): Partial<ExamSettings> {
   const settings: Partial<ExamSettings> = {};
 
   for (let i = 0; i < lines.length; i++) {
@@ -109,6 +118,11 @@ function parseSettingsSection(lines: string[]): Partial<ExamSettings> {
 
     if (!key) {
       logger.warn(`Settings line ${i + 1} has empty key, skipping`);
+      continue;
+    }
+
+    if (key === "app_version") {
+      meta.appVersion = value;
       continue;
     }
 
@@ -214,7 +228,8 @@ function parsePreambleSection(lines: string[]): string {
  * Parse questions section (CSV table)
  */
 function parseQuestionsSection(
-  lines: string[]
+  lines: string[],
+  warnings: string[]
 ): Omit<Question, "group" | "order">[] {
   if (lines.length === 0) {
     throw new Error("Questions section is empty");
@@ -258,7 +273,7 @@ function parseQuestionsSection(
     if (!line || line.trim() === "") continue;
 
     try {
-      const question = parseQuestionRow(line, colIndices, i + 1);
+      const question = parseQuestionRow(line, colIndices, i + 1, warnings);
       questions.push(question);
     } catch (error) {
       throw new Error(
@@ -308,7 +323,8 @@ function parseCSVLine(line: string): string[] {
 function parseQuestionRow(
   line: string,
   colIndices: Record<string, number>,
-  rowNumber: number
+  rowNumber: number,
+  warnings: string[]
 ): Omit<Question, "group" | "order"> {
   const cells = parseCSVLine(line);
 
@@ -356,7 +372,11 @@ function parseQuestionRow(
   const validatedTags = validateQuestionTags(tagList, {
     questionNumber: rowNumber,
     format: 'csv',
+    optionCount: options.length,
   });
+  for (const warning of validatedTags.warnings) {
+    warnings.push(`Question row ${rowNumber}: ${warning}`);
+  }
 
   return {
     text: unescapeNewlines(questionText),
@@ -366,8 +386,11 @@ function parseQuestionRow(
       null,
     ],
     fixed: validatedTags.fixed,
+    fixedPosition: validatedTags.fixedPosition,
     fixedOptions: validatedTags.fixedOptions,
-    correctOptionLetter: validatedTags.fixedOptions ? correctLetter : undefined,
+    ...(validatedTags.pinnedOptions.length > 0 && {
+      pinnedOptions: validatedTags.pinnedOptions,
+    }),
     keepOnSeparatePage: validatedTags.separatePage,
   };
 }

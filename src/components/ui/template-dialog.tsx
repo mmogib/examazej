@@ -390,28 +390,48 @@ export function TemplateDialog({
             {format === "tex" ? (
               <ul className="space-y-1 text-xs">
                 <li>
-                  <strong>Fixed Questions:</strong> Add{" "}
-                  <code>%{"{#fixed}"}</code> to prevent shuffling
+                  <strong>Fixed question:</strong>{" "}
+                  <code>%{"{#fixed}"}</code> keeps the question in its place and
+                  its options in order
                 </li>
                 <li>
-                  <strong>Fixed Options:</strong> Add{" "}
-                  <code>%{"{#fixed-options:B}"}</code> to keep option order
+                  <strong>Fixed position:</strong>{" "}
+                  <code>%{"{#fixed-position}"}</code> keeps the question in
+                  place; its options still shuffle
                 </li>
+                <li>
+                  <strong>Fixed options:</strong>{" "}
+                  <code>%{"{#fixed-options}"}</code> keeps the options in order
+                </li>
+                <li>
+                  <strong>Option kept in place:</strong>{" "}
+                  <code>%{"{#fixed-options:E}"}</code> keeps option E as E in
+                  every version (e.g. "None of the above")
+                </li>
+                <li>
+                  <strong>Correct answer:</strong>{" "}
+                  <code>%{"{#correct:B}"}</code>; without it the answer is A
+                </li>
+                <li>See Documentation for all tags.</li>
               </ul>
             ) : (
               <ul className="space-y-1 text-xs">
                 <li>
-                  <strong>Question Types:</strong> Use "regular", "fixed",
-                  "fixed-options", or "open-ended" in Type column
+                  <strong>Correct column:</strong> the answer letter (A-E)
+                </li>
+                <li>
+                  <strong>Tags column:</strong> <code>fixed</code>,{" "}
+                  <code>fixed-position</code>, <code>fixed-options</code>,{" "}
+                  <code>fixed-options:E</code>, <code>separate-page</code>
+                </li>
+                <li>
+                  <strong>Open-ended:</strong> leave all options empty
                 </li>
                 <li>
                   <strong>LaTeX Math:</strong> Use $...$ for inline math or
                   $$...$$ for display math in questions/options
                 </li>
-                <li>
-                  <strong>Separate Page:</strong> Add "separate-page" in Tags
-                  column for full-page questions
-                </li>
+                <li>See Documentation for all tags.</li>
               </ul>
             )}
           </div>

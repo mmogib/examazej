@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (166 tests, core coverage ~78%)
+- **Testing**: Vitest (318 tests)
 
 ## Architecture Constraints
 
@@ -62,10 +62,23 @@ src/
 - No `type` field -- types are inferred from structure
 
 ### Question Tags
-- `fixed` -- Locks position AND option order
-- `fixed-options:X` -- Locks option order only (X = correct answer letter)
+Lock tags are independent; "position" means the slot within the question's group.
+- `fixed` -- Locks position AND option order (shorthand for the next two)
+- `fixed-position` -- Locks position only; options still shuffle
+- `fixed-options` -- Locks option order only; ignored (with a warning) on open-ended
+- `correct:X` -- LaTeX only: correct option letter A-E; absent = A. CSV/Excel use the `Correct` column
+- `fixed-options:X` -- Keeps option X (several: `fixed-options:DE`) at its letter in every version; the rest shuffle (`pinnedOptions` = indices). Shuffle draws the RNG exactly like an unpinned question, so a pin never changes other questions
 - `separate-page` -- Forces question onto its own page
-- **Conflict**: `fixed` + `fixed-options` cannot be combined
+- Redundant combos (`fixed` + `fixed-options`/`fixed-position`) warn, never error; a bad or out-of-range answer letter is an error
+- **Answer truth**: `choices[1]` is the correct index everywhere; `correctOptionLetter` is deprecated (old sessions only). Use `getCorrectLetter()` / `getLockTags()` / `getLockLabels()` from `src/lib/core/question-flags.ts`
+- **Exporters** write the canonical lock tags plus `%{#correct:X}` on every MCQ, so a re-imported template reproduces the same versions for the same seed
+- Parser warnings (`ParsedLatexTemplate.warnings`) are shown on the Details page (notes text in `src/lib/core/import-notes.ts`)
+
+### File Versions (`app_version`)
+- Every template the app writes (LaTeX `%app_version=`, CSV/Excel settings row, session JSON) carries `app_version`; logic in `src/lib/core/app-version.ts`
+- Missing or unreadable stamp = file made before v1.8.0. **Any change to what a tag means must be gated on the file's version** (add a constant like `PINNED_OPTIONS_VERSION` and bump `NEWEST_RULES_VERSION`)
+- The only rule today: in a pre-1.8 LaTeX file, `fixed-options:X` without `correct:` takes X as the answer (v1.7 meaning), with one explanatory note
+- `getTemplateVersion()` stamps max(package version, newest rules version), so dev builds before the release bump still write a v1.8 stamp
 - **Grouping rule**: A `separate-page` question must be alone in its own size-1 group. Sharing a group with other questions causes version-dependent page counts (Details page hard-errors this)
 
 ### Three Grouping Modes

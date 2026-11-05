@@ -1,46 +1,58 @@
 /**
  * Question tag validation utility
  * Validates and parses question tags across all input formats (LaTeX, CSV, Excel)
+ *
+ * Lock tags are independent:
+ *   fixed-position    -- keep the question's slot within its group (options still shuffle)
+ *   fixed-options     -- keep the option order (the question can still move)
+ *   fixed-options:DE  -- keep only options D and E in place; the others shuffle around them
+ *   fixed             -- shorthand for fixed-position + fixed-options
+ * The correct answer is not a tag here: LaTeX uses %{#correct:X} (read by the LaTeX
+ * parser), CSV/Excel use the Correct column.
  */
 
 export interface QuestionTags {
   fixed: boolean;
+  fixedPosition: boolean;
   fixedOptions: boolean;
+  /** Option indices kept in place by `fixed-options:X` (sorted, no duplicates). */
+  pinnedOptions: number[];
   separatePage: boolean;
 }
 
-export const VALID_TAGS = ['fixed', 'fixed-options', 'separate-page'] as const;
+export interface TagValidationResult extends QuestionTags {
+  /** Non-blocking problems, without a location prefix (callers add their own). */
+  warnings: string[];
+}
+
+export const VALID_TAGS = ['fixed', 'fixed-position', 'fixed-options', 'separate-page'] as const;
 export type ValidTag = typeof VALID_TAGS[number];
 
 export interface ValidationContext {
   questionNumber?: number;
   lineNumber?: number;
   format?: 'latex' | 'csv' | 'excel';
+  /** Number of options; 0 means open-ended. Omit when unknown. */
+  optionCount?: number;
 }
 
+const letterOf = (index: number) => String.fromCharCode(65 + index);
+
 /**
- * Parse and validate question tags
- * Collects all validation errors and throws once with all errors if any found
+ * Parse and validate question tags. A tag may carry a value after a colon; only
+ * `fixed-options` takes one (option letters A-E written together, e.g. `fixed-options:DE`).
+ * `correct:X` is handled by the LaTeX parser before this is called.
  *
- * @param tags - Array of tag strings to validate
- * @param context - Optional context for better error messages
- * @returns QuestionTags object with validated boolean flags
- * @throws Error if tags are invalid or conflicting (includes all errors found)
+ * @throws Error listing every problem in the tags (unknown tags, bad or out-of-range letters)
  *
  * @example
- * validateQuestionTags(['fixed', 'separate-page'])
- * // Returns: { fixed: true, fixedOptions: false, separatePage: true }
- *
- * validateQuestionTags(['fixed', 'fixed-options'])
- * // Throws: "Question 5: Cannot use both 'fixed' and 'fixed-options' tags..."
+ * validateQuestionTags(['fixed-position', 'fixed-options:e'], { optionCount: 5 })
+ * // { fixed: false, fixedPosition: true, fixedOptions: false, pinnedOptions: [4], ... }
  */
 export function validateQuestionTags(
   tags: string[],
   context: ValidationContext = {}
-): QuestionTags {
-  const errors: string[] = [];
-
-  // Build context string for error messages
+): TagValidationResult {
   const contextStr = context.questionNumber
     ? `Question ${context.questionNumber}`
     : context.lineNumber
@@ -50,38 +62,120 @@ export function validateQuestionTags(
   // Normalize tags (lowercase, trim)
   const normalizedTags = tags.map(t => t.toLowerCase().trim()).filter(t => t !== '');
 
-  // Check for invalid tags
-  const invalidTags = normalizedTags.filter(t => !VALID_TAGS.includes(t as ValidTag));
+  const names: string[] = [];
+  const invalidTags: string[] = [];
+  const errors: string[] = [];
+  const pins = new Set<number>();
+  const pinTags: string[] = [];
+
+  for (const tag of normalizedTags) {
+    const colon = tag.indexOf(':');
+    const name = colon === -1 ? tag : tag.slice(0, colon).trim();
+    const value = colon === -1 ? undefined : tag.slice(colon + 1).trim();
+
+    if (!VALID_TAGS.includes(name as ValidTag)) {
+      invalidTags.push(tag);
+      continue;
+    }
+    if (value === undefined) {
+      names.push(name);
+      continue;
+    }
+    if (name !== 'fixed-options') {
+      errors.push(`'${name}' does not take a value (found '${tag}').`);
+      names.push(name);
+      continue;
+    }
+    if (!/^[a-e]+$/.test(value)) {
+      errors.push(
+        `'${tag}' needs option letters A-E written together, e.g. 'fixed-options:E' or 'fixed-options:DE'.`
+      );
+      continue;
+    }
+    const letters = value.toUpperCase();
+    const indices = [...letters].map(letter => letter.charCodeAt(0) - 65);
+    const optionCount = context.optionCount;
+    if (optionCount !== undefined && optionCount > 0) {
+      const outside = indices.filter(i => i >= optionCount);
+      if (outside.length > 0) {
+        errors.push(
+          `'fixed-options:${letters}' keeps option ${outside.map(letterOf).join(', ')} in place, ` +
+          `but this question has ${optionCount} option${optionCount === 1 ? '' : 's'} (A-${letterOf(optionCount - 1)}).`
+        );
+        continue;
+      }
+    }
+    indices.forEach(i => pins.add(i));
+    pinTags.push(`fixed-options:${letters}`);
+  }
+
   if (invalidTags.length > 0) {
-    errors.push(
+    const validList =
+      context.format === 'latex'
+        ? `${VALID_TAGS.join(', ')}, fixed-options:X, correct:X`
+        : `${VALID_TAGS.join(', ')}, fixed-options:X`;
+    let message =
       `Invalid tag${invalidTags.length > 1 ? 's' : ''}: ${invalidTags.join(', ')}. ` +
-      `Valid tags: ${VALID_TAGS.join(', ')}`
-    );
+      `Valid tags: ${validList}`;
+    const isSpreadsheet = context.format === 'csv' || context.format === 'excel';
+    if (isSpreadsheet && invalidTags.some(t => /^correct:/.test(t))) {
+      message += `. In CSV/Excel files the correct answer goes in the Correct column.`;
+    }
+    if (invalidTags.some(t => /^[a-e]$/.test(t))) {
+      message += `. To keep several options in place, write the letters together, e.g. 'fixed-options:DE'.`;
+    }
+    errors.unshift(message);
   }
 
-  // Check for conflicting tags
-  const hasFixed = normalizedTags.includes('fixed');
-  const hasFixedOptions = normalizedTags.includes('fixed-options');
-
-  if (hasFixed && hasFixedOptions) {
-    errors.push(
-      `Cannot use both 'fixed' and 'fixed-options' tags together. ` +
-      `Use 'fixed' to lock question position AND option order, or ` +
-      `use 'fixed-options' to lock option order only (question position can still shuffle).`
-    );
-  }
-
-  // If errors found, throw with all error messages
   if (errors.length > 0) {
-    const errorMessage = `${contextStr}: ${errors.join(' ')}`;
-    throw new Error(errorMessage);
+    throw new Error(`${contextStr}: ${errors.join(' ')}`);
   }
 
-  // Return validated tags
+  const fixed = names.includes('fixed');
+  let fixedPosition = names.includes('fixed-position');
+  let fixedOptions = names.includes('fixed-options');
+  let pinnedOptions = [...pins].sort((a, b) => a - b);
+  const pinWritten = pinTags.map(t => `'${t}'`).join(' and ');
+  const warnings: string[] = [];
+
+  if (fixed && fixedOptions) {
+    warnings.push(`'fixed' already locks the option order, so 'fixed-options' is redundant.`);
+    fixedOptions = false;
+  }
+  if (fixed && fixedPosition) {
+    warnings.push(`'fixed' already locks the position, so 'fixed-position' is redundant.`);
+    fixedPosition = false;
+  }
+  if (pinnedOptions.length > 0 && (fixed || fixedOptions)) {
+    warnings.push(
+      `'${fixed ? 'fixed' : 'fixed-options'}' already keeps every option in place, so ${pinWritten} is redundant.`
+    );
+    pinnedOptions = [];
+  }
+  if (context.optionCount === 0 && fixedOptions) {
+    warnings.push(`'fixed-options' is ignored because this question has no options (open-ended).`);
+    fixedOptions = false;
+  }
+  if (context.optionCount === 0 && pinnedOptions.length > 0) {
+    warnings.push(`${pinWritten} is ignored because this question has no options (open-ended).`);
+    pinnedOptions = [];
+  }
+  if (
+    context.optionCount !== undefined &&
+    context.optionCount > 0 &&
+    pinnedOptions.length > 0 &&
+    pinnedOptions.length >= context.optionCount - 1
+  ) {
+    warnings.push(`${pinWritten} leaves no options to shuffle, so it works like plain 'fixed-options'.`);
+  }
+
   return {
-    fixed: hasFixed,
-    fixedOptions: hasFixedOptions,
-    separatePage: normalizedTags.includes('separate-page'),
+    fixed,
+    fixedPosition,
+    fixedOptions,
+    pinnedOptions,
+    separatePage: names.includes('separate-page'),
+    warnings,
   };
 }
 
@@ -149,11 +243,21 @@ export function validateSeparatePageGrouping(
  */
 export function getTagDescription(tags: QuestionTags): string {
   const parts: string[] = [];
+  const position = tags.fixed || tags.fixedPosition;
+  const options = tags.fixed || tags.fixedOptions;
+  const pinned = !options && tags.pinnedOptions.length > 0;
+  const pinnedText = `option${tags.pinnedOptions.length > 1 ? 's' : ''} ${tags.pinnedOptions
+    .map(letterOf)
+    .join(', ')} kept in place`;
 
-  if (tags.fixed) {
+  if (position && options) {
     parts.push('fixed position and options');
-  } else if (tags.fixedOptions) {
+  } else if (position) {
+    parts.push(pinned ? `fixed position, ${pinnedText}` : 'fixed position only');
+  } else if (options) {
     parts.push('fixed options only');
+  } else if (pinned) {
+    parts.push(pinnedText);
   } else {
     parts.push('shuffled position and options');
   }

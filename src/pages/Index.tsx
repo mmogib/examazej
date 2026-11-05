@@ -5,15 +5,17 @@ import { StartPage } from './Start';
 import { DetailsPage } from './Details';
 import { ResultsPage } from './Results';
 import { DocumentationPage } from './Documentation';
-import type { ExamJSON } from '@/lib/types';
+import type { ExamJSON, ImportInfo } from '@/lib/types';
 
 const Index = () => {
   const [examData, setExamData] = useState<ExamJSON | null>(null);
   const [currentStep, setCurrentStep] = useState<'start' | 'details' | 'results' | 'docs'>('start');
   const [generationSeed, setGenerationSeed] = useState<string>('');
+  const [importInfo, setImportInfo] = useState<ImportInfo>({ warnings: [] });
 
-  const handleDataLoaded = (data: ExamJSON) => {
+  const handleDataLoaded = (data: ExamJSON, info: ImportInfo = { warnings: [] }) => {
     setExamData(data);
+    setImportInfo(info);
     setCurrentStep('details');
   };
 
@@ -38,6 +40,7 @@ const Index = () => {
     setCurrentStep('start');
     setExamData(null);
     setGenerationSeed('');
+    setImportInfo({ warnings: [] });
   };
 
   const handleShowDocs = () => {
@@ -72,6 +75,8 @@ const Index = () => {
             onDataUpdated={handleDataUpdated}
             onBack={handleBackToStart}
             onContinue={handleContinueToResults}
+            importWarnings={importInfo.warnings}
+            madeWith={importInfo.madeWith}
           />
         )}
         {currentStep === 'results' && examData && generationSeed && (

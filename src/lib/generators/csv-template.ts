@@ -2,6 +2,8 @@ import type { ExamData, ExamSettings } from "../types";
 import { extractPlainInstructions } from "../parsers/adapter";
 import { createLogger } from "../utils/logger";
 import { normalizeAcademicIntegrityPledgeText } from "../core/academic-integrity-pledge";
+import { getCorrectLetter, getLockTags } from "../core/question-flags";
+import { getTemplateVersion } from "../core/app-version";
 
 const logger = createLogger("CSV_TEMPLATE_GENERATOR");
 
@@ -58,6 +60,7 @@ export function generateCSVTemplate(
   logger.debug("Generating CSV template");
 
   let template = `# settings
+app_version,${getTemplateVersion()}
 university,${settings.university}
 department,${settings.department}
 term,${settings.term}
@@ -92,16 +95,10 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
     while (options.length < 5) {
       options.push("");
     }
-    const correct = q.correctOptionLetter || "A";
+    const correct = getCorrectLetter(q) ?? "";
 
     // Build tags array from question properties
-    const tags: string[] = [];
-    if (q.fixed) {
-      tags.push("fixed");
-    }
-    if (q.fixedOptions) {
-      tags.push("fixed-options");
-    }
+    const tags: string[] = getLockTags(q);
     if (q.keepOnSeparatePage) {
       tags.push("separate-page");
     }
