@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.8.2] - 2026-11-06
 
+First 1.8 release with a Windows installer: desktop users update from 1.7.0 directly to 1.8.2. The new features are listed under 1.8.0.
+
 ### Fixed
 
 - The v1.8.1 Windows installer was not built either: launched by the build server's npm 10 (`npx npm@11 ci`), npm 11 received the `.npmrc` install-script allowlist as an environment setting and refused it. The build now installs npm 11 itself and runs a plain `npm ci`, and the release check runs that same clean install directly with this machine's npm, which must be the build server's version (npm 11).
@@ -21,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- The v1.8.0 Windows installer was not built: the build server's npm 10 rejected the lock file written by npm 11 (they read the nested `overrides` in package.json differently), so v1.8.0 shipped on the web only. The installer build now uses npm 11, and the release check first runs a clean install with that npm, so a lock file it would reject stops the release before anything is pushed.
+- The v1.8.0 Windows installer was not built: the build server's npm 10 rejected the lock file written by npm 11 (they read the nested `overrides` in package.json differently), so v1.8.0 shipped on the web only. The installer build now uses npm 11, and the release check first runs a clean install with that npm, so a lock file it would reject stops the release before anything is pushed. This fix was incomplete; see 1.8.2.
 
 ## [1.8.0] - 2026-11-06
 
@@ -34,17 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app_version` in the settings of every template the app writes (LaTeX, CSV, Excel) and in the session JSON, so each file is read by the rules of the version that made it. A file without it is read as one made before v1.8. A file from a newer app gets a note to update; the Details summary shows which version made the file; generated exams start with a `% Made with Examazej` comment.
 - Non-blocking import notes: ignored tags, older files, and other things worth checking are listed on the Details page. Pinned questions get two notes: one when the answer is a pinned option (it has the same letter in every version), and one when a pinned question has no `%{#correct:X}` (its answer is A).
 
-### Security
-
-- Cleared every known dependency vulnerability, production and development (`npm audit` reports 0): upgraded KaTeX to 0.19.1, Zod to 4.6.7, and Vitest to 4.1.12; refreshed transitive packages; and added reviewed `overrides` for `postcss-selector-parser` and `minimatch` (see `docs/dependency-notices.md`).
-
 ### Changed
 
-- **`%{#fixed-options:X}` has a new meaning.** Before v1.8 it kept all options in order and made X the answer; it now keeps only option X in place. Files made before v1.8 (no `app_version`) still take the answer from the letter when there is no `%{#correct:X}`. Because those questions' other options now shuffle, every version made from such a file differs from the versions made before v1.8 with the same seed, in all questions. One note on the Details page lists those questions and the answers it took, and a red warning box on the answer key page says the key differs from keys made before v1.8. Both explain that replacing `%{#fixed-options:X}` with `%{#fixed-options}` and `%{#correct:X}` makes exactly the exams made before v1.8.
+- **`%{#fixed-options:X}` has a new meaning.** Before v1.8 it kept all options in order and made X the answer; it now keeps only option X in place. Files made before v1.8 (no `app_version`) still take the answer from the letter when there is no `%{#correct:X}`. Because those questions' other options now shuffle, every version made from such a file differs from the versions made before v1.8 with the same seed, in all questions. One note on the Details page lists those questions and the answers taken from the letters, and a red warning box on the answer key page says the key differs from keys made before v1.8. Both explain that replacing `%{#fixed-options:X}` with `%{#fixed-options}` and `%{#correct:X}` makes exactly the exams made before v1.8.
 - Replaced the unmaintained `react-katex` wrapper with a direct KaTeX renderer in the exam preview. `react-katex` pinned KaTeX 0.16 and blocked the security update.
 - Upgraded the unused-but-declared `@hookform/resolvers` to 5.x so it stays compatible with Zod 4.
 - Combining `fixed` with `fixed-options` (or `fixed-position`) is now a redundancy note instead of an error, in every format.
-- Downloaded templates (LaTeX, CSV, Excel) write one lock tag per question and, in LaTeX, `%{#correct:X}` on every multiple-choice question, so a re-uploaded template reproduces the same versions for the same seed. The template's built-in examples teach the new tags.
+- Downloaded templates (LaTeX, CSV, Excel) write each question's lock tags in a standard form and, in LaTeX, `%{#correct:X}` on every multiple-choice question, so a re-uploaded template reproduces the same versions for the same seed. The template's built-in examples teach the new tags.
 - Badges on the Results page and in the preview show the question's lock tags (Fixed, Fixed Position, Fixed Options, "Option E fixed"); the Fixed Options badge no longer shows the answer letter.
 - The Template Features list in the template dialog shows the current tags; the CSV/Excel list no longer mentions a Type column, which the templates no longer have.
 
@@ -58,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A tag written after an open-ended question (for example the next question's `%{#fixed}`) was applied to the open-ended question instead of the next one.
 - LaTeX tags that were silently ignored now work or report an error: lowercase answer letters, capitalised tag names, several tags on one line, and tags on the `\item` line now work; an answer letter beyond the question's options and any unreadable `%{#...}` line are now errors.
 - Open-ended questions showed "@" in the answer key's version columns and were counted as "A" answers on the answer counts page; they now show "--" and are not counted.
+
+### Security
+
+- Cleared every known dependency vulnerability, production and development (`npm audit` reports 0): upgraded KaTeX to 0.19.1, Zod to 4.6.7, and Vitest to 4.1.12; refreshed transitive packages; and added reviewed `overrides` for `postcss-selector-parser` and `minimatch` (see `docs/dependency-notices.md`).
 
 ## [1.7.0] - 2026-09-08
 
@@ -254,6 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
+[Unreleased]: https://github.com/mmogib/examazej/compare/v1.8.2...HEAD
 [1.8.2]: https://github.com/mmogib/examazej/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/mmogib/examazej/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/mmogib/examazej/compare/v1.7.0...v1.8.0
