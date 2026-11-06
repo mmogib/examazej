@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-11-06
+
 ### Added
 
 - `npm run build:django` builds the app for the KFUPM university server, whose Django app serves it from `/static/frontend/`. The release check builds it too and rejects it if its files would load from the wrong place.
@@ -264,7 +266,8 @@ First 1.8 release with a Windows installer: desktop users update from 1.7.0 dire
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
-[Unreleased]: https://github.com/mmogib/examazej/compare/v1.8.2...HEAD
+[Unreleased]: https://github.com/mmogib/examazej/compare/v1.8.3...HEAD
+[1.8.3]: https://github.com/mmogib/examazej/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/mmogib/examazej/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/mmogib/examazej/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/mmogib/examazej/compare/v1.7.0...v1.8.0
