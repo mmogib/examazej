@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `npm run build:django` builds the app for the KFUPM university server, whose Django app serves it from `/static/frontend/`. The release check builds it too and rejects it if its files would load from the wrong place.
+
 ### Changed
 
 - GitHub Actions: `actions/checkout` and `actions/setup-node` updated to v5 (v4 targeted the deprecated Node 20). The Quality workflow (pull requests, pushes to `new-feat`) now installs with npm 11 like the installer build; with npm 10 it would have failed the same way.
+
+### Fixed
+
+- The Examazej logo on the Download page did not load when the app is served from a sub-folder, as on the KFUPM university server.
 
 ## [1.8.2] - 2026-11-06
 

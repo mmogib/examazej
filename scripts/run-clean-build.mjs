@@ -13,11 +13,17 @@ export const FORBIDDEN_BUILD_WARNINGS = [
   "externalized for browser compatibility",
   "could not be resolved",
   "Circular chunk:",
+  // A `base` without a leading slash still builds (Vite adds the slash), but say so.
+  '"base" option should start with a slash',
 ];
+
+/** Where the KFUPM (Django) server serves the built files from; see vite.config.ts. */
+export const DJANGO_BASE = "/static/frontend/";
 
 const BUILD_SCRIPTS = {
   web: "build",
   desktop: "build:desktop",
+  django: "build:django",
 };
 
 export function findBuildProblem({ output, status }) {
@@ -64,10 +70,16 @@ export function runCleanBuild(
     return result.status || 1;
   }
 
-  if (mode === "web") {
+  if (mode === "web" || mode === "django") {
     const indexHtml = readFile(resolve(cwd, "dist", "index.html"), "utf8");
     if (/rel="modulepreload"[^>]+exceljs/i.test(indexHtml)) {
       stderr.write("Release build rejected: ExcelJS is eagerly preloaded.\n");
+      return 1;
+    }
+    if (mode === "django" && !indexHtml.includes(`src="${DJANGO_BASE}assets/`)) {
+      stderr.write(
+        `Release build rejected: the Django build does not load its code from ${DJANGO_BASE}.\n`,
+      );
       return 1;
     }
   }

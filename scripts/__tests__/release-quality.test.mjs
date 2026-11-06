@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getNpmInvocation } from "../npm-command.mjs";
 import { ensureSystemCa, runNpmAudit } from "../npm-audit.mjs";
 import {
+  DJANGO_BASE,
   FORBIDDEN_BUILD_WARNINGS,
   findBuildProblem,
+  runCleanBuild,
 } from "../run-clean-build.mjs";
 import { RELEASE_CHECKS, runReleaseChecks } from "../verify-release.mjs";
 import { CI_NPM_SPEC, runLockfileCheck } from "../check-lockfile.mjs";
@@ -23,6 +25,7 @@ describe("release verification", () => {
       "typecheck",
       "test:run",
       "build:clean",
+      "build:django:clean",
       "build:desktop:clean",
     ]);
   });
@@ -169,9 +172,48 @@ describe("clean build runner", () => {
   it("accepts warning-free successful output", () => {
     expect(findBuildProblem({ output: "built in 4.2s", status: 0 })).toBeNull();
   });
+
+  describe("University (Django) build", () => {
+    const run = (indexHtml) => {
+      const stderr = { write: vi.fn() };
+      const status = runCleanBuild("django", {
+        env: { npm_execpath: "C:\\npm\\bin\\npm-cli.js" },
+        platform: "win32",
+        spawn: vi.fn(() => ({ status: 0, stdout: "built in 9s", stderr: "" })),
+        readFile: () => indexHtml,
+        stdout: { write: vi.fn() },
+        stderr,
+      });
+      return { status, message: stderr.write.mock.calls.map((call) => call[0]).join("") };
+    };
+
+    it(`accepts a build that loads its code from ${DJANGO_BASE}`, () => {
+      expect(run(`<script type="module" src="${DJANGO_BASE}assets/index-abc.js"></script>`).status).toBe(0);
+    });
+
+    it("rejects a build that loads its code from the site root", () => {
+      const { status, message } = run('<script type="module" src="/assets/index-abc.js"></script>');
+      expect(status).toBe(1);
+      expect(message).toContain(`does not load its code from ${DJANGO_BASE}`);
+    });
+  });
 });
 
 describe("release integration", () => {
+  it("the app never hard-codes a root path to a public file (the Django build serves them elsewhere)", () => {
+    // Vite rewrites such paths in index.html, not in code: write `${import.meta.env.BASE_URL}name.png`.
+    const sourceRoot = resolve(repositoryRoot, "src");
+    const offenders = readdirSync(sourceRoot, { recursive: true })
+      .map(String)
+      .filter((file) => /\.(tsx?|css)$/.test(file) && !file.includes("__tests__"))
+      .flatMap((file) => {
+        const text = readFileSync(resolve(sourceRoot, file), "utf8");
+        const found = text.match(/(?:src|href)=["'`]\/(?!\/)[^"'`\s]+\.(?:png|jpe?g|svg|ico|webp|gif)["'`]/g) ?? [];
+        return found.map((match) => `${file}: ${match}`);
+      });
+    expect(offenders).toEqual([]);
+  });
+
   it("excludes generated coverage output from strict lint", () => {
     const eslintConfig = readFileSync(
       resolve(repositoryRoot, "eslint.config.js"),

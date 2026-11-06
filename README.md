@@ -168,6 +168,18 @@ npm run preview
 # Deploy dist/ folder to your hosting service
 ```
 
+### University Server (KFUPM, Django)
+
+The university server's Django app serves the built files from `/static/frontend/`, so it
+needs its own build:
+
+```sh
+npm run build:django    # writes dist/ with every file under /static/frontend/
+```
+
+Hand the `dist/` folder to the server's admin. The release check (`npm run verify:release`)
+builds this version too.
+
 ## 🤝 Contributing
 
 This project is actively maintained. For questions or suggestions:
@@ -184,6 +196,7 @@ This project is actively maintained. For questions or suggestions:
 npm run dev             # Start development server
 npm run build           # Build the web application
 npm run build:desktop   # Build the shared application for Electron
+npm run build:django    # Build for the KFUPM university server (Django)
 npm run preview         # Preview the web production build
 npm run verify:release  # Run the complete pre-release quality gate
 ```

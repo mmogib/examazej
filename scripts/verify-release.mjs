@@ -11,6 +11,7 @@ export const RELEASE_CHECKS = [
   { script: "typecheck", label: "TypeScript" },
   { script: "test:run", label: "Tests" },
   { script: "build:clean", label: "Web build" },
+  { script: "build:django:clean", label: "University (Django) build" },
   { script: "build:desktop:clean", label: "Desktop build" },
 ];
 

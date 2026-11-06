@@ -175,7 +175,11 @@ const Download = () => {
         {/* §2 Download card */}
         <Card className="mt-8 border-primary/10 bg-muted/50 shadow-card">
           <CardContent className="flex flex-col items-center gap-5 p-8 text-center md:p-10">
-            <img src="/icon-192.png" alt="Examazej" className="h-16 w-16 rounded-2xl shadow-elegant" />
+            <img
+              src={`${import.meta.env.BASE_URL}icon-192.png`}
+              alt="Examazej"
+              className="h-16 w-16 rounded-2xl shadow-elegant"
+            />
             <a href={rel.downloadUrl} download className="w-full max-w-sm">
               <Button
                 size="lg"

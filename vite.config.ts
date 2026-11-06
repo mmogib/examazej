@@ -118,10 +118,13 @@ const rendererManualChunks = (id: string): string | undefined => {
 export default defineConfig(({ mode }) => {
   // Desktop (Electron) build/dev is selected with `--mode desktop`.
   const isDesktop = mode === "desktop";
+  // KFUPM university server (Django) build: `npm run build:django`. Django serves the
+  // built files from /static/frontend/ (requested by the server's admin).
+  const isDjango = mode === "django";
 
   return {
     // Electron loads assets over file:// → relative paths; web stays absolute.
-    base: isDesktop ? "./" : "/",
+    base: isDesktop ? "./" : isDjango ? "/static/frontend/" : "/",
     // Compile-time flag: literal `false` on web, so desktop-only branches are
     // dead-code-eliminated. NOTE: vitest inherits this define too — if a standalone
     // vitest.config.ts is ever added, it must re-declare __DESKTOP__ or tests throw.

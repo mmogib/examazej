@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (343 tests)
+- **Testing**: Vitest (347 tests)
 
 ## Architecture Constraints
 
@@ -127,13 +127,14 @@ Lock tags are independent; "position" means the slot within the question's group
 npm install          # Install dependencies
 npm run dev          # Dev server (localhost:8080)
 npm run build        # Production build
+npm run build:django # KFUPM university server build (Django serves it from /static/frontend/)
 npm run verify:release  # Canonical audit, lint, typecheck, test, and build gate
 npm run test:run     # Run the complete test suite once
 npm run test:coverage  # Coverage report
 ```
 
 ### Git Branches
-- `main` -- Production (deploys to Netlify + university server)
+- `main` -- Production (Netlify deploys it automatically; for the KFUPM university server, `npm run build:django` and hand `dist/` to its admin)
 - `new-feat` -- Current feature branch
 
 ### Releasing
