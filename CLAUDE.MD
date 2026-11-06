@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Assistant Context
 
-**Last Updated**: 2026-07-05
-**Version**: 1.6.5
+**Last Updated**: 2026-11-06
+**Version**: 1.8.2
 
 ---
 
@@ -11,9 +11,9 @@
 
 > **Branding:** the app was unified under the single name **Examazej** (English *Exam* + Arabic *مزيج / mazeej*, "blend/mix") in v1.6.2 — replacing the prior inconsistent names (Shuffler / Exam Generator / MC Exam Randomizer / Exam Shuffler).
 
-## Desktop App (Examazej) — v1.7.0 SHIPPED ✅ (Phases 0–5 done; auto-update proven on personal + KFUPM-managed machines; Phase 6 signing now OPTIONAL for KFUPM)
+## Desktop App (Examazej) — v1.8.2 SHIPPED ✅ (Phases 0–5 done; auto-update proven on personal + KFUPM-managed machines; Phase 6 signing now OPTIONAL for KFUPM)
 
-**Live as of 2026-09-08 — v0.1 pilot functionally complete; latest shipped v1.7.0.** The Windows desktop app ships as a thin **Electron** shell around the *same* web build. Shipping is one command — `./scripts/release.sh patch` runs the strict pre-release quality gate, then bumps + tags + pushes, which triggers Netlify (web deploy) **and** CI (`.github/workflows/desktop-release.yml`, windows-latest) that builds the unsigned NSIS installer and auto-publishes it to the GitHub Release. The guided **`/download`** page serves the latest `.exe` + sha256 from `/releases/latest`. **Auto-update is proven end-to-end** (electron-updater: check-on-launch → silent download → subtle "Restart now" toast → install-on-quit; verified live v1.6.3→v1.6.4, and v1.6.4→v1.6.5 on **both a personal machine and a KFUPM-managed machine** — AD domain-joined, Netskope TLS-inspection proxy, standard non-admin user — both updated flawlessly). The gate requires a zero-vulnerability production audit.
+**Live as of 2026-11-06 — v0.1 pilot functionally complete; latest shipped v1.8.2** (1.8.0 and 1.8.1 shipped on the web only: their installer builds failed on npm 10 vs 11, see "npm 11 only" under Releasing). The Windows desktop app ships as a thin **Electron** shell around the *same* web build. Shipping is one command — `./scripts/release.sh patch` runs the strict pre-release quality gate, then bumps + tags + pushes, which triggers Netlify (web deploy) **and** CI (`.github/workflows/desktop-release.yml`, windows-latest) that builds the unsigned NSIS installer and auto-publishes it to the GitHub Release. The guided **`/download`** page serves the latest `.exe` + sha256 from `/releases/latest`. **Auto-update is proven end-to-end** (electron-updater: check-on-launch → silent download → subtle "Restart now" toast → install-on-quit; verified live v1.6.3→v1.6.4, and v1.6.4→v1.6.5 on **both a personal machine and a KFUPM-managed machine** — AD domain-joined, Netskope TLS-inspection proxy, standard non-admin user — both updated flawlessly). The gate requires a zero-vulnerability production audit.
 
 **Phase 6 (code signing) — reassessed 2026-07-05, now OPTIONAL for KFUPM.** On-machine checks proved KFUPM managed machines run the **unsigned per-user installer + auto-update fine**: no WDAC, permissive (audit-only) AppLocker, PowerShell FullLanguage, SmartScreen only a one-time "Run anyway", and the sole real gate (local admin) is sidestepped by the per-user install. So signing is **not needed for internal users** — only for **external / other-university / personal** machines. If pursued: **Azure Trusted Signing is geo-blocked for KSA and issues no EV**, and **EV no longer bypasses SmartScreen** (removed 2024) → lean = **cloud-HSM OV cert under KFUPM's identity**, or **KFUPM's own internal CA** (ADCS root trusted domain-wide) for internal signing. Full analysis + university-meeting checklist: `notes/desktop-code-signing.md` (local/gitignored). Full plan: `notes/desktop-app-plan.md`. Key decisions:
 

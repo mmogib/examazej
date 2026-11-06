@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-11-06
+
 ### Fixed
 
 - The v1.8.1 Windows installer was not built either: launched by the build server's npm 10 (`npx npm@11 ci`), npm 11 received the `.npmrc` install-script allowlist as an environment setting and refused it. The build now installs npm 11 itself and runs a plain `npm ci`, and the release check runs that same clean install directly with this machine's npm, which must be the build server's version (npm 11).
@@ -248,6 +250,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
+[1.8.2]: https://github.com/mmogib/examazej/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/mmogib/examazej/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/mmogib/examazej/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/mmogib/examazej/compare/v1.6.5...v1.7.0
