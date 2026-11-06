@@ -38,10 +38,21 @@ jobs:
 
       # package-lock.json is written by npm 11. Node 22 ships npm 10, which reads the nested
       # "overrides" in package.json differently and rejects the lock file (v1.8.0's build failed
-      # this way). Install with npm 11; the release gate runs the same check first
+      # this way). npm 11 must also run directly: launched by npm 10 (`npx npm@11 ci`), it gets
+      # .npmrc's allow-scripts as an environment setting and refuses (v1.8.1 failed this way).
+      # So install npm 11 globally, outside the project so npm 10 never reads its .npmrc, then
+      # run a plain `npm ci`. The release gate runs the same check first
       # (scripts/check-lockfile.mjs, CI_NPM_SPEC), and a test keeps the two in step.
+      - name: Use npm 11 (the npm that writes package-lock.json)
+        working-directory: ${{ runner.temp }}
+        run: npm install -g npm@11
+
       - name: Install dependencies
-        run: npx --yes npm@11 ci
+        run: |
+          $version = npm --version
+          Write-Host "npm $version"
+          if (-not $version.StartsWith("11.")) { throw "Expected npm 11, got $version" }
+          npm ci
 
       # Pre-create the Release so electron-builder's parallel asset uploads (.exe / .blockmap /
       # latest.yml) find an existing release instead of each racing to create one — which on

@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (341 tests)
+- **Testing**: Vitest (342 tests)
 
 ## Architecture Constraints
 
@@ -146,7 +146,7 @@ Bumps version, commits, tags, merges to main, and pushes. Run from a clean featu
 branch. Before changing any release state, the script requires
 `npm run verify:release` to pass.
 
-**npm 11 only:** `package-lock.json` is written by npm 11, and npm 10 (bundled with Node 22) rejects it because of the nested `overrides`. CI installs with `npx --yes npm@11 ci`, and the gate's first check (`lockfile:check`, `scripts/check-lockfile.mjs`) dry-runs that same clean install in a temp copy. v1.8.0's installer build failed on this before the check existed. Change `CI_NPM_SPEC` and the workflow together (a test enforces it).
+**npm 11 only:** `package-lock.json` is written by npm 11, and npm 10 (bundled with Node 22) rejects it because of the nested `overrides`. npm 11 must also run directly: launched by npm 10 (`npx npm@11 ci`) it gets `.npmrc`'s `allow-scripts` as an env setting and fails with EALLOWSCRIPTS. So CI runs `npm install -g npm@11` (outside the project) and then a plain `npm ci`, and the gate's first check (`lockfile:check`, `scripts/check-lockfile.mjs`) requires local npm 11 and dry-runs `npm ci` directly in a temp copy. The v1.8.0 and v1.8.1 installer builds failed on these two problems. Change `CI_NPM_SPEC` and the workflow together (a test enforces it).
 
 ## Testing
 

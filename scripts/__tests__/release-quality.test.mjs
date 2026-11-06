@@ -95,45 +95,56 @@ describe("npm audit runner", () => {
 });
 
 describe("lock file check", () => {
-  it("dry-runs npm ci with CI's npm in a temporary copy, without a shell", () => {
-    const spawn = vi.fn(() => ({ status: 0 }));
-    const status = runLockfileCheck({
-      root: repositoryRoot,
-      env: {
-        npm_execpath: "C:\\npm\\bin\\npm-cli.js",
-        npm_config_allow_scripts: "@anthropic-ai/claude-code",
-      },
-      execPath: "C:\\Program Files\\nodejs\\node.exe",
-      platform: "win32",
-      spawn,
-    });
+  const win = {
+    env: {
+      npm_execpath: "C:\\npm\\bin\\npm-cli.js",
+      npm_config_allow_scripts: "@anthropic-ai/claude-code",
+    },
+    execPath: "C:\\Program Files\\nodejs\\node.exe",
+    platform: "win32",
+  };
+  const npmWith = (version, ciStatus = 0) =>
+    vi.fn((command, args) =>
+      args.includes("--version") ? { status: 0, stdout: `${version}\n` } : { status: ciStatus },
+    );
+
+  it("runs npm ci --dry-run directly (not launched by another npm) in a temporary copy", () => {
+    const spawn = npmWith("11.21.1");
+    const status = runLockfileCheck({ root: repositoryRoot, ...win, spawn, log: vi.fn() });
 
     expect(status).toBe(0);
-    const [command, args, options] = spawn.mock.calls[0];
+    const [command, args, options] = spawn.mock.calls[1];
     expect(command).toBe("C:\\Program Files\\nodejs\\node.exe");
-    expect(args).toEqual([
-      "C:\\npm\\bin\\npm-cli.js",
-      "exec", "--yes", `--package=${CI_NPM_SPEC}`, "--",
-      "npm", "ci", "--dry-run", "--ignore-scripts",
-    ]);
+    expect(args).toEqual(["C:\\npm\\bin\\npm-cli.js", "ci", "--dry-run", "--ignore-scripts"]);
     expect(options.cwd).not.toBe(repositoryRoot);
     expect(options.shell).toBe(false);
     expect(options.env).not.toHaveProperty("npm_config_allow_scripts");
     expect(options.env.NODE_OPTIONS).toContain("--use-system-ca");
   });
 
-  it("fails when npm ci rejects the lock file", () => {
-    const status = runLockfileCheck({ root: repositoryRoot, spawn: () => ({ status: 1 }) });
-    expect(status).toBe(1);
+  it("refuses when this machine's npm is not CI's major version", () => {
+    const spawn = npmWith("10.9.9");
+    const log = vi.fn();
+    expect(runLockfileCheck({ root: repositoryRoot, ...win, spawn, log })).toBe(1);
+    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(log.mock.calls[0][0]).toMatch(/CI installs with npm@11, but this machine has npm 10\.9\.9/);
   });
 
-  it("CI installs dependencies with the same npm the check uses", () => {
+  it("fails when npm ci rejects the lock file", () => {
+    const spawn = npmWith("11.0.0", 1);
+    expect(runLockfileCheck({ root: repositoryRoot, ...win, spawn, log: vi.fn() })).toBe(1);
+  });
+
+  it("CI installs CI_NPM_SPEC globally, outside the project, then runs a plain npm ci", () => {
     const workflow = readFileSync(
       resolve(repositoryRoot, ".github", "workflows", "desktop-release.yml"),
       "utf8",
-    );
-    expect(workflow).toContain(`run: npx --yes ${CI_NPM_SPEC} ci`);
-    expect(workflow).not.toMatch(/run: npm ci\b/);
+    ).replace(/\r/g, "");
+    expect(workflow).toContain(`run: npm install -g ${CI_NPM_SPEC}`);
+    expect(workflow).toMatch(/working-directory: \$\{\{ runner\.temp \}\}\s+run: npm install -g/);
+    expect(workflow).toMatch(/^\s+npm ci$/m);
+    // npm 11 must not be launched by npm 10 (npx), which breaks .npmrc's allow-scripts.
+    expect(workflow).not.toMatch(/^[ \t]*(run:)?[^#\n]*\bnpx\b/m);
   });
 });
 
