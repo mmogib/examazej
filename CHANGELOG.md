@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The v1.8.0 Windows installer was not built: the build server's npm 10 rejected the lock file written by npm 11 (they read the nested `overrides` in package.json differently), so v1.8.0 shipped on the web only. The installer build now uses npm 11, and the release check first runs a clean install with that npm, so a lock file it would reject stops the release before anything is pushed.
+
+## [1.8.0] - 2026-11-06
+
 ### Added
 
 - `%{#correct:X}` LaTeX tag: sets the correct option (A-E) on any multiple-choice question, with or without other tags. Without it, the first option is correct, as before.
@@ -236,6 +242,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
+[1.8.0]: https://github.com/mmogib/examazej/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/mmogib/examazej/compare/v1.6.5...v1.7.0
 [1.5.0]: https://github.com/yourusername/exam-shuffler/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/yourusername/exam-shuffler/compare/v1.3.0...v1.4.0

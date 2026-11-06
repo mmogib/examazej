@@ -10,12 +10,14 @@ import {
   findBuildProblem,
 } from "../run-clean-build.mjs";
 import { RELEASE_CHECKS, runReleaseChecks } from "../verify-release.mjs";
+import { CI_NPM_SPEC, runLockfileCheck } from "../check-lockfile.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 describe("release verification", () => {
   it("runs every release check in the approved order", () => {
     expect(RELEASE_CHECKS.map((check) => check.script)).toEqual([
+      "lockfile:check",
       "audit:security",
       "lint:strict",
       "typecheck",
@@ -36,7 +38,7 @@ describe("release verification", () => {
     });
 
     expect(status).toBe(2);
-    expect(visited).toEqual(["audit:security", "lint:strict", "typecheck"]);
+    expect(visited).toEqual(["lockfile:check", "audit:security", "lint:strict", "typecheck"]);
   });
 });
 
@@ -89,6 +91,49 @@ describe("npm audit runner", () => {
     expect(spawn.mock.calls[0][2].env).not.toHaveProperty(
       "npm_config_allow_scripts",
     );
+  });
+});
+
+describe("lock file check", () => {
+  it("dry-runs npm ci with CI's npm in a temporary copy, without a shell", () => {
+    const spawn = vi.fn(() => ({ status: 0 }));
+    const status = runLockfileCheck({
+      root: repositoryRoot,
+      env: {
+        npm_execpath: "C:\\npm\\bin\\npm-cli.js",
+        npm_config_allow_scripts: "@anthropic-ai/claude-code",
+      },
+      execPath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: "win32",
+      spawn,
+    });
+
+    expect(status).toBe(0);
+    const [command, args, options] = spawn.mock.calls[0];
+    expect(command).toBe("C:\\Program Files\\nodejs\\node.exe");
+    expect(args).toEqual([
+      "C:\\npm\\bin\\npm-cli.js",
+      "exec", "--yes", `--package=${CI_NPM_SPEC}`, "--",
+      "npm", "ci", "--dry-run", "--ignore-scripts",
+    ]);
+    expect(options.cwd).not.toBe(repositoryRoot);
+    expect(options.shell).toBe(false);
+    expect(options.env).not.toHaveProperty("npm_config_allow_scripts");
+    expect(options.env.NODE_OPTIONS).toContain("--use-system-ca");
+  });
+
+  it("fails when npm ci rejects the lock file", () => {
+    const status = runLockfileCheck({ root: repositoryRoot, spawn: () => ({ status: 1 }) });
+    expect(status).toBe(1);
+  });
+
+  it("CI installs dependencies with the same npm the check uses", () => {
+    const workflow = readFileSync(
+      resolve(repositoryRoot, ".github", "workflows", "desktop-release.yml"),
+      "utf8",
+    );
+    expect(workflow).toContain(`run: npx --yes ${CI_NPM_SPEC} ci`);
+    expect(workflow).not.toMatch(/run: npm ci\b/);
   });
 });
 

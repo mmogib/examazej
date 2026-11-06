@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { getNpmEnvironment, getNpmInvocation } from "./npm-command.mjs";
 
 export const RELEASE_CHECKS = [
+  { script: "lockfile:check", label: "Clean install with CI's npm" },
   { script: "audit:security", label: "Dependency audit" },
   { script: "lint:strict", label: "ESLint" },
   { script: "typecheck", label: "TypeScript" },

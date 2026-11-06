@@ -27,6 +27,7 @@
     "test:run": "vitest run",
     "typecheck": "tsc -b --pretty false",
     "audit:security": "node scripts/npm-audit.mjs",
+    "lockfile:check": "node scripts/check-lockfile.mjs",
     "verify:release": "node scripts/verify-release.mjs"
   },
   "dependencies": {
