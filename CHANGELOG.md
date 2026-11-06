@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub Actions: `actions/checkout` and `actions/setup-node` updated to v5 (v4 targeted the deprecated Node 20). The Quality workflow (pull requests, pushes to `new-feat`) now installs with npm 11 like the installer build; with npm 10 it would have failed the same way.
+
 ## [1.8.2] - 2026-11-06
 
 ### Fixed

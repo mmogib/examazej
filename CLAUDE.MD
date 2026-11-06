@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (342 tests)
+- **Testing**: Vitest (343 tests)
 
 ## Architecture Constraints
 

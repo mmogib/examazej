@@ -135,17 +135,19 @@ describe("lock file check", () => {
     expect(runLockfileCheck({ root: repositoryRoot, ...win, spawn, log: vi.fn() })).toBe(1);
   });
 
-  it("CI installs CI_NPM_SPEC globally, outside the project, then runs a plain npm ci", () => {
-    const workflow = readFileSync(
-      resolve(repositoryRoot, ".github", "workflows", "desktop-release.yml"),
-      "utf8",
-    ).replace(/\r/g, "");
-    expect(workflow).toContain(`run: npm install -g ${CI_NPM_SPEC}`);
-    expect(workflow).toMatch(/working-directory: \$\{\{ runner\.temp \}\}\s+run: npm install -g/);
-    expect(workflow).toMatch(/^\s+npm ci$/m);
-    // npm 11 must not be launched by npm 10 (npx), which breaks .npmrc's allow-scripts.
-    expect(workflow).not.toMatch(/^[ \t]*(run:)?[^#\n]*\bnpx\b/m);
-  });
+  it.each(["desktop-release.yml", "quality.yml"])(
+    "%s installs CI_NPM_SPEC globally, outside the project, then runs a plain npm ci",
+    (file) => {
+      const workflow = readFileSync(resolve(repositoryRoot, ".github", "workflows", file), "utf8")
+        .replace(/\r/g, "");
+      expect(workflow).toContain(`run: npm install -g ${CI_NPM_SPEC}`);
+      expect(workflow).toMatch(/working-directory: \$\{\{ runner\.temp \}\}\s+run: npm install -g/);
+      expect(workflow).toMatch(/^\s+npm ci$/m);
+      expect(workflow).not.toMatch(/run: npm ci\b/);
+      // npm 11 must not be launched by npm 10 (npx), which breaks .npmrc's allow-scripts.
+      expect(workflow).not.toMatch(/^[ \t]*(run:)?[^#\n]*\bnpx\b/m);
+    },
+  );
 });
 
 describe("clean build runner", () => {
