@@ -24,6 +24,8 @@
       ["coursecode", "ENGL 102"],
       ["examname", "Midterm"],
       ["numberofvestions", "4"],
+      ["examdate", "June 01, 2026"],
+      ["term", "Term 252"],
       ["groups", "2,(4),[3],2,1"],
       ["seed", "new-xlsx-seed"]
     ],

@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (522 tests)
+- **Testing**: Vitest (531 tests)
 - **Node**: 26 with npm 11, named in `.nvmrc` (the GitHub workflows and Netlify read it)
 
 ## Architecture Constraints

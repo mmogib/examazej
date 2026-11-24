@@ -23,6 +23,8 @@
       ["coursecode", "ENGL 101"],
       ["examname", "Final"],
       ["numberofvestions", "4"],
+      ["examdate", "June 01, 2026"],
+      ["term", "Term 252"],
       ["groups", "2,(4),[3],2,1"],
       ["seed", "old-xlsx-seed"]
     ],

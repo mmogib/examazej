@@ -14,6 +14,8 @@ The fixtures (`../fixtures/compat/`) are one exam of every kind, in two ages:
 | `new.tex`, `new.csv`, `new-xlsx.json`, `new-session.json` | Examazej 1.8.4 (every tag) |
 
 `*-xlsx.json` holds the sheets of an `.xlsx` file; the test writes the workbook with ExcelJS.
+Every fixture sets `examdate` and `term`: both default to today's, which would make the recorded
+documents depend on the day (a test checks it).
 `old-session.json` was written by 1.7.0's code from `old.tex`, and `new-session.json` by 1.8.4's
 from `new.tex`, the way each release's Exam Package writes `_session.json`.
 

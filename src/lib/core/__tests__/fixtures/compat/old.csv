@@ -4,6 +4,8 @@ department,Physics
 coursecode,PHYS 101
 examname,Quiz 3
 numberofvestions,4
+examdate,June 01, 2026
+term,Term 252
 groups,3,(3),[3],2,1
 seed,old-csv-seed
 

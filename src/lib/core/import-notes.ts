@@ -599,7 +599,7 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
   return `
 \\begin{tcolorbox}[colback=red!6, colframe=red!75!black, coltitle=white, fonttitle=\\bfseries,
   title={WARNING: this answer key differs from the keys the older Examazej made (before November 2026)}]
-${reasons.join("\n\n")}
+${reasons.join("\n\n\\medskip\n")}
 \\begin{itemize}
 ${items.map((item) => `\\item ${item}`).join("\n")}
 \\end{itemize}

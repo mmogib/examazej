@@ -34,6 +34,12 @@ describe("the same exams as 1.8.4, for every file and seed", () => {
     );
   });
 
+  it.each([...OLD_FILES, ...NEW_FILES])("%s fixes every setting that would default to today's date", async (name) => {
+    // The exam date and the term default to today's; the recorded documents must not depend on it.
+    const { setting } = await readFixture(name);
+    expect({ examdate: setting.examdate, term: setting.term }).toEqual({ examdate: "June 01, 2026", term: "Term 252" });
+  });
+
   it.each([...OLD_FILES, ...NEW_FILES])("%s: versions, answers, mapping files and documents", async (name) => {
     const exam = await readFixture(name);
     for (const expected of v184[name]) {
