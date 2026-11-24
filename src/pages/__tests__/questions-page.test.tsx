@@ -109,7 +109,7 @@ describe("Questions page", () => {
   });
 
   it("visiting the page without an edit never writes the exam", () => {
-    const uploaded = [q("Q1", { fixed: true, legacyFixed: true }), q("Q2", { pinnedOptions: [1] }), q("Q3")];
+    const uploaded = [q("Q1", { fixed: true }), q("Q2", { pinnedOptions: [1], legacyPin: { answerFromLetter: true } }), q("Q3")];
     render(exam(uploaded, "(2),1"));
     click($('[data-testid="chip-2"]'));
     click(button("Next"));
@@ -196,22 +196,16 @@ describe("Questions page", () => {
     expect($('[data-testid="effect"]')?.textContent).toContain("it keeps its place;");
   });
 
-  it("an old fixed question, fixed and then pinned: the warning comes back and fits the pin", () => {
-    render(exam([q("Q1", { fixed: true, legacyFixed: true }), q("Q2")], "(2)"));
-    click(button("Match my old exams"));
-    expect($('[data-testid="note-legacy-fixed"]')).toBeNull();
-    click($('[aria-label="Pin option C"]'));
-    const note = $('[data-testid="note-legacy-fixed"]')?.textContent ?? "";
-    expect(note).toContain("With its current tags they do not shuffle as they did then");
-    expect(note).toContain("Lets the options shuffle and clears the pin on C.");
-  });
-
-  it("an old pinned answer, unpinned: no claim that it is the same letter in every version", () => {
+  it("an old %{#fixed-options:B}: the note says what it means now and points to the switch; no old-exam button", () => {
     render(exam([q("Q1", { pinnedOptions: [1], legacyPin: { answerFromLetter: true }, choices: [options(4), 1, null] })], "1"));
-    expect($('[data-testid="note-pinned-answer"]')?.textContent).toContain("B in every version");
-    click($('[aria-label="Unpin option B"]'));
-    expect($('[data-testid="note-pinned-answer"]')).toBeNull();
-    expect($('[data-testid="note-legacy-pin"]')?.textContent).toContain("With its current tags this question is not shuffled as it was then");
+    const note = () => $('[data-testid="note-old-pin-meaning"]')?.textContent ?? "";
+    expect(note()).toContain('An older Examazej read this tag as "keep all options in order"; now only B keeps its place');
+    expect(note()).toContain('turn on "Keep all options in order" above');
+    expect($('[data-testid="note-answer-from-letter"]')).not.toBeNull();
+    expect(button("Match my old exams")).toBeUndefined();
+    click(switchFor("Keep all options in order"));
+    expect(latest?.exam.questions[0]).toMatchObject({ fixedOptions: true });
+    expect(note()).toBe("");
     expect($('[data-testid="note-answer-from-letter"]')).not.toBeNull();
   });
 
@@ -227,41 +221,6 @@ describe("Questions page", () => {
       "In place (the group keeps order anyway) · locked in the file"
     );
     expect(switchFor("Keep its place in the group")).toBeNull();
-  });
-
-  it("an old-file question gets a warning with its one-click fix", () => {
-    render(exam([q("Q1", { fixed: true, legacyFixed: true }), q("Q2")], "(2)"));
-    expect($('[data-testid="note-legacy-fixed"]')?.textContent).toContain("(the other questions are not affected)");
-    click(button("Match my old exams"));
-    expect(latest?.exam.questions[0]).toMatchObject({ fixedPosition: true, legacyFixed: true });
-    expect(latest?.exam.questions[0].fixed).toBeUndefined();
-    expect($('[data-testid="note-legacy-fixed"]')).toBeNull();
-  });
-
-  it("questions the older Examazej read differently: what it read, and one click to match the old exams", () => {
-    const read = (extra = {}) => ({ tags: [], fixed: false, fixedOptions: false, separatePage: false, answer: 0, ...extra });
-    render(
-      exam(
-        [
-          q("Q1 open", { choices: [[], 0, null], legacyRead: read({ tags: ["fixed"], fixed: true }) }),
-          q("Q2", { fixed: true, legacyRead: read() }),
-        ],
-        "2"
-      )
-    );
-    const note = () => $('[data-testid="note-legacy-read"]')?.textContent ?? "";
-    expect(note()).toContain("read this question with %{#fixed}; this version reads it as written in the file, with no tags");
-    click(button("Match my old exams"));
-    expect(latest?.exam.questions[0]).toMatchObject({ fixed: true });
-    expect($('[data-testid="note-legacy-read"]')).toBeNull();
-
-    click($('[data-testid="chip-2"]'));
-    expect(note()).toContain("read this question with no tags; this version reads it as written in the file, with %{#fixed}");
-    expect(note()).toContain("The answer stays A.");
-    click(button("Match my old exams"));
-    expect(latest?.exam.questions[1].fixed).toBeUndefined();
-    expect($('[data-testid="note-legacy-read"]')).toBeNull();
-    expect($('[data-testid="chip-2"]')?.getAttribute("aria-label")).toContain("changed");
   });
 
   it("confirms an assumed answer without changing it", () => {

@@ -70,6 +70,7 @@ describe("Details page import warnings", () => {
     const summary = document.body.textContent ?? "";
     expect(summary).toMatch(/Groups\s*1 group(?!s)/);
     expect(summary).toMatch(/Versions\s*1 variation(?!s)/);
+    expect(summary).toMatch(/Group 1: 1 question(?!s)/);
   });
 
   it("warns about a file made with an older Examazej, and only then", () => {

@@ -2,12 +2,7 @@ import type { ParsedLatexTemplate, ExamSettings, Question } from "../types";
 import type { ParsedCSVData } from "./csv-parser";
 import type { ParsedExcelData } from "./excel-parser";
 import { getDefaultSettings } from "../core/settings";
-import {
-  FIXED_IN_PAREN_GROUP_VERSION,
-  getFileVersionNotes,
-  isFileBefore,
-  readFileVersion,
-} from "../core/app-version";
+import { getFileVersionNotes, readFileVersion } from "../core/app-version";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("PARSER_ADAPTER");
@@ -73,15 +68,11 @@ ${items}
   }
 
   // CSV/Excel never accepted %{#fixed-options:X} before v1.8 and always required the Correct
-  // column, so pins follow no older rule here. A `fixed` question in a `(n)` group did change
-  // in v1.8 (its options were shuffled before), so a pre-1.8 file marks its `fixed` questions.
+  // column, so no older rule applies to the questions here.
   const fileVersion = readFileVersion(parsed.appVersion);
-  const questions = isFileBefore(fileVersion, FIXED_IN_PAREN_GROUP_VERSION)
-    ? parsed.questions.map((q) => (q.fixed ? { ...q, legacyFixed: true } : q))
-    : parsed.questions;
   const result: ParsedLatexTemplate = {
     settings,
-    questions,
+    questions: parsed.questions,
     preamble: parsed.preamble || "",
   };
   // Notes about the file itself; the notes about the questions come from their markers.

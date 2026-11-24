@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (535 tests)
+- **Testing**: Vitest (446 tests)
 - **Node**: 26 with npm 11, named in `.nvmrc` (the GitHub workflows and Netlify read it)
 
 ## Architecture Constraints
@@ -73,23 +73,19 @@ Lock tags are independent; "position" means the slot within the question's group
 - Redundant combos (`fixed` + `fixed-options`/`fixed-position`) warn, never error; a bad or out-of-range answer letter is an error
 - **Answer truth**: `choices[1]` is the correct index everywhere; `correctOptionLetter` is deprecated (old sessions only). Use `getCorrectLetter()` / `getLockTags()` / `getLockLabels()` from `src/lib/core/question-flags.ts`
 - **Exporters** write the canonical lock tags plus `%{#correct:X}` on every MCQ, so a re-imported template reproduces the same versions for the same seed
-- Reader warnings (`ParsedLatexTemplate.warnings`, `ImportInfo.warnings`) are only about the file (version stamp, redundant or ignored tags). The readers record what older rules did as markers (`legacyPin`, `legacyFixed`, `answerAssumed`); every note about questions (Details, Questions page, answer-key warning) is derived from the current questions, markers and groups in `src/lib/core/import-notes.ts`, never stored
-- Old-file warnings are judged by what the shuffle does (`legacyPinReach` / `legacyFixedReach`), never by comparing tag shapes, and state their reach: this question only, or other questions too (tests check each state against `generateExamVersions`). Their explanations and remedies describe the question's current tags, not the tag the file had
-- **Compatibility check** (`src/lib/core/__tests__/compat/`): fixtures of every format, made for 1.7 and by 1.8.4, must give exactly 1.8.4's versions, answers, mapping files and documents, and (old files, after the "as before v1.8" fixes) exactly 1.7.0's. The expected output was recorded by running the same pipeline on the released code; see its README before changing a fixture
+- Reader warnings (`ParsedLatexTemplate.warnings`, `ImportInfo.warnings`) are only about the file (version stamp, redundant or ignored tags). The readers record markers (`legacyPin`, `answerAssumed`); every note about questions (Details, Questions page) is derived from the current questions and markers in `src/lib/core/import-notes.ts`, never stored
+- **Compatibility check** (`src/lib/core/__tests__/compat/`): fixtures of every format, old and new, must give exactly 1.8.4's versions, answers, mapping files and documents. The expected output was recorded by running the same pipeline on the released 1.8.4 code; see its README before changing a fixture
 
 ### File Versions (`app_version`)
 - Every template the app writes (LaTeX `%app_version=`, CSV/Excel settings row, session JSON) carries `app_version`; logic in `src/lib/core/app-version.ts`
 - Missing or unreadable stamp = file made before v1.8.0. **Any change to what a tag means must be gated on the file's version** (add a constant like `PINNED_OPTIONS_VERSION` and bump `NEWEST_RULES_VERSION`)
-- Rule 2 (all formats): in a pre-1.8 file, `fixed` questions get `legacyFixed`. One inside a `(n)` group had its options shuffled by v1.7's bug, so its key differs: a Details note (the groups typed on Details), the Questions page and the answer-key warning (the groups generated with) say so; `fixed-position` reproduces v1.7 exactly. Group parsing lives in `src/lib/core/group-config.ts`. Session JSON saved before 1.8 gets the same rule (`src/lib/core/session-import.ts`)
-- Rule 1: in a pre-1.8 LaTeX file, `fixed-options:X` without `correct:` takes X as the answer (v1.7 meaning), with one explanatory note. Such questions get `legacyPin`, and the answer key page shows a red warning: their option shuffle consumes RNG draws v1.7 never made, so the whole exam differs from v1.7's for the same seed. `fixed-options` + `correct:X` reproduces v1.7 exactly (verified against the v1.7.0 code)
-- Rule 3 (LaTeX): 1.6-1.7 read a tag only alone on its line with a capital option letter, and gave a tag written after an open-ended question to that question. For a pre-1.8 file the parser also runs `src/lib/core/reader-v1-7.ts` (a frozen copy of the 1.7.0 reader; never "fix" it, tests compare it with the real 1.7.0 output) and marks each question it read differently with `legacyRead` (what it read); such a question gets no `legacyPin` / `legacyFixed`. `legacyReadReach` compares what the shuffle does now with what it did then; "Match my old exams" (`matchOldReading`) applies the old reading, keeping the file's answer
-- All three old-file fixes are labelled "Match my old exams"; a warning shows only on a question that still comes out differently from the old exams
-- Exams printed by older releases are not reproduced in general (D15): the shuffle changed in 1.5.1 (seed hashing) and the file does not say which release printed it. A file without `app_version` gets `OlderFileWarning` on Details and `OlderFileReminder` on Results (`isOlderFile`); the docs tell users to grade old exams with the answer key printed with them. Never word a note as if the old exams can be made again; never add dates
+- In a pre-1.8 LaTeX file, `fixed-options:X` without `correct:` takes X as the answer (what the tag meant then), and the question gets `legacyPin`. Details and the Questions page note that the tag now keeps only X in place (while the pins are there) and that the answer came from the letter (until it is checked)
+- **Exams printed by older releases are not made again (D15/D16).** The shuffle changed in 1.5.1 (seed hashing), 1.8 changed what `fixed-options:X` and `fixed` in a `(n)` group do and how tags are read, and a file does not say which release printed it. A file without `app_version` gets `OlderFileWarning` on Details and `OlderFileReminder` on Results (`isOlderFile`); the docs tell users to grade old exams with the answer key printed with them, and give an AI prompt that turns an old exam PDF into the `_mapping.csv` the Regrade Tool reads. No per-question old-exam fixes, no answer-key warning box. Never word a note as if the old exams can be made again; never add dates
 - `getTemplateVersion()` stamps max(package version, newest rules version), so dev builds before the release bump still write a v1.8 stamp
 - **Grouping rule**: A `separate-page` question must be alone in its own size-1 group. Sharing a group with other questions causes version-dependent page counts (Details page hard-errors this)
 
 ### Questions Page (UI tag editor, v1.9)
-- `Start → Details → Questions → Results`; Details also has "Generate now". Design and decisions D1-D12: `notes/questions-page.md`
+- `Start → Details → Questions → Results`; Details also has "Generate now". Design and decisions D1-D16: `notes/questions-page.md`
 - Edits are pure functions in `src/lib/core/question-edits.ts`, saved at once through `onDataUpdated`. A question's identity is its master index. `Index.tsx` keeps the uploaded questions as the baseline ("Changed", Reset, changed answers)
 - Flags are kept as read; the page never creates `fixed`. When an edit brings a question's locks and pins back to the uploaded ones, the uploaded flags are restored exactly (`fixed` and `fixedPosition` + `fixedOptions` shuffle differently in `(n)`)
 - One route into Results (`requestResults` in `Index.tsx`) confirms changed answers; asked again only when the list changes. Documentation is shown over the current step, which stays mounted
@@ -176,7 +172,7 @@ Run `npm run verify:release` before release or integration. It enforces:
 
 ## Active notes
 
-- `notes/questions-page.md` -- design v3 of the Questions page (UI tag editor, target 1.9.0, ready to build) and the user's decisions D1-D12 (local/gitignored)
+- `notes/questions-page.md` -- design of the Questions page (UI tag editor, target 1.9.0, built) and the user's decisions D1-D16 (local/gitignored)
 - `channels/` -- correspondence with Codex as external reviewer; protocol and index in `channels/README.md` (local/gitignored)
 
 ## File Reference

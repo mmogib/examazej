@@ -220,18 +220,20 @@ describe("Details → Questions → Results", () => {
     expect($('[data-testid="results"]')?.textContent).not.toContain("older file;");
   });
 
-  it("Details notes follow the groups typed there, and leave out the group notes while they cannot be read", () => {
+  it("Details notes follow the edits made on the Questions page", () => {
     nextExam = structuredClone(EXAM);
-    nextExam.exam.questions[1] = { ...nextExam.exam.questions[1], fixed: true, legacyFixed: true };
+    nextExam.exam.questions[1] = {
+      ...nextExam.exam.questions[1],
+      pinnedOptions: [1],
+      legacyPin: { answerFromLetter: false },
+    };
     start();
     const notes = () => $('[data-testid="import-warnings"]')?.textContent ?? "";
-    const groups = document.getElementById("groups") as HTMLInputElement;
-    expect(notes()).toBe("");
-    type(groups, "1,(1)");
-    expect(notes()).toContain("Question 2 is inside a (n) group and was %{#fixed}");
-    type(groups, "1,(");
-    expect(notes()).not.toContain("Question 2 is inside a (n) group");
-    type(groups, "2");
-    expect(notes()).toBe("");
+    expect(notes()).toContain("Question 2 uses %{#fixed-options:X}, which an older Examazej read as");
+    click(button("Next: Review questions"));
+    click($('[data-testid="chip-2"]'));
+    click(document.getElementById("lock-options"));
+    click(button("Back"));
+    expect(notes()).not.toContain("Question 2 uses %{#fixed-options:X}");
   });
 });

@@ -31,7 +31,7 @@ const mergeSettingsWithDefaults = (settingsModule.mergeSettingsWithDefaults ??
 
 export const FIXTURES = process.env.COMPAT_FIXTURES ?? join(__dirname, "..", "fixtures", "compat");
 
-/** Files made before v1.8 (for Examazej 1.7) and files made by 1.8.4. */
+/** Files made for an older Examazej (no app_version) and files made by 1.8.4. */
 export const OLD_FILES = ["old.tex", "old-layouts.tex", "old.csv", "old-xlsx.json", "old-session.json"];
 export const NEW_FILES = ["new.tex", "new.csv", "new-xlsx.json", "new-session.json"];
 
@@ -105,7 +105,10 @@ export async function readFixture(name: string): Promise<ExamJSON> {
 
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 
-/** The parts of a document that name the app's version, or the old-file warning (worded per release). */
+/**
+ * The parts of a document that name the app's version, and the red warning box 1.8 put on the
+ * answer key of an old file (gone since 1.9: the key is otherwise the same).
+ */
 export function normalizeDocument(text: string): string {
   return text
     .replace(/Examazej \d+\.\d+\.\d+/g, "Examazej X")

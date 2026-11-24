@@ -12,29 +12,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Questions page**, between Details and Results: each question as it will print (an approximate preview), one at a time, with a group navigator whose question chips jump to that question, filters (all, tagged, changed, with notes) and Prev / Next in exam order. Change a question's tags without editing the file: keep its place in the group, keep all options in order, pin options, set the correct answer, put it on its own page. Every change is kept as you make it, a dot marks the questions that differ from the uploaded file, and Reset undoes a question. Switching a lock off and on again gives back exactly the uploaded tags, so the versions are the uploaded ones. Edits reach the Exam Package as before (template and session file).
 - Details offers **Next: Review questions** and **Generate now** (skips the Questions page).
 - Before generating, changed answers are listed for confirmation ("Q3: B → D"), on both routes; the same list is not asked again.
-- Questions from files made with the older Examazej get a warning on the Questions page with a one-click fix, "Match my old exams" (for `%{#fixed-options:X}`, for `fixed` in a `(n)` group, and for tags it read otherwise). The warning appears only on questions that still come out differently from the old exams, says how far the difference reaches (this question only, or other questions too) and goes away when the question's tags make the old exams.
-- An answer the file did not state (a pinned question without `%{#correct:X}`, or a pre-1.8 answer taken from the letter) keeps its note until it is set or confirmed with "Answer X is correct"; the confirmation is saved in the session file.
-- Files made with an older Examazej whose tags it read otherwise than they are written now say so, question by question, and "Match my old exams" undoes the difference. That older version ignored a tag on the same line as `\item`, `%{#q}` or another tag, a tag followed by a comment, and a small option letter (`%{#fixed-options:b}`), and gave a tag written after an open-ended question to that question; since v1.8 every tag is read where it is written. Where it therefore took another answer, the new answer key keeps the file's answer and a note names the old one.
+- An answer the file did not state (a pinned question without `%{#correct:X}`, or an answer taken from the letter of an old `%{#fixed-options:X}`) keeps its note until it is set or confirmed with "Answer X is correct"; the confirmation is saved in the session file.
 - A file made with an older Examazej (no `app_version`) gets a warning at the top of the Details page, and a reminder on the Results page: exams made from it now may not be the ones printed back then, even with the same seed (the shuffle itself changed in 1.5.1, and the way tags are read in 1.8), so those are graded with the answer key printed with them. Making new exams from such a file is not affected.
 - Documentation: "Grading exams made with an older Examazej", with a ready prompt for an AI assistant that turns an old exam PDF into the `_mapping.csv` the Regrade Tool reads.
 
 ### Changed
 
-- The notes about questions on the Details page and the answer-key warning are worked out from the questions as they are now and the groups typed on Details, so they follow edits and group changes, and list only the questions still affected. Notes about the file itself (version stamp, redundant or ignored tags) are unchanged.
-- A session file saved by 1.8 or later that kept old-file markers shows the old-file notes again on Details, as its answer key already did.
-- Notes about old files speak of "an older Examazej" and "your old exams" instead of version numbers or dates, on Details, the Questions page and the answer key; they no longer promise that the session file or "Match my old exams" makes the old exams again, only that the button undoes the difference it names.
+- The notes about questions on the Details page are worked out from the questions as they are now, so they follow the edits made on the Questions page. Notes about the file itself (version stamp, redundant or ignored tags) are unchanged.
+- An old `%{#fixed-options:X}` gets one short note: it now keeps only option X in place, and "Keep all options in order" on the Questions page keeps them all in order. Notes speak of "an older Examazej" instead of version numbers or dates.
 - Documentation (header button and desktop Help menu) opens over the current step and returns to it, keeping Details' unsaved settings and the Questions page's place. Results' Back returns to the page it was opened from.
+
+### Removed
+
+- The notes that said how the exams of a file made before v1.8 differ from the ones made then (for `%{#fixed-options:X}`, and for `fixed` in a `(n)` group), and the red warning box 1.8 put above the answer key of such a file. They suggested that old exams can be made again by changing tags, which is not so: exams from releases before 1.5.1 shuffled differently. The one warning on the Details page replaces them. The exams, answer keys and mapping files themselves are unchanged.
 
 ### Fixed
 
 - CSV files: quote characters in question and option text were dropped (`"Interpret ""a,b""."`, as Excel and Google Sheets save it, was read as `Interpret a,b.`). Doubled quotes are now read as one quote, and the CSV template writer doubles them.
-- A pre-1.8 `fixed` open-ended (or one-option) question inside a `(n)` group no longer gets an old-file warning: its versions never differed.
-- One group and one version are counted in the singular ("1 group", "1 variation", "1 exam version").
-- Old-file notes and the answer-key warning describe a question's current tags: after an edit they no longer tell you to replace a `fixed` tag the question no longer has, nor say that an answer taken from a pinned letter stays the same letter once that pin is removed.
+- One group, one question in a group and one version are counted in the singular ("1 group", "Group 5: 1 question", "1 variation", "1 exam version").
 
 ### Tests
 
-- A compatibility check: an exam of every kind (LaTeX, CSV, Excel, session file), made for 1.7 and made by 1.8.4, generated in four group settings and three seeds. Every file gives exactly the versions, answers, mapping files and documents of 1.8.4; a file made for 1.7 gives exactly the exams of 1.7.0 once its "Match my old exams" fixes are pressed, and differs from them only when a warning says so. The frozen copy of the 1.7 reader is checked against the real 1.7.0 output for every tag layout.
+- A compatibility check: an exam of every kind (LaTeX, CSV, Excel, session file), made for an older Examazej and made by 1.8.4, generated in four group settings and three seeds. Every file gives exactly the versions, answers, mapping files and documents of 1.8.4.
 
 ## [1.8.4] - 2026-11-24
 

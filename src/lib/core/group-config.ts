@@ -135,17 +135,3 @@ export function getGroupPartitionErrors(groupPartition: string, questionCount: n
   }
   return errors;
 }
-
-/** 0-based indices of the questions that fall in a `(n)` group. */
-export function findQuestionsInParenGroups(questionCount: number, groups: string): number[] {
-  const indices: number[] = [];
-  let start = 0;
-  for (const config of parseGroupConfigs(groups)) {
-    if (!(config.size > 0)) break; // malformed setting: reported elsewhere
-    if (!config.shuffleQuestionsWithin) {
-      for (let i = start; i < Math.min(start + config.size, questionCount); i++) indices.push(i);
-    }
-    start += config.size;
-  }
-  return indices;
-}

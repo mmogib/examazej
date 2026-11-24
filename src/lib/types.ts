@@ -41,26 +41,12 @@ export interface Question {
   pinnedOptions?: number[];
   /**
    * Set when the pin came from `%{#fixed-options:X}` in a file made before v1.8, where that
-   * tag locked every option. Versions made from such a file differ from the ones made before
-   * v1.8 with the same seed, so the answer key page warns about it.
+   * tag kept every option in order; a note says that it now keeps only X in place.
    */
   legacyPin?: {
     /** True when the file had no `%{#correct:X}` and the answer was taken from the letter. */
     answerFromLetter: boolean;
   };
-  /**
-   * Set on a `fixed` question from a file made before v1.8. Inside a `(n)` group, v1.7
-   * shuffled such a question's options by mistake, so the answer key page warns when it
-   * lands in one.
-   */
-  legacyFixed?: boolean;
-  /**
-   * Set by the LaTeX reader on a question of a file made before v1.8 whose tags the older
-   * Examazej (1.6-1.7) read differently: it ignored a tag it could not read, or gave a tag
-   * written after an open-ended question to that question. What it read, never cleared. Such a
-   * question has no `legacyPin` / `legacyFixed`: this marker is its whole old-file story.
-   */
-  legacyRead?: LegacyReading;
   /**
    * Set by the LaTeX reader when a pinned question has no `%{#correct:X}` and its answer fell
    * back to A (not the pre-1.8 single-letter case, which `legacyPin.answerFromLetter` records).
@@ -119,18 +105,6 @@ export interface ImportInfo {
 }
 
 /** The kind of file an exam came from and its version stamp, for the wording of notes. */
-/** A question's tags as the older Examazej (1.6-1.7) read them. */
-export interface LegacyReading {
-  /** As written in the file: `fixed`, `fixed-options:X`, `separate-page`. */
-  tags: string[];
-  fixed: boolean;
-  /** `fixed-options:X` meant every option in order then. */
-  fixedOptions: boolean;
-  separatePage: boolean;
-  /** The answer it took: X of `fixed-options:X`, otherwise the first option. */
-  answer: number;
-}
-
 export interface NoteSource {
   format: "latex" | "spreadsheet" | "session";
   /** The file's `app_version` stamp as written; undefined when it has none. */

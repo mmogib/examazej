@@ -9,7 +9,6 @@ import { generateSettingsBlock } from "./settings";
 import { normalizeAcademicIntegrityPledgeText } from "./academic-integrity-pledge";
 import { getCorrectLetter, getLockTags } from "./question-flags";
 import { APP_VERSION } from "./app-version";
-import { legacyAnswerKeyWarning } from "./import-notes";
 import {
   calculateQuestionPages,
   detectPageCountVariations,
@@ -607,9 +606,8 @@ ${versionQuestionsSection}`;
     })
     .join("");
 
-  // Generate answer key. A pre-1.8 file whose key differs from v1.7's (pinned options, or a
-  // `fixed` question in a `(n)` group) gets a red warning above the key.
-  const legacyPinWarning = legacyAnswerKeyWarning(masterExam.questions, settings.groups) ?? "";
+  // Generate answer key. (The empty line below once held 1.8's red warning for old files; it
+  // stays so that a key without that warning is byte for byte the one 1.8 wrote.)
   const answerKeyPage = `
 %% KEY ANSWER Page
 \\newpage
@@ -621,7 +619,7 @@ ${versionQuestionsSection}`;
 \\begin{normalsize}
 \\setcounter{page}{1}
 \\vspace {1cm}
-${legacyPinWarning}
+
 \\begin{center}
 
   \\begin{tabular}{|c||c | ${versions.map((v) => "c").join("|")}|}

@@ -186,18 +186,8 @@ export function DetailsPage({
     onContinue(seed, target, updatedData);
   };
 
-  // Notes about the file as read, then the notes about the questions as they are now, judged
-  // by the groups typed here (left out while the group setting cannot be read).
-  const groupsReadable =
-    getGroupPartitionErrors(groupPartition, examData.exam.questions.length).length === 0;
-  const notes = [
-    ...importWarnings,
-    ...getQuestionNoteSummary(
-      examData.exam.questions,
-      groupsReadable ? groupPartition : undefined,
-      importSource
-    ),
-  ];
+  // Notes about the file as read, then the notes about the questions as they are now.
+  const notes = [...importWarnings, ...getQuestionNoteSummary(examData.exam.questions, importSource)];
 
   const groupSizes = groupPartition
     .split(",")
@@ -465,7 +455,7 @@ export function DetailsPage({
                           variant="outline"
                           className="font-mono"
                         >
-                          Group {index + 1}: {size} questions
+                          Group {index + 1}: {size} {size === 1 ? "question" : "questions"}
                           {modeLabel && (
                             <span className="ml-1 text-xs text-muted-foreground">
                               {modeLabel}

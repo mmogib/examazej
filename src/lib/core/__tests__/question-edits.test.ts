@@ -4,8 +4,6 @@ import {
   areLocksChanged,
   copyQuestions,
   findChangedAnswers,
-  fixLegacyFixed,
-  fixLegacyPin,
   isQuestionChanged,
   pinsLeaveNothingToShuffle,
   replaceQuestion,
@@ -195,25 +193,9 @@ describe("own page", () => {
   });
 });
 
-describe("fixes for files made before v1.8", () => {
-  it("'Keep all options in order' sets fixedOptions, clears pins, keeps the answer and a position lock", () => {
-    const question = q({ legacyPin: { answerFromLetter: true }, pinnedOptions: [1], fixedPosition: true, choices: [options(4), 1, null] });
-    const fixed = fixLegacyPin(question);
-    expect(locks(fixed)).toEqual({ fixedPosition: true, fixedOptions: true });
-    expect(fixed.choices[1]).toBe(1);
-    expect(fixed.legacyPin).toEqual({ answerFromLetter: true });
-  });
-
-  it("'Shuffle the options' turns fixed into fixedPosition and clears option locks and pins", () => {
-    expect(locks(fixLegacyFixed(q({ fixed: true, legacyFixed: true })))).toEqual({ fixedPosition: true });
-    expect(locks(fixLegacyFixed(q({ fixedOptions: true, legacyFixed: true })))).toEqual({});
-    expect(locks(fixLegacyFixed(q({ pinnedOptions: [2], legacyFixed: true })))).toEqual({});
-  });
-});
-
 describe("immutability, Reset and Changed", () => {
   it("no edit mutates its input or the baseline", () => {
-    const question = deepFreeze(q({ fixed: true, legacyFixed: true, pinnedOptions: [2] }));
+    const question = deepFreeze(q({ fixed: true, legacyPin: { answerFromLetter: true }, pinnedOptions: [2] }));
     const baseline = deepFreeze(q({ fixed: true }));
     const pinned = deepFreeze(q({ pinnedOptions: [2] }));
     expect(() => {
@@ -222,12 +204,10 @@ describe("immutability, Reset and Changed", () => {
       togglePin(pinned, 1, baseline);
       setCorrectAnswer(question, 3);
       setSeparatePage(question, true);
-      fixLegacyPin(question, baseline);
-      fixLegacyFixed(question, baseline);
       replaceQuestion(deepFreeze([question]), 0, q());
     }).not.toThrow();
     expect(pinned.pinnedOptions).toEqual([2]);
-    expect(question).toMatchObject({ fixed: true, legacyFixed: true, pinnedOptions: [2] });
+    expect(question).toMatchObject({ fixed: true, legacyPin: { answerFromLetter: true }, pinnedOptions: [2] });
   });
 
   it("Reset gives a fresh copy of the uploaded question", () => {
