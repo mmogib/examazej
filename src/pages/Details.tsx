@@ -32,20 +32,25 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { ExamJSON, ExamSettings } from "@/lib/types";
+import type { ExamJSON, ExamSettings, NoteSource } from "@/lib/types";
 import { InstructionsDialog } from "@/components/ui/instructions-dialog";
 import { AcademicIntegrityPledgeControl } from "@/components/ui/academic-integrity-pledge-control";
 import { normalizeAcademicIntegrityPledgeText } from "@/lib/core/academic-integrity-pledge";
 import { generateDynamicSeed, isDefaultSeed } from "@/lib/utils/seed-generator";
 import { validateSeparatePageGrouping } from "@/lib/utils/tag-validator";
+import { getGroupPartitionErrors } from "@/lib/core/group-config";
+import { getQuestionNoteSummary } from "@/lib/core/import-notes";
 
 interface DetailsPageProps {
   examData: ExamJSON;
   onDataUpdated: (data: ExamJSON) => void;
   onBack: () => void;
-  onContinue: (seed: string) => void;
+  /** After the settings are saved: on to the Questions page, or straight to Results. */
+  onContinue: (seed: string, target: "questions" | "results", data: ExamJSON) => void;
   /** Non-blocking problems found while reading the uploaded file. */
   importWarnings?: string[];
+  /** The uploaded file's kind and stamp, for the wording of the question notes. */
+  importSource?: NoteSource;
   /** Which app made the uploaded file, e.g. "Examazej 1.8.0"; hidden when unknown. */
   madeWith?: string;
 }
@@ -56,6 +61,7 @@ export function DetailsPage({
   onBack,
   onContinue,
   importWarnings = [],
+  importSource,
   madeWith,
 }: DetailsPageProps) {
   const [settings, setSettings] = useState<ExamSettings>(examData.setting);
@@ -114,89 +120,16 @@ export function DetailsPage({
   const validateSettings = useCallback(() => {
     const errors: string[] = [];
 
-    // Parse group partition - handle parentheses and square brackets
-    const groupTokens = groupPartition.split(",").map((g) => g.trim());
-    const groups: number[] = [];
-
-    for (const token of groupTokens) {
-      // Check for bracket types
-      const openParens = (token.match(/\(/g) || []).length;
-      const closeParens = (token.match(/\)/g) || []).length;
-      const openBrackets = (token.match(/\[/g) || []).length;
-      const closeBrackets = (token.match(/\]/g) || []).length;
-
-      // Mismatched brackets
-      if (openParens !== closeParens) {
-        errors.push(`Mismatched parentheses in: "${token}"`);
-        continue;
-      }
-      if (openBrackets !== closeBrackets) {
-        errors.push(`Mismatched square brackets in: "${token}"`);
-        continue;
-      }
-
-      // Multiple or nested brackets
-      if (openParens > 1 || openBrackets > 1) {
-        errors.push(`Multiple or nested brackets not allowed: "${token}"`);
-        continue;
-      }
-
-      // Cannot mix parentheses and brackets
-      if (openParens > 0 && openBrackets > 0) {
-        errors.push(
-          `Cannot mix parentheses and brackets: "${token}". Use one or the other`
-        );
-        continue;
-      }
-
-      // Check for invalid formats like "(5,10)" or "[5,10]" or mixed content
-      if (openParens === 1 || openBrackets === 1) {
-        const innerContent = token.slice(1, -1).trim();
-        if (innerContent.includes(",")) {
-          errors.push(
-            `Comma inside brackets not allowed: "${token}". Use separate groups instead`
-          );
-          continue;
-        }
-      }
-
-      // Remove parentheses and brackets if present and parse number
-      const cleaned = token.replace(/[()[\]]/g, "");
-      const num = parseInt(cleaned);
-
-      if (isNaN(num)) {
-        errors.push(`Invalid group size: "${token}"`);
-        continue;
-      }
-
-      if (num <= 0) {
-        errors.push(`Group size must be positive: "${token}"`);
-        continue;
-      }
-
-      groups.push(num);
-    }
-
-    // Validate group sum only if we successfully parsed all groups
-    if (groups.length === groupTokens.length) {
-      const totalQuestions = examData.exam.questions.length;
-      const groupSum = groups.reduce((sum, g) => sum + g, 0);
-
-      if (groupSum !== totalQuestions) {
-        errors.push(
-          `Group partition must sum to ${totalQuestions} questions (currently sums to ${groupSum})`
-        );
-      }
-
-      // Enforce: separate-page questions must be alone in their group
-      if (groupSum === totalQuestions) {
-        errors.push(
-          ...validateSeparatePageGrouping(
-            examData.exam.questions,
-            groupPartition
-          )
-        );
-      }
+    // Group partition, then: separate-page questions must be alone in their group
+    const groupErrors = getGroupPartitionErrors(
+      groupPartition,
+      examData.exam.questions.length
+    );
+    errors.push(...groupErrors);
+    if (groupErrors.length === 0) {
+      errors.push(
+        ...validateSeparatePageGrouping(examData.exam.questions, groupPartition)
+      );
     }
 
     // Validate versions
@@ -235,7 +168,7 @@ export function DetailsPage({
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleContinue = () => {
+  const handleContinue = (target: "questions" | "results") => {
     if (!validateSettings()) return;
 
     const updatedData: ExamJSON = {
@@ -249,8 +182,21 @@ export function DetailsPage({
     };
 
     onDataUpdated(updatedData);
-    onContinue(seed);
+    onContinue(seed, target, updatedData);
   };
+
+  // Notes about the file as read, then the notes about the questions as they are now, judged
+  // by the groups typed here (left out while the group setting cannot be read).
+  const groupsReadable =
+    getGroupPartitionErrors(groupPartition, examData.exam.questions.length).length === 0;
+  const notes = [
+    ...importWarnings,
+    ...getQuestionNoteSummary(
+      examData.exam.questions,
+      groupsReadable ? groupPartition : undefined,
+      importSource
+    ),
+  ];
 
   const groupSizes = groupPartition
     .split(",")
@@ -283,23 +229,23 @@ export function DetailsPage({
         </div>
       </div>
 
-      {importWarnings.length > 0 && (
+      {notes.length > 0 && (
         <Alert
           className="mb-6 border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400"
           data-testid="import-warnings"
         >
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>
-            {importWarnings.length === 1
+            {notes.length === 1
               ? "1 note about your file"
-              : `${importWarnings.length} notes about your file`}
+              : `${notes.length} notes about your file`}
           </AlertTitle>
           <AlertDescription>
             <p className="mb-2 text-sm">
               The file loaded and nothing here stops you from continuing, but check these:
             </p>
             <ul className="list-disc space-y-1 pl-5 text-sm">
-              {importWarnings.map((warning, index) => (
+              {notes.map((warning, index) => (
                 <li key={index}>{warning}</li>
               ))}
             </ul>
@@ -728,17 +674,28 @@ export function DetailsPage({
             </CardContent>
           </Card>
 
-          {/* Continue Button */}
-          <Button
-            onClick={handleContinue}
-            disabled={!isValid}
-            variant="hero"
-            size="lg"
-            className="w-full"
-          >
-            Generate Exam Versions
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
+          {/* Continue: review the questions first, or generate now (D3) */}
+          <div className="space-y-2">
+            <Button
+              onClick={() => handleContinue("questions")}
+              disabled={!isValid}
+              variant="hero"
+              size="lg"
+              className="w-full"
+            >
+              Next: Review questions
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+            <Button
+              onClick={() => handleContinue("results")}
+              disabled={!isValid}
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              Generate now
+            </Button>
+          </div>
         </div>
       </div>
     </div>

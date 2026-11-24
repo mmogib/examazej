@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
-import { LaTeXRenderer } from "@/components/ui/exam-preview-dialog";
+import { LaTeXRenderer } from "@/components/ui/latex-renderer";
 
 let root: Root | undefined;
 

@@ -310,9 +310,11 @@ function parseQuestionsSection(
 }
 
 /**
- * Parse a CSV line respecting quoted values
+ * Parse a CSV line respecting quoted values. Inside quotes, a doubled quote is one quote
+ * character, as Excel and Google Sheets write it: "Interpret ""a,b""." reads as
+ * Interpret "a,b". Any other quote starts or ends a quoted part.
  */
-function parseCSVLine(line: string): string[] {
+export function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
   let inQuotes = false;
@@ -320,7 +322,10 @@ function parseCSVLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
 
-    if (char === '"') {
+    if (char === '"' && inQuotes && line[i + 1] === '"') {
+      current += '"';
+      i++;
+    } else if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === "," && !inQuotes) {
       result.push(current.trim());

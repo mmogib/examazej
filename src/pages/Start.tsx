@@ -196,11 +196,12 @@ x - y &= 1
   return questions;
 };
 
-/** Notes and "made with" text for the Details page. */
-function importInfoFor(parsed: ParsedLatexTemplate): ImportInfo {
+/** Notes, "made with" text and the file's kind for the Details page. */
+function importInfoFor(parsed: ParsedLatexTemplate, format: "latex" | "spreadsheet"): ImportInfo {
   return {
     warnings: parsed.warnings ?? [],
     madeWith: describeFileVersion(readFileVersion(parsed.appVersion)),
+    source: { format, appVersion: parsed.appVersion },
   };
 }
 
@@ -274,7 +275,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
           });
 
           const examData = createExamFromTemplate(parsed);
-          onDataLoaded(examData, importInfoFor(parsed));
+          onDataLoaded(examData, importInfoFor(parsed, "latex"));
         }
       } else if (extension === "csv") {
         // NEW: CSV parsing
@@ -302,7 +303,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
         // Create exam data
         const examData = createExamFromTemplate(latexFormat);
-        onDataLoaded(examData, importInfoFor(latexFormat));
+        onDataLoaded(examData, importInfoFor(latexFormat, "spreadsheet"));
       } else if (extension === "xlsx") {
         // NEW: Excel parsing
         const parsed = await parseExcel(file);
@@ -328,7 +329,7 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
         // Create exam data
         const examData = createExamFromTemplate(latexFormat);
-        onDataLoaded(examData, importInfoFor(latexFormat));
+        onDataLoaded(examData, importInfoFor(latexFormat, "spreadsheet"));
       } else {
         setError(
           "Unsupported file type. Please upload a .tex, .csv, .xlsx, or .json file."

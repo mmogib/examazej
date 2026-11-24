@@ -104,7 +104,9 @@ Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
     }
     const tagsStr = tags.join(", ");
 
-    questionExamples += `"${q.text}","${options[0]}","${options[1]}","${options[2]}","${options[3]}","${options[4]}","${correct}","${tagsStr}"\n`;
+    // Every field quoted, with its quote characters doubled (as the reader expects).
+    const field = (text: string) => `"${text.replace(/"/g, '""')}"`;
+    questionExamples += [q.text, ...options, correct, tagsStr].map(field).join(",") + "\n";
   });
   template += convertMultilineFieldsToEscapedNewlines(questionExamples);
 

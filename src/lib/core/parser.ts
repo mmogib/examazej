@@ -17,15 +17,6 @@ import {
   PINNED_OPTIONS_VERSION,
   readFileVersion,
 } from "./app-version";
-import {
-  findLegacyFixedInParenGroups,
-  findPinnedAnswerQuestions,
-  legacyFixedNote,
-  legacyPinNote,
-  missingAnswerPinNote,
-  pinnedAnswerNote,
-  type LegacyPinEntry,
-} from "./import-notes";
 
 const logger = createLogger("PARSER");
 
@@ -79,14 +70,14 @@ function readTagLine(content: string): TagLineResult | null {
   };
 }
 
-/** Per-file state for pinned options (`%{#fixed-options:X}`), filled while questions are read. */
+/**
+ * Which older rules apply to the file. The questions record what the rules did as markers
+ * (`legacyPin`, `legacyFixed`, `answerAssumed`); the notes about them are worked out from the
+ * markers (`import-notes.ts`), not written here.
+ */
 interface PinState {
   /** The file predates v1.8, when %{#fixed-options:X} also set the answer. */
   legacy: boolean;
-  /** Legacy-file questions that pin options (for the "changed meaning" note). */
-  legacyEntries: LegacyPinEntry[];
-  /** Questions that pin options, have no %{#correct:X} and so fall back to answer A. */
-  missingAnswer: number[];
   /** The file predates v1.8, when `fixed` inside a `(n)` group still shuffled the options. */
   legacyFixed: boolean;
 }
@@ -201,19 +192,17 @@ function createQuestionObject(
 
   // Pinned options. Before v1.8, %{#fixed-options:X} also made X the answer, so a file from
   // then keeps that answer when it has no %{#correct:X}; every other pinned question without
-  // one falls back to A, and a note says so.
+  // one falls back to A, marked `answerAssumed` so a note says so.
   const pinned = flags.pinnedOptions;
-  let inferredAnswer: string | undefined;
-  if (pinned.length > 0) {
-    if (!correctLetter) {
-      if (pins.legacy && pinned.length === 1) {
-        correctIndex = pinned[0];
-        inferredAnswer = String.fromCharCode(65 + pinned[0]);
-      } else {
-        pins.missingAnswer.push(questionNumber);
-      }
+  let answerFromLetter = false;
+  let answerAssumed = false;
+  if (pinned.length > 0 && !correctLetter) {
+    if (pins.legacy && pinned.length === 1) {
+      correctIndex = pinned[0];
+      answerFromLetter = true;
+    } else {
+      answerAssumed = true;
     }
-    if (pins.legacy) pins.legacyEntries.push({ questionNumber, inferredAnswer });
   }
 
   const question: Omit<Question, "group" | "order"> = {
@@ -227,8 +216,9 @@ function createQuestionObject(
   if (flags.fixedOptions) question.fixedOptions = true;
   if (pinned.length > 0) question.pinnedOptions = pinned;
   if (pinned.length > 0 && pins.legacy) {
-    question.legacyPin = { answerFromLetter: inferredAnswer !== undefined };
+    question.legacyPin = { answerFromLetter };
   }
+  if (answerAssumed) question.answerAssumed = true;
   if (flags.fixed && pins.legacyFixed) question.legacyFixed = true;
 
   return question;
@@ -357,8 +347,6 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   const fileVersion = readFileVersion(result.appVersion);
   const pins: PinState = {
     legacy: isFileBefore(fileVersion, PINNED_OPTIONS_VERSION),
-    legacyEntries: [],
-    missingAnswer: [],
     legacyFixed: isFileBefore(fileVersion, FIXED_IN_PAREN_GROUP_VERSION),
   };
   // How many of currentTags were written up to the end of the current question's text.
@@ -591,27 +579,9 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
     saveCurrentQuestion();
   }
 
-  // File-level notes first, then per-question warnings, then the pinned-option summaries.
-  const notes = getFileVersionNotes(fileVersion);
-  if (pins.legacyEntries.length > 0) {
-    notes.push(legacyPinNote(pins.legacyEntries, fileVersion));
-  }
-  const legacyFixed = findLegacyFixedInParenGroups(result.questions, result.settings?.groups);
-  if (legacyFixed.length > 0) {
-    notes.push(legacyFixedNote(legacyFixed, "latex", fileVersion));
-  }
-  allWarnings.unshift(...notes);
-  if (pins.missingAnswer.length > 0) {
-    allWarnings.push(missingAnswerPinNote(pins.missingAnswer));
-  }
-  // Questions whose answer came from a legacy tag are already covered by the legacy note.
-  const inferred = new Set(
-    pins.legacyEntries.filter((e) => e.inferredAnswer).map((e) => e.questionNumber)
-  );
-  const pinnedAnswers = findPinnedAnswerQuestions(result.questions).filter((n) => !inferred.has(n));
-  if (pinnedAnswers.length > 0) {
-    allWarnings.push(pinnedAnswerNote(pinnedAnswers));
-  }
+  // Notes about the file itself: the version stamp first, then each question's tag problems.
+  // The notes about the questions (older rules, answers) come from their markers.
+  allWarnings.unshift(...getFileVersionNotes(fileVersion));
   if (allWarnings.length > 0) {
     result.warnings = allWarnings;
   }

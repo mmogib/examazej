@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Questions page**, between Details and Results: each question as it will print (an approximate preview), one at a time, with a group navigator whose question chips jump to that question, filters (all, tagged, changed, with notes) and Prev / Next in exam order. Change a question's tags without editing the file: keep its place in the group, keep all options in order, pin options, set the correct answer, put it on its own page. Every change is kept as you make it, a dot marks the questions that differ from the uploaded file, and Reset undoes a question. Switching a lock off and on again gives back exactly the uploaded tags, so the versions are the uploaded ones. Edits reach the Exam Package as before (template and session file).
+- Details offers **Next: Review questions** and **Generate now** (skips the Questions page).
+- Before generating, changed answers are listed for confirmation ("Q3: B → D"), on both routes; the same list is not asked again.
+- Questions from files made before v1.8 get a warning on the Questions page with a one-click fix: "Keep all options in order, as before v1.8" (for `%{#fixed-options:X}`) and "Shuffle the options, as before v1.8" (for `fixed` in a `(n)` group). The warning says how far the difference reaches (this question only, or other questions too) and goes away when the question's tags make the exams made before v1.8.
+- An answer the file did not state (a pinned question without `%{#correct:X}`, or a pre-1.8 answer taken from the letter) keeps its note until it is set or confirmed with "Answer X is correct"; the confirmation is saved in the session file.
+
+### Changed
+
+- The notes about questions on the Details page and the answer-key warning are worked out from the questions as they are now and the groups typed on Details, so they follow edits and group changes, and list only the questions still affected. Notes about the file itself (version stamp, redundant or ignored tags) are unchanged.
+- A session file saved by 1.8 or later that kept old-file markers shows the old-file notes again on Details, as its answer key already did.
+- Documentation (header button and desktop Help menu) opens over the current step and returns to it, keeping Details' unsaved settings and the Questions page's place. Results' Back returns to the page it was opened from.
+
+### Fixed
+
+- CSV files: quote characters in question and option text were dropped (`"Interpret ""a,b""."`, as Excel and Google Sheets save it, was read as `Interpret a,b.`). Doubled quotes are now read as one quote, and the CSV template writer doubles them.
+- A pre-1.8 `fixed` open-ended (or one-option) question inside a `(n)` group no longer gets an old-file warning: its versions never differed.
+
 ## [1.8.4] - 2026-11-24
 
 ### Changed

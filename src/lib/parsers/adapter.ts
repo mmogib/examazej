@@ -8,12 +8,6 @@ import {
   isFileBefore,
   readFileVersion,
 } from "../core/app-version";
-import {
-  findLegacyFixedInParenGroups,
-  findPinnedAnswerQuestions,
-  legacyFixedNote,
-  pinnedAnswerNote,
-} from "../core/import-notes";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("PARSER_ADAPTER");
@@ -90,14 +84,8 @@ ${items}
     questions,
     preamble: parsed.preamble || "",
   };
-  const legacyFixed = findLegacyFixedInParenGroups(questions, settings.groups);
-  const pinnedAnswers = findPinnedAnswerQuestions(questions);
-  const warnings = [
-    ...getFileVersionNotes(fileVersion),
-    ...(legacyFixed.length > 0 ? [legacyFixedNote(legacyFixed, "spreadsheet", fileVersion)] : []),
-    ...(parsed.warnings ?? []),
-    ...(pinnedAnswers.length > 0 ? [pinnedAnswerNote(pinnedAnswers)] : []),
-  ];
+  // Notes about the file itself; the notes about the questions come from their markers.
+  const warnings = [...getFileVersionNotes(fileVersion), ...(parsed.warnings ?? [])];
   if (warnings.length > 0) {
     result.warnings = warnings;
   }

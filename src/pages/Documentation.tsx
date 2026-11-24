@@ -288,7 +288,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                 <div>
                   <p className="text-sm font-medium">Quick Setup</p>
                   <p className="text-xs text-muted-foreground">
-                    3 steps to your first exam
+                    4 steps to your first exam
                   </p>
                 </div>
               </div>
@@ -475,7 +475,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                   {highlightText("Quick Start Guide")}
                 </CardTitle>
                 <CardDescription>
-                  {highlightText("Get up and running in 3 simple steps")}
+                  {highlightText("Get up and running in 4 simple steps")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -531,6 +531,24 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                     >
                       3
+                    </Badge>
+                    <div>
+                      <h3 className="font-semibold">
+                        {highlightText("Review Questions")}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {highlightText(
+                          "See each question as it will print and change its tags without editing the file: keep its place, keep the options in order, pin options, set the correct answer, or put it on its own page. Every change is kept as you make it; Reset undoes a question. Questions from files made before v1.8 show a warning with a one-click fix that makes the exams made before v1.8. To skip this step, press Generate now on the Details page."
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <Badge
+                      variant="outline"
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                    >
+                      4
                     </Badge>
                     <div>
                       <h3 className="font-semibold">
@@ -1133,9 +1151,11 @@ Which number is prime?
                     <code className="bg-muted px-1 rounded">fixed</code> question inside a{" "}
                     <code className="bg-muted px-1 rounded">(n)</code> group still had its
                     options shuffled by mistake; for files made before v1.8 the Details
-                    page and the answer key page point this out, and using{" "}
+                    page, the Questions page and the answer key page point this out, and
+                    using{" "}
                     <code className="bg-muted px-1 rounded">%{`{#fixed-position}`}</code>{" "}
-                    there makes exactly the exams made before v1.8.
+                    there (or &quot;Shuffle the options, as before v1.8&quot; on the
+                    Questions page) makes exactly the exams made before v1.8.
                   </p>
                   <pre className="text-sm bg-muted p-3 rounded">
                     {`\\item
@@ -1264,7 +1284,9 @@ Which letter represents the correct answer?
                       exactly the exams made before v1.8), use{" "}
                       <code className="bg-muted px-1 rounded">%{`{#fixed-options}`}</code>{" "}
                       with{" "}
-                      <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>.
+                      <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>, or
+                      press &quot;Keep all options in order, as before v1.8&quot; on the
+                      Questions page.
                       Adding <code className="bg-muted px-1 rounded">fixed-options</code>{" "}
                       to a <code className="bg-muted px-1 rounded">fixed</code> question
                       is allowed but redundant.
@@ -1297,7 +1319,8 @@ Which letter represents the correct answer?
                     <code className="bg-muted px-1 rounded">%{`{#fixed-options:DE}`}</code>.
                     Say the answer with{" "}
                     <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>;
-                    without it the answer is A, and the Details page says so.
+                    without it the answer is A, and the Details and Questions pages say so
+                    until you set or confirm the answer there.
                   </p>
                   <pre className="text-sm bg-muted p-3 rounded">
                     {`\\item

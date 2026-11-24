@@ -55,6 +55,17 @@ export interface Question {
    */
   legacyFixed?: boolean;
   /**
+   * Set by the LaTeX reader when a pinned question has no `%{#correct:X}` and its answer fell
+   * back to A (not the pre-1.8 single-letter case, which `legacyPin.answerFromLetter` records).
+   * Records where the answer came from; never cleared.
+   */
+  answerAssumed?: boolean;
+  /**
+   * Set on the Questions page when the user picks the answer or confirms the selected one. It
+   * ends the "assumed answer" and "answer taken from the letter" notes; Reset removes it.
+   */
+  answerChecked?: boolean;
+  /**
    * @deprecated Read the answer from `choices[1]` (see `getCorrectLetter`). Older session
    * files carry this field; nothing writes or reads it any more.
    */
@@ -92,9 +103,19 @@ export interface ParsedLatexTemplate {
 
 /** What the upload step learned about the file, shown on the Details page. */
 export interface ImportInfo {
+  /** Notes about the file as read (version stamp, redundant or ignored tags). */
   warnings: string[];
   /** Which app made the file, e.g. "Examazej 1.8.0"; omitted when unknown. */
   madeWith?: string;
+  /** What the question notes need to know about the file (`import-notes.ts`). */
+  source?: NoteSource;
+}
+
+/** The kind of file an exam came from and its version stamp, for the wording of notes. */
+export interface NoteSource {
+  format: "latex" | "spreadsheet" | "session";
+  /** The file's `app_version` stamp as written; undefined when it has none. */
+  appVersion?: string;
 }
 
 export interface VersionMapping {

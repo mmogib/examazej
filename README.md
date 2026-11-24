@@ -14,6 +14,7 @@
 - **Question Groups**: Organize questions into balanced groups for structured randomization
 - **Three Grouping Modes**: Standard, Parentheses (dependent questions), and Square Brackets (topic-based shuffling)
 - **Multiple Question Types**: Support for regular, fixed, fixed-position, fixed-options, open-ended, separate-page, and image questions, with an explicit correct-answer tag and options that keep their letter while the rest shuffle (e.g. "None of the above")
+- **Questions Page**: Review every question as it will print and change its tags (place, option order, pinned options, correct answer, own page) without editing the file; one-click fixes for files made before v1.8
 - **Page Count Variation Warnings**: Smart detection and warnings when different exam versions have different page counts, preventing exam hall confusion
 - **Cover Pages**: Optional individual or master cover pages
 - **Version Tracking**: CSV mapping of question distribution across versions
@@ -72,9 +73,10 @@ Users need a valid access code provided by the administrator. Access codes are m
 3. **Edit Template**: Add your questions using your preferred editor (Overleaf, Excel, VS Code, etc.)
 4. **Upload Template**: Upload your completed template file (.tex, .xlsx, or .csv)
 5. **Configure Settings**: Set exam details (course name, date, number of versions, etc.)
-6. **Generate Exams**: Click generate to create randomized versions
-7. **Download**: Get a complete LaTeX document with all versions and answer keys
-8. **Compile**: Open in Overleaf or compile locally with LaTeX
+6. **Review Questions**: Check each question and change its tags or answer if needed (or press "Generate now" on the settings page to skip this)
+7. **Generate Exams**: Click generate to create randomized versions
+8. **Download**: Get a complete LaTeX document with all versions and answer keys
+9. **Compile**: Open in Overleaf or compile locally with LaTeX
 
 ### Template Formats
 

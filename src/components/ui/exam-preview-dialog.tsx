@@ -1,56 +1,13 @@
-import { useMemo, useState } from 'react';
-import katex from 'katex';
+import { useState } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Eye } from 'lucide-react';
-import 'katex/dist/katex.min.css';
+import { LaTeXRenderer } from '@/components/ui/latex-renderer';
 import { getLockLabels } from '@/lib/core/question-flags';
 import type { ExamData, ExamSettings, Question, QuestionChoice } from '@/lib/types';
-
-// Renders one math expression with KaTeX; invalid LaTeX falls back to the raw source, highlighted.
-function MathFormula({ math, source, displayMode }: { math: string; source: string; displayMode: boolean }) {
-  const html = useMemo(() => {
-    try {
-      return katex.renderToString(math, { displayMode, throwOnError: true });
-    } catch {
-      return null;
-    }
-  }, [math, displayMode]);
-
-  if (html === null) {
-    return <span className="text-red-500 bg-red-50 px-1 rounded">{source}</span>;
-  }
-  const Tag = displayMode ? 'div' : 'span';
-  return <Tag dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-// Component to render LaTeX content
-export function LaTeXRenderer({ content }: { content: string }) {
-  if (!content) return <span></span>;
-
-  // Simple LaTeX detection and rendering
-  const parts = content.split(/(\$\$[^$]+\$\$|\$[^$]+\$|\\begin\{[^}]+\}.*?\\end\{[^}]+\})/);
-
-  return (
-    <span>
-      {parts.map((part, index) => {
-        // Display math ($$...$$)
-        if (part.startsWith('$$') && part.endsWith('$$')) {
-          return <MathFormula key={index} math={part.slice(2, -2)} source={part} displayMode />;
-        }
-        // Inline math ($...$)
-        else if (part.startsWith('$') && part.endsWith('$')) {
-          return <MathFormula key={index} math={part.slice(1, -1)} source={part} displayMode={false} />;
-        }
-        // Regular text
-        return <span key={index}>{part}</span>;
-      })}
-    </span>
-  );
-}
 
 interface ExamPreviewSheetProps {
   versions: ExamData[];

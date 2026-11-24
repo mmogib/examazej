@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseLatexTemplate } from "../parser";
+import { getQuestionNoteSummary } from "../import-notes";
 import { DEFAULT_ACADEMIC_INTEGRITY_PLEDGE } from "../academic-integrity-pledge";
 
 /**
@@ -236,7 +237,10 @@ Which is correct?
       expect(result.questions[0].fixedOptions).toBeFalsy();
       expect(result.questions[0].pinnedOptions).toEqual([1]);
       expect(result.questions[0].choices[1]).toBe(1);
-      expect(result.warnings?.[0]).toMatch(/^Question 1 uses %\{#fixed-options:X\}, which changed meaning in v1\.8/);
+      expect(result.questions[0].legacyPin).toEqual({ answerFromLetter: true });
+      expect(getQuestionNoteSummary(result.questions, undefined)[0]).toMatch(
+        /^Question 1 uses %\{#fixed-options:X\}, which changed meaning in v1\.8/
+      );
     });
 
     it("should parse 'separate-page' tag", () => {

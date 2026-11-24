@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { importSessionJson } from "../session-import";
+import { getQuestionNoteSummary } from "../import-notes";
 import { getDefaultSettings } from "../settings";
 import { generateExamVersions } from "../versioning";
 import { generateLatexDocument } from "../latex";
@@ -32,10 +33,23 @@ describe("importSessionJson", () => {
     );
     expect(examData.exam.questions.map((question) => question.legacyFixed)).toEqual([true, undefined, true]);
     expect(info.madeWith).toBe("Examazej before 1.8 (no app_version)");
-    expect(info.warnings).toHaveLength(1);
-    expect(info.warnings[0]).toMatch(/^Question 3 is 'fixed' inside a \(n\) group/);
-    expect(info.warnings[0]).toContain("using 'fixed-position' instead of 'fixed'");
-    expect(info.warnings[0]).toContain("generate and save the session again from the Exam Package");
+    expect(info.warnings).toEqual([]);
+    expect(info.source).toEqual({ format: "session", appVersion: undefined });
+    const notes = getQuestionNoteSummary(examData.exam.questions, examData.setting.groups, info.source);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/^Question 3 is 'fixed' inside a \(n\) group/);
+    expect(notes[0]).toContain('"Shuffle the options, as before v1.8" on the Questions page');
+    expect(notes[0]).not.toContain("in the file:");
+    expect(notes[0]).toContain("open the template from the Exam Package instead of this session file");
+  });
+
+  it("brings the note back from a session saved by v1.8 that kept the marker", () => {
+    const saved = [q("Q1"), q("Q2", { fixed: true, legacyFixed: true })];
+    const { examData, info } = importSessionJson(session(saved, "1,(1)", "1.8.4"));
+    expect(info.warnings).toEqual([]);
+    expect(getQuestionNoteSummary(examData.exam.questions, examData.setting.groups, info.source)[0]).toMatch(
+      /^Question 2 is 'fixed' inside a \(n\) group/
+    );
   });
 
   it("gives the answer key the same red warning as an old template does", () => {
