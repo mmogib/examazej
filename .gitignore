@@ -36,6 +36,7 @@ coverage/
 
 # Local planning notes
 notes/
+channels/
 
 # Claude Code local settings (per-machine permissions)
 .claude/settings.local.json

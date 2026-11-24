@@ -159,6 +159,11 @@ Run `npm run verify:release` before release or integration. It enforces:
 - the complete Vitest and quality-runner test suites
 - warning-free clean builds for both web and Electron targets
 
+## Active notes
+
+- `notes/questions-page.md` -- design of the Questions page (UI tag editor, target 1.9.0) and the user's decisions D1-D5 (local/gitignored)
+- `channels/` -- correspondence with Codex as external reviewer; protocol and index in `channels/README.md` (local/gitignored)
+
 ## File Reference
 
 | Task | Where to look |
