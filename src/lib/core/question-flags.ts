@@ -34,15 +34,20 @@ export function getPinnedLetters(question: LockFields): string {
 }
 
 /**
- * The canonical lock tags for a question, as every exporter writes them: `fixed`, or
- * `fixed-position` and/or `fixed-options` / `fixed-options:DE`. An option lock on an
- * open-ended question means nothing, so it is never written.
+ * The lock tags for a question, as every exporter writes them: `fixed`, or `fixed-position`
+ * and/or `fixed-options` / `fixed-options:DE`. An option lock on an open-ended question means
+ * nothing, so it is never written.
+ *
+ * `fixed-position` + `fixed-options` is written as those two tags, never collapsed into `fixed`:
+ * inside a `(n)` group the two draw the RNG differently (`fixed` draws and discards an option
+ * shuffle, `fixed-options` draws none), so collapsing them made a downloaded template give
+ * different versions than the exam it came from.
  */
 export function getLockTags(question: LockFields): string[] {
+  if (question.fixed) return ["fixed"];
   const hasOptions = question.choices[0].length > 0;
-  const position = isPositionLocked(question);
-  const options = Boolean(question.fixed || question.fixedOptions) && hasOptions;
-  if (question.fixed || (position && options)) return ["fixed"];
+  const position = Boolean(question.fixedPosition);
+  const options = Boolean(question.fixedOptions) && hasOptions;
 
   const tags: string[] = [];
   if (position) tags.push("fixed-position");

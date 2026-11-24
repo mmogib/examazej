@@ -66,16 +66,19 @@ export function findLegacyFixedInParenGroups(
 /** Explains to a pre-1.8 file that its `fixed` questions in `(n)` groups now keep their options. */
 export function legacyFixedNote(
   numbers: number[],
-  format: "latex" | "spreadsheet",
+  format: "latex" | "spreadsheet" | "session",
   file: FileVersion
 ): string {
   const latex = format === "latex";
   const tag = (name: string) => (latex ? `%{#${name}}` : `'${name}'`);
   const plural = numbers.length > 1;
   const these = plural ? "these questions" : "this question";
-  const stop = latex
-    ? "add %app_version=1.8.0 to the setting block"
-    : "add an app_version row with 1.8.0 to the settings";
+  const stop =
+    format === "latex"
+      ? "add %app_version=1.8.0 to the setting block, or download the template again from the Exam Package"
+      : format === "spreadsheet"
+        ? "add an app_version row with 1.8.0 to the settings, or download the template again from the Exam Package"
+        : "generate and save the session again from the Exam Package";
   return (
     `${formatQuestionList(numbers)} ${plural ? "are" : "is"} ${tag("fixed")} inside a (n) group. Before v1.8 ` +
     `the options of such a question were shuffled by mistake; since v1.8 they stay in order, so ` +
@@ -83,7 +86,7 @@ export function legacyFixedNote(
     `same seed (the other questions are not affected), and the answer key page carries a warning. ` +
     `${describeFileOrigin(file)}. To grade exams printed before v1.8, use the answer keys saved then, or make ` +
     `the same exams again by using ${tag("fixed-position")} instead of ${tag("fixed")} in ${these}. To keep ` +
-    `the options in order and stop this note, ${stop}, or download the template again from the Exam Package.`
+    `the options in order and stop this note, ${stop}.`
   );
 }
 

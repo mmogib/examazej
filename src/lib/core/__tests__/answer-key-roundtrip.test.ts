@@ -270,3 +270,32 @@ describe("CSV / Excel template export", () => {
     );
   });
 });
+
+describe("downloaded template reproduces the exam: fixed-position + fixed-options in a (n) group", () => {
+  const item = (tags: string[], text: string) =>
+    ["\\item", ...tags, `%{#q}${text}%{/q}`, "\\begin{enumerate}",
+      "\\item %{#o}a%{/o}", "\\item %{#o}b%{/o}", "\\item %{#o}c%{/o}", "\\item %{#o}d%{/o}",
+      "\\end{enumerate}"].join("\n");
+  const original = ["%{#setting}", "%app_version=1.8.0", "%groups=(2),1", "%numberofvestions=4",
+    "%seed=pair-roundtrip", "%{/setting}", "\\begin{enumerate}",
+    item(["%{#fixed-position}", "%{#fixed-options}", "%{#correct:B}"], "Q1"),
+    item(["%{#correct:C}"], "Q2"), item([], "Q3"), "\\end{enumerate}"].join("\n");
+  const rows = (template: ParsedLatexTemplate) => {
+    const { settings, exam } = toExam(template);
+    return generateExamVersions(exam.questions, settings, settings.seed!).mappings
+      .map((m) => `${m.version}${m.versionQNo}:Q${m.masterQNo}:${m.perm}:${m.correct}`);
+  };
+  const { settings, exam } = toExam(parseLatexTemplate(original));
+  const before = rows(parseLatexTemplate(original));
+
+  it("LaTeX: writes the two tags back, not `fixed`, and gives the same versions", () => {
+    const template = generateLatexTemplate(settings, exam, 4);
+    const tags = template.split("\n").filter((line) => /^%\{#fixed/.test(line.trim()));
+    expect(tags.map((line) => line.trim())).toEqual(["%{#fixed-position}", "%{#fixed-options}"]);
+    expect(rows(parseLatexTemplate(template))).toEqual(before);
+  });
+
+  it("CSV: gives the same versions", () => {
+    expect(rows(convertToLatexFormat(parseCSV(generateCSVTemplate(settings, exam))))).toEqual(before);
+  });
+});

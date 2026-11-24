@@ -207,6 +207,15 @@ export function generateExamVersions(
   const groupSizes = groupConfigs.map((c) => c.size);
   const questionGroups = partitionQuestions(masterQuestions, groupSizes);
 
+  // A question's master number comes from its place in the master list: the sizes of the
+  // groups before it plus its place in its own group (set by partitionQuestions). Never from
+  // its text: two questions can have the same wording.
+  const groupStarts = groupSizes.map((_, i) =>
+    groupSizes.slice(0, i).reduce((sum, size) => sum + size, 0)
+  );
+  const masterNumberOf = (question: Question) =>
+    groupStarts[question.group - 1] + question.order;
+
   const numVersions = settings.numberofvestions;
 
   const versions: ExamData[] = [];
@@ -299,7 +308,7 @@ export function generateExamVersions(
           versionQuestions.push(versionQuestion);
 
           const masterQNo =
-            masterQuestions.findIndex((mq) => mq.text === question.text) + 1;
+            masterNumberOf(question);
           const correctLetter = String.fromCharCode(65 + newCorrectIndex);
 
           mappings.push({
@@ -362,7 +371,7 @@ export function generateExamVersions(
           versionQuestions.push(versionQuestion);
 
           const masterQNo =
-            masterQuestions.findIndex((mq) => mq.text === question.text) + 1;
+            masterNumberOf(question);
           const correctLetter = String.fromCharCode(65 + newCorrectIndex);
 
           mappings.push({

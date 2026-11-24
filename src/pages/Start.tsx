@@ -43,6 +43,7 @@ import type {
 } from "@/lib/types";
 import { generateLatexTemplate } from "@/lib/core/latex";
 import { describeFileVersion, readFileVersion } from "@/lib/core/app-version";
+import { importSessionJson } from "@/lib/core/session-import";
 import { parseCSV } from "@/lib/parsers/csv-parser";
 import { parseExcel } from "@/lib/parsers/excel-parser";
 import {
@@ -253,16 +254,8 @@ export function StartPage({ onDataLoaded }: StartPageProps) {
 
       if (extension === "json") {
         const content = await file.text();
-        const { app_version: appVersion, ...jsonData } = JSON.parse(content) as ExamJSON & {
-          app_version?: string;
-        };
-        onDataLoaded(
-          {
-            ...jsonData,
-            setting: mergeSettingsWithDefaults(jsonData.setting) as ExamSettings,
-          },
-          { warnings: [], madeWith: describeFileVersion(readFileVersion(appVersion)) }
-        );
+        const { examData: sessionData, info } = importSessionJson(content);
+        onDataLoaded(sessionData, info);
       } else if (extension === "tex") {
         // Existing LaTeX flow - UNCHANGED
         const content = await file.text();

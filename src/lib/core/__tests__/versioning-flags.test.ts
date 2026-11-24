@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultSettings } from "../settings";
-import { generateExamVersions } from "../versioning";
-import type { ExamSettings, Question, VersionMapping } from "../../types";
+import { generateExamVersions, generateQuestionOptionMapping } from "../versioning";
+import type { ExamData, ExamSettings, Question, VersionMapping } from "../../types";
 
 const options = (n: number) => Array.from({ length: n }, (_, i) => ({ text: `o${i}` }));
 const q = (text: string, n: number, correct: number, extra: Partial<Question> = {}): Question => ({
@@ -197,4 +197,43 @@ describe("pinned options (fixed-options:X)", () => {
       expect(positions(pinned.mappings)).toEqual(positions(plain.mappings));
     }
   );
+});
+
+describe("master numbers come from the master list, not the question text", () => {
+  // Two questions with the same wording but different options (3 and 4) and answers.
+  const questions = [
+    q("Choose the correct statement.", 3, 0),
+    q("Choose the correct statement.", 4, 2),
+    q("Another question", 4, 1),
+  ];
+
+  it.each(["3", "(3)", "[3]", "1,(2)", "[2],1"])("each gets its own number in group mode %s", (groups) => {
+    const { versions, mappings } = generateExamVersions(questions, settingsFor(groups, 3), "same-text");
+    for (const version of versions) {
+      const label = version.name.replace("version_", "").toUpperCase();
+      const rows = mappings.filter((m) => m.version === label);
+      expect(rows.map((m) => m.masterQNo).sort()).toEqual([1, 2, 3]);
+      version.questions.forEach((question, position) => {
+        const row = rows.find((m) => m.versionQNo === position + 1)!;
+        // The 3-option copy is master 1, the 4-option copy is master 2.
+        if (question.text.startsWith("Choose")) {
+          expect(row.masterQNo).toBe(question.choices[0].length === 3 ? 1 : 2);
+        }
+      });
+    }
+  });
+
+  it("the options mapping has the right rows for both", () => {
+    const state = generateExamVersions(questions, settingsFor("3", 2), "same-text");
+    const table = generateQuestionOptionMapping(state, { questions } as ExamData);
+    const rowsFor = (n: number) => table.slice(1).filter((row) => String(row[0]) === String(n));
+    expect(rowsFor(1)).toHaveLength(3);
+    expect(rowsFor(2)).toHaveLength(4);
+    // In every version both have a real position, and not the same one.
+    for (let column = 3; column < table[0].length; column += 2) {
+      expect(rowsFor(1)[0][column], `master 1, column ${column}`).toBeTruthy();
+      expect(rowsFor(2)[0][column], `master 2, column ${column}`).toBeTruthy();
+      expect(rowsFor(1)[0][column]).not.toBe(rowsFor(2)[0][column]);
+    }
+  });
 });

@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependencies updated within their current major versions: Electron 43.8.12 (Chromium security fixes for the desktop app), electron-updater 6.8.11, Vite 6.4.6, React Router 7.18.6, TipTap 3.35.0, TypeScript 5.9.3, ESLint 9.39, Radix UI, TanStack Query, React Hook Form and others. `npm audit` reports 0 vulnerabilities.
 - Builds use Node 26, named in `.nvmrc`: the GitHub workflows read it, and so does Netlify.
 
+### Fixed
+
+- A template downloaded from the Exam Package wrote a question tagged `fixed-position` and `fixed-options` as `fixed`. Inside a `(n)` group the two shuffle differently, so re-uploading that template gave different versions and answer keys than the exam it came from. The two tags are now written back as they were. (Since v1.8.0.)
+- When two questions had exactly the same wording, the mapping file and the answer key page gave both the first one's master number, and the options mapping was wrong for the second. Questions are now identified by their place in the exam, not by their text; shuffles are unchanged. (Since v1.0.0.)
+- A session file saved before v1.8 did not get the old-file warnings: a `fixed` question inside a `(n)` group, whose options v1.7 shuffled by mistake, now gets the same Details note and red answer-key warning as when it comes from a template. (Since v1.8.0.)
+
 ## [1.8.3] - 2026-11-06
 
 ### Added
