@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.4] - 2026-11-24
+
 ### Changed
 
 - Dependencies updated within their current major versions: Electron 43.8.12 (Chromium security fixes for the desktop app), electron-updater 6.8.11, Vite 6.4.6, React Router 7.18.6, TipTap 3.35.0, TypeScript 5.9.3, ESLint 9.39, Radix UI, TanStack Query, React Hook Form and others. `npm audit` reports 0 vulnerabilities.
@@ -277,7 +279,8 @@ First 1.8 release with a Windows installer: desktop users update from 1.7.0 dire
 - **MINOR** version (1.X.0) - New features, backward compatible
 - **PATCH** version (1.2.X) - Bug fixes, backward compatible
 
-[Unreleased]: https://github.com/mmogib/examazej/compare/v1.8.3...HEAD
+[Unreleased]: https://github.com/mmogib/examazej/compare/v1.8.4...HEAD
+[1.8.4]: https://github.com/mmogib/examazej/compare/v1.8.3...v1.8.4
 [1.8.3]: https://github.com/mmogib/examazej/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/mmogib/examazej/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/mmogib/examazej/compare/v1.8.0...v1.8.1
