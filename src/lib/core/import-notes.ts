@@ -9,7 +9,7 @@
  * (`legacyPin`, `legacyFixed`, `answerAssumed`); their own `warnings` are about the file.
  */
 
-import type { NoteSource, Question } from "../types";
+import type { LegacyReading, NoteSource, Question } from "../types";
 import {
   describeFileOrigin,
   describeFileVersion,
@@ -17,8 +17,8 @@ import {
   PINNED_OPTIONS_VERSION,
   readFileVersion,
 } from "./app-version";
-import { findQuestionsInParenGroups } from "./group-config";
-import { areOptionsLocked } from "./question-flags";
+import { describeGroups, findQuestionsInParenGroups, type GroupMode } from "./group-config";
+import { areOptionsLocked, isPositionLocked } from "./question-flags";
 
 type NoteFields = Pick<
   Question,
@@ -27,8 +27,10 @@ type NoteFields = Pick<
   | "fixedPosition"
   | "fixedOptions"
   | "pinnedOptions"
+  | "keepOnSeparatePage"
   | "legacyPin"
   | "legacyFixed"
+  | "legacyRead"
   | "answerAssumed"
   | "answerChecked"
 >;
@@ -54,12 +56,43 @@ export type LegacyReach = "this" | "wider";
 /**
  * A pre-1.8 `%{#fixed-options:X}`, which v1.7 read as every option locked (`fixedOptions`: no
  * option shuffle drawn). With `fixedOptions` the question comes out as in v1.7. Anything else
- * draws an option shuffle v1.7 did not draw (and, in `5` / `[n]` groups, puts the question in a
- * different place of the question shuffle), so other questions may differ too.
+ * draws an option shuffle v1.7 did not draw, so other questions may differ too. A question with
+ * one option draws nothing either way: other questions differ only when `outOfPlace` (its
+ * group's question shuffle differs from v1.7's, `legacyPinsOutOfPlace`); otherwise only its own
+ * line of the mapping file does (options "A", where v1.7 wrote "ABCDE").
  */
-export function legacyPinReach(question: NoteFields): LegacyReach | null {
-  if (!question.legacyPin || question.choices[0].length < 2) return null;
-  return question.fixedOptions ? null : "wider";
+export function legacyPinReach(question: NoteFields, outOfPlace = false): LegacyReach | null {
+  if (!question.legacyPin || question.fixedOptions) return null;
+  return question.choices[0].length >= 2 || outOfPlace ? "wider" : "this";
+}
+
+/**
+ * 0-based indices of the pre-1.8 pins whose group shuffles its questions in a different order
+ * than v1.7 did. In `5` / `[n]` groups the question shuffle lists the `fixedOptions` questions
+ * first (versioning.ts), and v1.7 read these pins as `fixedOptions`, so a pin that is not
+ * `fixedOptions` now can change its group's order even when it draws no option shuffle. Every
+ * such pin of a group whose order differs is listed. None when the groups are unknown.
+ */
+export function legacyPinsOutOfPlace(questions: NoteFields[], groups: string | undefined): Set<number> {
+  const out = new Set<number>();
+  if (!groups) return out;
+  for (const group of describeGroups(groups, questions.length)) {
+    if (group.mode === "ordered") continue;
+    const movable = Array.from({ length: group.size }, (_, k) => group.start + k).filter(
+      (i) => !isPositionLocked(questions[i])
+    );
+    const listed = (optionsLocked: (i: number) => boolean) => [
+      ...movable.filter(optionsLocked),
+      ...movable.filter((i) => !optionsLocked(i)),
+    ];
+    const now = listed((i) => Boolean(questions[i].fixedOptions));
+    const then = listed((i) => Boolean(questions[i].fixedOptions || questions[i].legacyPin));
+    if (now.every((i, k) => i === then[k])) continue;
+    movable.forEach((i) => {
+      if (questions[i].legacyPin && !questions[i].fixedOptions) out.add(i);
+    });
+  }
+  return out;
 }
 
 /**
@@ -76,26 +109,118 @@ export function legacyFixedReach(question: NoteFields, inParenGroup: boolean): L
   return null;
 }
 
+type ShuffleFields = Pick<
+  Question,
+  "choices" | "fixed" | "fixedPosition" | "fixedOptions" | "pinnedOptions" | "keepOnSeparatePage"
+>;
+
+/**
+ * What `generateExamVersions` does with a question in a group of this mode, as a value two
+ * questions can be compared by: its place in the question shuffle, its options (kept, drawn and
+ * kept, pinned, shuffled) and its own page. Two questions with the same value come out the same
+ * in every version, mapping file included.
+ */
+function shuffleBehaviour(question: ShuffleFields, mode: GroupMode): { place: string; options: string; page: boolean } {
+  const count = question.choices[0].length;
+  const pins = [...new Set(question.pinnedOptions ?? [])].filter((i) => i < count).sort((a, b) => a - b);
+  // Pins on fewer than two options move nothing and are written like a shuffle.
+  const pinned = count >= 2 && pins.length > 0 ? `pins ${pins.join("")}` : "shuffled";
+  let options: string;
+  let place: string;
+  if (mode === "ordered") {
+    place = "in order";
+    if (question.fixedOptions) options = "kept";
+    else if (question.fixed) options = count >= 2 ? "drawn and kept" : "kept";
+    else options = pinned;
+  } else {
+    place = isPositionLocked(question) ? "locked" : question.fixedOptions ? "listed first" : "listed";
+    options = areOptionsLocked(question) ? "kept" : pinned;
+  }
+  return { place, options, page: Boolean(question.keepOnSeparatePage) };
+}
+
+/**
+ * The tags that make, in a group of this mode, the exam the older Examazej made from a question
+ * it read as `reading`: its `fixed` shuffled the options inside a `(n)` group (the same as a
+ * position lock alone), and its `fixed-options:X` kept every option in order.
+ */
+export function legacyReadingTarget(
+  reading: LegacyReading,
+  mode: GroupMode
+): Pick<Question, "fixed" | "fixedPosition" | "fixedOptions" | "keepOnSeparatePage"> {
+  return {
+    fixed: reading.fixed && mode !== "ordered",
+    fixedPosition: reading.fixed && mode === "ordered",
+    fixedOptions: reading.fixedOptions,
+    keepOnSeparatePage: reading.separatePage,
+  };
+}
+
+/**
+ * A question of a file made before v1.8 whose tags the older Examazej read differently
+ * (`legacyRead`): does it still come out differently from the exams made then, in a group of
+ * this mode? "this" when only its own line of the mapping file or its page differs, "wider"
+ * when its place or its option shuffle does (so other questions may differ too). Its answer is
+ * not compared: it stays the one the file gives (an open-ended question's takes the old one).
+ */
+export function legacyReadReach(question: NoteFields, mode: GroupMode | undefined): LegacyReach | null {
+  const reading = question.legacyRead;
+  if (!reading || !mode) return null;
+  const target = { ...question, ...legacyReadingTarget(reading, mode), pinnedOptions: undefined };
+  const now = shuffleBehaviour(question, mode);
+  const then = shuffleBehaviour(target, mode);
+  const openEndedAnswer = question.choices[0].length === 0 && question.choices[1] !== reading.answer;
+  if (now.place === then.place && now.options === then.options && now.page === then.page && !openEndedAnswer) {
+    return null;
+  }
+  const moves = question.choices[0].length >= 2 && now.options !== then.options;
+  return now.place !== then.place || moves ? "wider" : "this";
+}
+
+/** The group mode of each question; none when the groups are unknown. */
+function groupModesOf(questionCount: number, groups: string | undefined): (GroupMode | undefined)[] {
+  const modes: (GroupMode | undefined)[] = Array.from({ length: questionCount }, () => undefined);
+  if (!groups) return modes;
+  for (const group of describeGroups(groups, questionCount)) {
+    for (let k = 0; k < group.size; k++) modes[group.start + k] = group.mode;
+  }
+  return modes;
+}
+
 interface Affected {
   number: number;
   reach: LegacyReach;
+}
+
+/** Each question's old-file reaches under these groups (null: no warning). */
+function legacyReachesOf(
+  questions: NoteFields[],
+  groups: string | undefined
+): { pin: LegacyReach | null; fixed: LegacyReach | null; read: LegacyReach | null }[] {
+  const inParens = parenGroupMembers(questions.length, groups);
+  const outOfPlace = legacyPinsOutOfPlace(questions, groups);
+  const modes = groupModesOf(questions.length, groups);
+  return questions.map((question, index) => ({
+    pin: legacyPinReach(question, outOfPlace.has(index)),
+    fixed: legacyFixedReach(question, inParens.has(index)),
+    read: legacyReadReach(question, modes[index]),
+  }));
 }
 
 /** Every question whose old-file warning applies, with its reach. */
 export function findLegacyDifferences(
   questions: NoteFields[],
   groups: string | undefined
-): { pins: Affected[]; fixed: Affected[] } {
-  const inParens = parenGroupMembers(questions.length, groups);
+): { pins: Affected[]; fixed: Affected[]; read: Affected[] } {
   const pins: Affected[] = [];
   const fixed: Affected[] = [];
-  questions.forEach((question, index) => {
-    const pinReach = legacyPinReach(question);
-    if (pinReach) pins.push({ number: index + 1, reach: pinReach });
-    const fixedReach = legacyFixedReach(question, inParens.has(index));
-    if (fixedReach) fixed.push({ number: index + 1, reach: fixedReach });
+  const read: Affected[] = [];
+  legacyReachesOf(questions, groups).forEach((reach, index) => {
+    if (reach.pin) pins.push({ number: index + 1, reach: reach.pin });
+    if (reach.fixed) fixed.push({ number: index + 1, reach: reach.fixed });
+    if (reach.read) read.push({ number: index + 1, reach: reach.read });
   });
-  return { pins, fixed };
+  return { pins, fixed, read };
 }
 
 /** 0-based indices of the questions in `(n)` groups; none when the groups are unknown. */
@@ -117,6 +242,19 @@ export function isAnswerFromLetter(question: NoteFields): boolean {
   return Boolean(question.legacyPin?.answerFromLetter && !question.answerChecked);
 }
 
+/**
+ * The older Examazej took another answer for this question (it did not read the tag that gives
+ * the current one), and nobody has checked it yet.
+ */
+export function isLegacyAnswerChanged(question: NoteFields): boolean {
+  return Boolean(
+    question.legacyRead &&
+      question.choices[0].length > 0 &&
+      question.legacyRead.answer !== question.choices[1] &&
+      !question.answerChecked
+  );
+}
+
 /** The correct answer is a pinned option, so it has the same letter in every version. */
 export function isAnswerPinned(question: NoteFields): boolean {
   return (
@@ -133,22 +271,30 @@ export function isAnswerPinned(question: NoteFields): boolean {
 export type QuestionNote =
   | { kind: "legacyPin"; reach: LegacyReach }
   | { kind: "legacyFixed"; reach: LegacyReach }
+  | { kind: "legacyRead"; reach: LegacyReach }
+  | { kind: "legacyReadAnswer"; then: string }
   | { kind: "answerAssumed" }
   | { kind: "answerFromLetter"; letter: string }
   | { kind: "pinnedAnswer"; letter: string };
 
-export function getQuestionNotes(question: NoteFields, inParenGroup: boolean): QuestionNote[] {
-  const notes: QuestionNote[] = [];
-  const pinReach = legacyPinReach(question);
-  if (pinReach) notes.push({ kind: "legacyPin", reach: pinReach });
-  const fixedReach = legacyFixedReach(question, inParenGroup);
-  if (fixedReach) notes.push({ kind: "legacyFixed", reach: fixedReach });
-  if (isAnswerAssumed(question)) notes.push({ kind: "answerAssumed" });
-  if (isAnswerFromLetter(question)) {
-    notes.push({ kind: "answerFromLetter", letter: letter(question.choices[1]) });
-  }
-  if (isAnswerPinned(question)) notes.push({ kind: "pinnedAnswer", letter: letter(question.choices[1]) });
-  return notes;
+/** Each question's notes under these groups, for the Questions page. */
+export function getQuestionNotes(questions: NoteFields[], groups: string | undefined): QuestionNote[][] {
+  return legacyReachesOf(questions, groups).map((reach, index) => {
+    const question = questions[index];
+    const notes: QuestionNote[] = [];
+    if (reach.pin) notes.push({ kind: "legacyPin", reach: reach.pin });
+    if (reach.fixed) notes.push({ kind: "legacyFixed", reach: reach.fixed });
+    if (reach.read) notes.push({ kind: "legacyRead", reach: reach.read });
+    if (isLegacyAnswerChanged(question) && question.legacyRead) {
+      notes.push({ kind: "legacyReadAnswer", then: letter(question.legacyRead.answer) });
+    }
+    if (isAnswerAssumed(question)) notes.push({ kind: "answerAssumed" });
+    if (isAnswerFromLetter(question)) {
+      notes.push({ kind: "answerFromLetter", letter: letter(question.choices[1]) });
+    }
+    if (isAnswerPinned(question)) notes.push({ kind: "pinnedAnswer", letter: letter(question.choices[1]) });
+    return notes;
+  });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -164,7 +310,7 @@ const DEFAULT_SOURCE: NoteSource = { format: "latex" };
 function originSentence(source: NoteSource): string {
   const file = readFileVersion(source.appVersion);
   if (isFileBefore(file, PINNED_OPTIONS_VERSION)) return describeFileOrigin(file);
-  return `These questions came from a file made before v1.8 (this file was saved by ${describeFileVersion(file)})`;
+  return `These questions came from a file made with the older Examazej (this file was saved by ${describeFileVersion(file)})`;
 }
 
 /** How to stop an old-file note by changing the file, by kind of file. */
@@ -190,11 +336,15 @@ export function getQuestionNoteSummary(
   groups: string | undefined,
   source: NoteSource = DEFAULT_SOURCE
 ): string[] {
-  const { pins, fixed } = findLegacyDifferences(questions, groups);
+  const { pins, fixed, read } = findLegacyDifferences(questions, groups);
   const fromLetter: { number: number; letter: string }[] = [];
   const assumed: number[] = [];
   const pinnedAnswers: number[] = [];
+  const oldAnswers: { number: number; then: string; now: string }[] = [];
   questions.forEach((question, index) => {
+    if (isLegacyAnswerChanged(question) && question.legacyRead) {
+      oldAnswers.push({ number: index + 1, then: letter(question.legacyRead.answer), now: letter(question.choices[1]) });
+    }
     if (isAnswerFromLetter(question)) {
       fromLetter.push({ number: index + 1, letter: letter(question.choices[1]) });
     }
@@ -202,19 +352,23 @@ export function getQuestionNoteSummary(
     if (isAnswerPinned(question)) pinnedAnswers.push(index + 1);
   });
 
-  // While a question's pin warning applies, that note also gives its answer letter and says it is
-  // the same letter in every version, so the pinned-answer note leaves it out.
+  // While a question's pin warning applies, that note also gives its answer letter. While every
+  // such answer is still pinned, it also says they are the same letter in every version, and the
+  // pinned-answer note leaves them out; otherwise the pinned-answer note says it where it holds.
   const inPinNote = new Set(pins.map((p) => p.number));
   const inferred = fromLetter.filter((e) => inPinNote.has(e.number));
   const fromLetterRest = fromLetter.filter((e) => !inPinNote.has(e.number));
-  const inferredNumbers = new Set(inferred.map((e) => e.number));
+  const stillPinned = inferred.length > 0 && inferred.every((e) => pinnedAnswers.includes(e.number));
+  const inPinNoteAsPinned = new Set(stillPinned ? inferred.map((e) => e.number) : []);
 
   const notes: string[] = [];
-  if (pins.length > 0) notes.push(legacyPinNote(pins.map((p) => p.number), source, inferred));
+  if (pins.length > 0) notes.push(legacyPinNote(pins.map((p) => p.number), source, inferred, stillPinned));
   if (fromLetterRest.length > 0) notes.push(answerFromLetterNote(fromLetterRest));
   if (fixed.length > 0) notes.push(legacyFixedNote(fixed, source));
+  if (read.length > 0) notes.push(legacyReadNote(read.map((r) => r.number), source));
+  if (oldAnswers.length > 0) notes.push(legacyAnswerNote(oldAnswers));
   if (assumed.length > 0) notes.push(missingAnswerPinNote(assumed, source));
-  const pinnedRest = pinnedAnswers.filter((n) => !inferredNumbers.has(n));
+  const pinnedRest = pinnedAnswers.filter((n) => !inPinNoteAsPinned.has(n));
   if (pinnedRest.length > 0) notes.push(pinnedAnswerNote(pinnedRest));
   return notes;
 }
@@ -223,13 +377,15 @@ export function getQuestionNoteSummary(
 export function legacyPinNote(
   numbers: number[],
   source: NoteSource,
-  inferred: { number: number; letter: string }[] = []
+  inferred: { number: number; letter: string }[] = [],
+  inferredPinned = true
 ): string {
   const list = formatQuestionList(numbers);
   const plural = numbers.length > 1;
   const answers =
     inferred.length > 0
-      ? `; as before v1.8, the answer was taken from the letter, so it is the same letter in every version: ` +
+      ? `; as the older Examazej did, the answer was taken from the letter` +
+        (inferredPinned ? `, so it is the same letter in every version: ` : ` in the tag: `) +
         inferred.map((e) => `Q${e.number} ${e.letter}`).join(", ") +
         ". Check " + (inferred.length > 1 ? "these answers" : "this answer") + " on the Questions page."
       : ".";
@@ -243,13 +399,13 @@ export function legacyPinNote(
       ? `add %{#correct:X} to ${these} and %app_version=1.8.0 to the setting block, or download the template again from the Exam Package`
       : stopAdvice(source);
   return (
-    `${list} use${plural ? "" : "s"} %{#fixed-options:X}, which changed meaning in v1.8: it now keeps only ` +
-    `option X in place and shuffles the other options (before v1.8 it kept all options in order and made X the answer). ` +
-    `${originSentence(source)}${answers} ` +
-    `Because of this, the versions made from this file differ from the versions made before v1.8 with the ` +
-    `same seed, in ${these} and possibly in the other questions too, so the answer key page carries a warning. ` +
-    `To grade exams printed before v1.8, use the answer keys and mapping files saved then, or make the same ` +
-    `exams again with "Keep all options in order, as before v1.8" on the Questions page${inFile}. ` +
+    `${list} came with %{#fixed-options:X}, whose meaning has changed: the older Examazej (before November 2026) ` +
+    `kept all options in order and made X the answer; now it keeps only option X in place and shuffles the other ` +
+    `options. ${originSentence(source)}${answers} ` +
+    `With ${plural ? "their" : "its"} current tags, the exams made from this file differ from your old exams with ` +
+    `the same seed, in ${these} and possibly in the other questions too, so the answer key page carries a warning. ` +
+    `To grade your old exams, use the answer keys and mapping files saved with them, or make the same ` +
+    `exams again with "Match my old exams" on the Questions page${inFile}. ` +
     `To keep the new meaning and stop this note, ${stop}.`
   );
 }
@@ -258,8 +414,8 @@ export function legacyPinNote(
 export function answerFromLetterNote(entries: { number: number; letter: string }[]): string {
   const many = entries.length > 1;
   return (
-    `The file gives no %{#correct:X} for ${formatQuestionList(entries.map((e) => e.number))}, so, as before ` +
-    `v1.8, ${many ? "their answers were" : "its answer was"} taken from the letter in the tag ` +
+    `The file gives no %{#correct:X} for ${formatQuestionList(entries.map((e) => e.number))}, so, as the older ` +
+    `Examazej did, ${many ? "their answers were" : "its answer was"} taken from the letter in the tag ` +
     `(${entries.map((e) => `Q${e.number} ${e.letter}`).join(", ")}). Check ${many ? "them" : "it"} on the Questions page.`
   );
 }
@@ -277,17 +433,45 @@ export function legacyFixedNote(entries: Affected[], source: NoteSource): string
       ? " (the other questions are not affected)"
       : `; because ${formatQuestionList(wider)} no longer draw${
           wider.length > 1 ? "" : "s"
-        } the option shuffle v1.7 drew, the later questions in each version may differ too`;
+        } the option shuffle the older Examazej drew, the later questions in each version may differ too`;
   const inFile =
-    source.format === "session" ? "" : ` (in the file: using ${tag("fixed-position")} instead of ${tag("fixed")} in ${these})`;
+    source.format === "session"
+      ? ""
+      : ` (in the file: ${tag("fixed-position")} and no other lock or pin tag in ${these})`;
   return (
-    `${formatQuestionList(numbers)} ${plural ? "are" : "is"} ${tag("fixed")} inside a (n) group in a file ` +
-    `made before v1.8. Before v1.8 the options of such a question were shuffled by mistake; with ` +
-    `${plural ? "their" : "its"} current tags they are not, so ${plural ? "their" : "its"} answers differ ` +
-    `from the answer keys made before v1.8 with the same seed${scope}, and the answer key page carries a ` +
-    `warning. ${originSentence(source)}. To grade exams printed before v1.8, ` +
-    `use the answer keys saved then, or make the same exams again with "Shuffle the options, as before ` +
-    `v1.8" on the Questions page${inFile}. To keep the current tags and stop this note, ${stopAdvice(source)}.`
+    `${formatQuestionList(numbers)} ${plural ? "are" : "is"} inside a (n) group and ${plural ? "were" : "was"} ` +
+    `${tag("fixed")} in a file made with the older Examazej (before November 2026), which shuffled the options of ` +
+    `such a question by mistake. With ${plural ? "their" : "its"} current tags they do not shuffle as they did ` +
+    `then, so ${plural ? "their" : "its"} answers differ ` +
+    `from your old answer keys with the same seed${scope}, and the answer key page carries a ` +
+    `warning. ${originSentence(source)}. To grade your old exams, ` +
+    `use the answer keys saved with them, or make the same exams again with "Match my old exams" on the ` +
+    `Questions page${inFile}. To keep the current tags and stop this note, ${stopAdvice(source)}.`
+  );
+}
+
+/** A file made before v1.8 whose tags the older Examazej read differently (`legacyRead`). */
+export function legacyReadNote(numbers: number[], source: NoteSource): string {
+  const plural = numbers.length > 1;
+  return (
+    `The older Examazej (before November 2026) read the tags of ${formatQuestionList(numbers)} differently: it ` +
+    `ignored a tag it could not read (one on the same line as \\item, %{#q} or another tag, one followed by a ` +
+    `comment, or one with a small option letter, as in %{#fixed-options:b}), or gave a tag written after an ` +
+    `open-ended question to that question. So the exams made with it differ from these, in ${plural ? "these questions" : "this question"} and ` +
+    `possibly in the other questions too, and the answer key page carries a warning. ${originSentence(source)}. To make ` +
+    `the same exams again, press "Match my old exams" on the Questions page, or open the session file saved with them. ` +
+    `To keep the tags as written and stop this note, ${stopAdvice(source)}.`
+  );
+}
+
+/** The older Examazej took another answer, because it did not read the tag that gives this one. */
+export function legacyAnswerNote(entries: { number: number; then: string; now: string }[]): string {
+  const many = entries.length > 1;
+  return (
+    `The older Examazej took another answer for ${formatQuestionList(entries.map((e) => e.number))}, because it did ` +
+    `not read the tag that gives the answer: ${entries.map((e) => `Q${e.number} ${e.then}, now ${e.now}`).join("; ")}. ` +
+    `The answer keys made with it were wrong for ${many ? "these questions" : "this question"}. Check ` +
+    `${many ? "them" : "it"} on the Questions page.`
   );
 }
 
@@ -321,8 +505,8 @@ export function pinnedAnswerNote(questionNumbers: number[]): string {
  * on the Details page. Null when neither applies. LaTeX, needs tcolorbox.
  */
 export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string | undefined): string | null {
-  const { pins, fixed } = findLegacyDifferences(questions, groups);
-  if (pins.length === 0 && fixed.length === 0) return null;
+  const { pins, fixed, read } = findLegacyDifferences(questions, groups);
+  if (pins.length === 0 && fixed.length === 0 && read.length === 0) return null;
   const pinned = pins.map((p) => p.number);
   const fixedNumbers = fixed.map((f) => f.number);
   const wider = fixed.filter((f) => f.reach === "wider").map((f) => f.number);
@@ -342,18 +526,20 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
 
   const reasons: string[] = [];
   const remedies: string[] = [];
-  const buttons: string[] = [];
+  const buttons: number[] = [];
   if (pinned.length > 0) {
     reasons.push(
       `${Masters(pinned)} ${pinned.length > 1 ? "use" : "uses"} ${tag("fixed-options:X")} in a file made ` +
-        `before v1.8. Since v1.8 this tag keeps only option X in place and shuffles the other options, so ` +
-        `the versions and this key differ from the ones made from the same file before v1.8, even with the ` +
+        `with the older Examazej (before November 2026), which kept all options in order for this tag; now it ` +
+        `keeps only option X in place and shuffles the other options. With ` +
+        `${pinned.length > 1 ? "their" : "its"} current tags, the versions and this key differ from the ones ` +
+        `the older Examazej made from the same file, even with the ` +
         `same seed: in ${pinned.length > 1 ? "these questions" : "this question"} and possibly in the other questions too.`
     );
     remedies.push(
       `replace ${tag("fixed-options:X")} with ${tag("fixed-options")} and ${tag("correct:X")} in ${masters(pinned)}`
     );
-    buttons.push(`\`\`Keep all options in order, as before v1.8'' for ${masters(pinned)}`);
+    buttons.push(...pinned);
   }
   if (fixedNumbers.length > 0) {
     const many = fixedNumbers.length > 1;
@@ -361,22 +547,48 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
       wider.length === 0
         ? "This does not affect the other questions."
         : `Because ${masters(wider)} no longer draw${wider.length > 1 ? "" : "s"} the option shuffle ` +
-          `made before v1.8, the later questions in each version may differ too.`;
+          `the older Examazej drew, the later questions in each version may differ too.`;
     reasons.push(
-      `${Masters(fixedNumbers)} ${many ? "are" : "is"} ${code("fixed")} inside a (n) group in a file ` +
-        `made before v1.8. Before v1.8 the options of such a question were shuffled by mistake; with ` +
-        `${many ? "their" : "its"} current tags they are not, so ${many ? "their answers" : "its answers"} in ` +
-        `this key differ from the ones made before v1.8 with the same seed. ${scope}`
+      `${Masters(fixedNumbers)} ${many ? "are" : "is"} inside a (n) group and ${many ? "were" : "was"} ` +
+        `${code("fixed")} in a file made with the older Examazej (before November 2026), which shuffled the ` +
+        `options of such a question by mistake. With ${many ? "their" : "its"} current tags they do not shuffle ` +
+        `as they did then, so ${many ? "their answers" : "its answers"} in this key differ from the ones it made ` +
+        `with the same seed. ${scope}`
     );
-    remedies.push(`use the tag ${code("fixed-position")} instead of ${code("fixed")} in ${masters(fixedNumbers)}`);
-    buttons.push(`\`\`Shuffle the options, as before v1.8'' for ${masters(fixedNumbers)}`);
+    remedies.push(`use the tag ${code("fixed-position")} and no other lock or pin tag in ${masters(fixedNumbers)}`);
+    buttons.push(...fixedNumbers);
+  }
+  if (read.length > 0) {
+    const readNumbers = read.map((r) => r.number);
+    const many = readNumbers.length > 1;
+    reasons.push(
+      `The older Examazej (before November 2026) read the tags of ${masters(readNumbers)} differently: it ignored ` +
+        `a tag it could not read, or gave a tag written after an open-ended question to that question. So the ` +
+        `versions and this key differ from the ones it made from the same file, even with the same seed: in ` +
+        `${many ? "these questions" : "this question"} and possibly in the other questions too.`
+    );
+    remedies.push(`open the session file saved with those exams`);
+    buttons.push(...readNumbers);
   }
 
   const items = [
-    `To grade exams printed before v1.8, use the answer key and mapping files saved then, not this key, ` +
-      `or make the same exams again: ${remedies.join("; and ")}.`,
-    `In Examazej, the Questions page does the same: ${buttons.join("; and ")}.`,
+    `To grade the exams the older Examazej made, use the answer key and mapping files saved with them, not ` +
+      `this key, or make the same exams again: ${remedies.join("; and ")}.`,
+    `In Examazej, \`\`Match my old exams'' on the Questions page does the same, for ${masters(
+      [...new Set(buttons)].sort((a, b) => a - b)
+    )}.`,
   ];
+  const oldAnswers = questions
+    .map((question, index) => ({ question, number: index + 1 }))
+    .filter(({ question }) => isLegacyAnswerChanged(question));
+  if (oldAnswers.length > 0) {
+    items.push(
+      `The older Examazej took another answer for ${masters(oldAnswers.map((a) => a.number))}, because it did ` +
+        `not read the tag that gives it (${oldAnswers
+          .map(({ question, number }) => `${number}: ${letter(question.legacyRead?.answer ?? 0)}, now ${letter(question.choices[1])}`)
+          .join("; ")}); the answer keys made with it were wrong there.`
+    );
+  }
   if (fromLetter.length > 0) {
     const many = fromLetter.length > 1;
     items.push(
@@ -386,7 +598,7 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
   }
   return `
 \\begin{tcolorbox}[colback=red!6, colframe=red!75!black, coltitle=white, fonttitle=\\bfseries,
-  title={WARNING: this answer key differs from keys made before Examazej 1.8}]
+  title={WARNING: this answer key differs from the keys the older Examazej made (before November 2026)}]
 ${reasons.join("\n\n")}
 \\begin{itemize}
 ${items.map((item) => `\\item ${item}`).join("\n")}

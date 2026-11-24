@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import {
@@ -89,20 +89,18 @@ const Index = () => {
     setDocsOpen(false);
   };
 
-  const openDocs = () => {
+  // The header's Documentation button and the desktop Help menu both open the docs this way.
+  const openDocs = useCallback(() => {
     setPendingResults(null);
     setDocsOpen(true);
     window.scrollTo?.(0, 0);
-  };
+  }, []);
 
   // Desktop native menu "Help → Documentation" opens the same docs view (T8/D13).
   useEffect(() => {
     if (!__DESKTOP__) return;
-    return window.examazej?.onShowDocs(() => {
-      setPendingResults(null);
-      setDocsOpen(true);
-    });
-  }, []);
+    return window.examazej?.onShowDocs(openDocs);
+  }, [openDocs]);
 
   return (
     <div className="min-h-screen bg-gradient-academic flex flex-col">

@@ -1,0 +1,32 @@
+{
+  "about": "The sheets of an .xlsx file as written for Examazej 1.7 (no app_version row); the test builds the workbook with ExcelJS.",
+  "sheets": {
+    "Questions": [
+      ["Question Text", "Option A", "Option B", "Option C", "Option D", "Option E", "Correct", "Tags"],
+      ["The capital of France is", "Paris", "Lyon", "Nice", "Lille", "", "A", ""],
+      ["Water boils at sea level at", "100 C", "90 C", "80 C", "120 C", "", "A", "fixed"],
+      ["Read the passage. Its main idea is", "change", "loss", "growth", "", "", "C", ""],
+      ["In the passage, the word 'it' refers to", "the river", "the town", "the bridge", "the road", "", "B", "fixed"],
+      ["The author's tone is", "hopeful", "angry", "neutral", "sad", "", "D", "fixed-options"],
+      ["The passage was most likely written", "recently", "long ago", "", "", "", "B", ""],
+      ["Which word is a verb?", "run", "blue", "quickly", "table", "none", "A", "fixed-options"],
+      ["Which word is an adverb?", "quickly", "blue", "run", "", "", "A", ""],
+      ["Tick to confirm you are in the right exam room.", "Confirmed", "", "", "", "", "A", "fixed-options"],
+      ["Write one sentence using a semicolon.", "", "", "", "", "", "", ""],
+      ["Which is a synonym of 'big'?", "large", "small", "thin", "", "", "A", "fixed"],
+      ["Write a short essay on your favourite book.", "", "", "", "", "", "", "separate-page"]
+    ],
+    "Settings": [
+      ["Key", "Value"],
+      ["university", "Test University"],
+      ["department", "English"],
+      ["coursecode", "ENGL 101"],
+      ["examname", "Final"],
+      ["numberofvestions", "4"],
+      ["groups", "2,(4),[3],2,1"],
+      ["seed", "old-xlsx-seed"]
+    ],
+    "Instructions": [["Instruction"], ["Answer every question."]],
+    "Preamble": [["LaTeX Preamble"], ["% no extra packages"]]
+  }
+}

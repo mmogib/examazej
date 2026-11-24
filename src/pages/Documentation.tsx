@@ -538,7 +538,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {highlightText(
-                          "See each question as it will print and change its tags without editing the file: keep its place, keep the options in order, pin options, set the correct answer, or put it on its own page. Every change is kept as you make it; Reset undoes a question. Questions from files made before v1.8 show a warning with a one-click fix that makes the exams made before v1.8. To skip this step, press Generate now on the Details page."
+                          "See each question as it will print and change its tags without editing the file: keep its place, keep the options in order, pin options, set the correct answer, or put it on its own page. Every change is kept as you make it; Reset undoes a question. Questions from files made with the older Examazej (before November 2026) that would come out differently show a warning with a one-click fix, Match my old exams. To skip this step, press Generate now on the Details page."
                         )}
                       </p>
                     </div>
@@ -721,6 +721,22 @@ Option text goes here
                             the file, so it is always read by that version&apos;s rules.
                             Templates from v1.8 on include it; leave it as it is. A file
                             without it is read as one made before v1.8.
+                          </AlertDescription>
+                        </Alert>
+                        <Alert className="mt-3">
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            The older Examazej (before November 2026) did not read some
+                            tags: a tag on the same line as <code>\item</code>,{" "}
+                            <code>%{`{#q}`}</code> or another tag, a tag followed by a
+                            comment, and a small option letter such as{" "}
+                            <code>%{`{#fixed-options:b}`}</code>. It also gave a tag written
+                            after an open-ended question to that question. Examazej now reads
+                            every tag where it is written, so a file made before v1.8 with
+                            such a tag can give different exams than it did then. The Details
+                            page names those questions, and &quot;Match my old exams&quot; on
+                            the Questions page makes the old exams again. Opening the session
+                            file saved with the old exams does the same.
                           </AlertDescription>
                         </Alert>
                       </CollapsibleContent>
@@ -1154,7 +1170,7 @@ Which number is prime?
                     page, the Questions page and the answer key page point this out, and
                     using{" "}
                     <code className="bg-muted px-1 rounded">%{`{#fixed-position}`}</code>{" "}
-                    there (or &quot;Shuffle the options, as before v1.8&quot; on the
+                    there (or &quot;Match my old exams&quot; on the
                     Questions page) makes exactly the exams made before v1.8.
                   </p>
                   <pre className="text-sm bg-muted p-3 rounded">
@@ -1285,7 +1301,7 @@ Which letter represents the correct answer?
                       <code className="bg-muted px-1 rounded">%{`{#fixed-options}`}</code>{" "}
                       with{" "}
                       <code className="bg-muted px-1 rounded">%{`{#correct:X}`}</code>, or
-                      press &quot;Keep all options in order, as before v1.8&quot; on the
+                      press &quot;Match my old exams&quot; on the
                       Questions page.
                       Adding <code className="bg-muted px-1 rounded">fixed-options</code>{" "}
                       to a <code className="bg-muted px-1 rounded">fixed</code> question

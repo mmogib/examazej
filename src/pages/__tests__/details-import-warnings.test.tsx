@@ -84,9 +84,9 @@ describe("Details page import warnings", () => {
   });
 
   it("shows which app made the file in the summary, and hides the line when unknown", () => {
-    renderDetails([], "Examazej before 1.8 (no app_version)");
+    renderDetails([], "an older Examazej (no app_version)");
     expect(document.querySelector('[data-testid="made-with"]')?.textContent).toBe(
-      "Made withExamazej before 1.8 (no app_version)"
+      "Made withan older Examazej (no app_version)"
     );
     act(() => root?.unmount());
     root = undefined;

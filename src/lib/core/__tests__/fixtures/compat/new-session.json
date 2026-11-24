@@ -1,0 +1,339 @@
+{
+  "setting": {
+    "university": "Test University",
+    "department": "Mathematics",
+    "coursecode": "MATH 102",
+    "examname": "Midterm",
+    "examdate": "November 24, 2026",
+    "timeallowed": "120 Minutes",
+    "numberofvestions": 4,
+    "term": "Term 261",
+    "examtype": "MAJOR",
+    "code_name": "CODE",
+    "code_numbering": "ALPHA",
+    "paper_size": "A4",
+    "instructions": "\\begin{enumerate}\n    \\begin{normalsize}\n        \\item  All types of calculators, smart watches or mobile phones are NOT allowed during the examination.\n        \\item  Use HB 2.5 pencils only.\n        \\item  Use a good eraser. DO NOT use the erasers attached to the pencil.\n        \\item  Write your name, ID number and Section number on the examination paper and in the upper left corner of the answer sheet.\n        \\item  When bubbling your ID number and Section number, be sure that the bubbles match with the numbers that you write.\n        \\item  The Test Code Number is already bubbled in your answer sheet. Make sure that it is the same as that printed on your question paper.\n        \\item  When bubbling, make sure that the bubbled space is fully covered.\n        \\item  When erasing a bubble, make sure that you do not leave any trace of penciling.\n    \\end{normalsize}\n\\end{enumerate}",
+    "includeCoverPage": true,
+    "includeAcademicIntegrityPledge": true,
+    "academicIntegrityPledgeText": "I pledge that I do not possess any mobile phone, smartwatch, earphones, or any other communication or smart devices, nor any written or printed material within my reach during this examination. I understand that possession of such devices or material will result in disciplinary action as per university policy.",
+    "groups": "3,(3),[3],2,1",
+    "seed": "new-session-seed"
+  },
+  "exam": {
+    "name": "master",
+    "ordering": null,
+    "preamble": "",
+    "questions": [
+      {
+        "text": "Solve $x^2 - 5x + 6 = 0$. The larger root is",
+        "choices": [
+          [
+            {
+              "text": "$2$"
+            },
+            {
+              "text": "$3$"
+            },
+            {
+              "text": "$6$"
+            },
+            {
+              "text": "$-3$"
+            }
+          ],
+          1,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "group": 1,
+        "order": 1
+      },
+      {
+        "text": "Which number is prime?",
+        "choices": [
+          [
+            {
+              "text": "$9$"
+            },
+            {
+              "text": "$15$"
+            },
+            {
+              "text": "$21$"
+            },
+            {
+              "text": "$1$"
+            },
+            {
+              "text": "$7$"
+            }
+          ],
+          4,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "fixedPosition": true,
+        "group": 1,
+        "order": 2
+      },
+      {
+        "text": "$\\int_0^1 x\\,dx$ equals",
+        "choices": [
+          [
+            {
+              "text": "$\\frac{1}{2}$"
+            },
+            {
+              "text": "$1$"
+            },
+            {
+              "text": "$2$"
+            }
+          ],
+          0,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "group": 1,
+        "order": 3
+      },
+      {
+        "text": "Using the data above, compute the mean.",
+        "choices": [
+          [
+            {
+              "text": "$4$"
+            },
+            {
+              "text": "$5$"
+            },
+            {
+              "text": "$6$"
+            },
+            {
+              "text": "$7$"
+            }
+          ],
+          1,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "fixed": true,
+        "group": 1,
+        "order": 4
+      },
+      {
+        "text": "Then the variance is",
+        "choices": [
+          [
+            {
+              "text": "$1$"
+            },
+            {
+              "text": "$4$"
+            },
+            {
+              "text": "$2$"
+            },
+            {
+              "text": "$3$"
+            }
+          ],
+          2,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "pinnedOptions": [
+          1
+        ],
+        "group": 1,
+        "order": 5
+      },
+      {
+        "text": "And the standard deviation is",
+        "choices": [
+          [
+            {
+              "text": "$2$"
+            },
+            {
+              "text": "$4$"
+            },
+            {
+              "text": "$1$"
+            },
+            {
+              "text": "$\\sqrt{2}$"
+            }
+          ],
+          3,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "fixedPosition": true,
+        "fixedOptions": true,
+        "group": 1,
+        "order": 6
+      },
+      {
+        "text": "Which is a vector space over $\\mathbb{R}$?",
+        "choices": [
+          [
+            {
+              "text": "$\\mathbb{R}^2$"
+            },
+            {
+              "text": "$\\mathbb{N}$"
+            },
+            {
+              "text": "$\\{0, 1\\}$"
+            },
+            {
+              "text": "All of the above"
+            },
+            {
+              "text": "None of the above"
+            }
+          ],
+          0,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "pinnedOptions": [
+          3,
+          4
+        ],
+        "group": 1,
+        "order": 7
+      },
+      {
+        "text": "The rank of the $3 \\times 3$ identity matrix is",
+        "choices": [
+          [
+            {
+              "text": "$1$"
+            },
+            {
+              "text": "$3$"
+            },
+            {
+              "text": "$0$"
+            },
+            {
+              "text": "$9$"
+            },
+            {
+              "text": "None of the above"
+            }
+          ],
+          1,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "pinnedOptions": [
+          4
+        ],
+        "group": 1,
+        "order": 8
+      },
+      {
+        "text": "Order the steps: which comes second?",
+        "choices": [
+          [
+            {
+              "text": "Write the equation"
+            },
+            {
+              "text": "Isolate the variable"
+            },
+            {
+              "text": "Check the answer"
+            }
+          ],
+          1,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "fixedOptions": true,
+        "group": 1,
+        "order": 9
+      },
+      {
+        "text": "Same wording",
+        "choices": [
+          [
+            {
+              "text": "one"
+            },
+            {
+              "text": "two"
+            },
+            {
+              "text": "three"
+            },
+            {
+              "text": "four"
+            }
+          ],
+          2,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "group": 1,
+        "order": 10
+      },
+      {
+        "text": "Same wording",
+        "choices": [
+          [
+            {
+              "text": "uno"
+            },
+            {
+              "text": "dos"
+            },
+            {
+              "text": "tres"
+            },
+            {
+              "text": "cuatro"
+            }
+          ],
+          0,
+          null
+        ],
+        "keepOnSeparatePage": false,
+        "pinnedOptions": [
+          0
+        ],
+        "group": 1,
+        "order": 11
+      },
+      {
+        "text": "Is every bounded sequence convergent?",
+        "choices": [
+          [
+            {
+              "text": "Yes"
+            },
+            {
+              "text": "No"
+            }
+          ],
+          1,
+          null
+        ],
+        "keepOnSeparatePage": true,
+        "group": 1,
+        "order": 12
+      }
+    ],
+    "kept_in_one_page": []
+  },
+  "options_order": {},
+  "app_version": "1.8.4",
+  "generation": {
+    "seed": "new-session-seed",
+    "versions": 4
+  }
+}

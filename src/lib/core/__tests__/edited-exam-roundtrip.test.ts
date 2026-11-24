@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parseLatexTemplate } from "../parser";
-import { generateLatexTemplate } from "../latex";
+import { buildExamPackage } from "../exam-package";
 import { mergeSettingsWithDefaults } from "../settings";
 import { generateExamVersions } from "../versioning";
-import { getTemplateVersion } from "../app-version";
 import { importSessionJson } from "../session-import";
 import { getQuestionNoteSummary } from "../import-notes";
 import {
@@ -16,7 +15,7 @@ import {
 import { parseCSV } from "../../parsers/csv-parser";
 import { convertToLatexFormat } from "../../parsers/adapter";
 import { generateCSVTemplate } from "../../generators/csv-template";
-import type { ExamData, ExamJSON, ExamSettings, ParsedLatexTemplate, Question } from "../../types";
+import type { ExamData, ExamJSON, ExamSettings, GenerationState, ParsedLatexTemplate, Question } from "../../types";
 
 const BEGIN = "\\begin{enumerate}";
 const END = "\\end{enumerate}";
@@ -59,8 +58,9 @@ function toExam(template: ParsedLatexTemplate): { settings: ExamSettings; exam: 
 }
 
 /** Every version as printed: question text, option texts and answer, plus the mappings. */
-function generated(questions: Question[], settings: ExamSettings) {
-  const { versions, mappings } = generateExamVersions(questions, settings, "edit-seed");
+function generated(questions: Question[], settings: ExamSettings, seed = settings.seed ?? "") {
+  expect(seed).not.toBe("");
+  const { versions, mappings } = generateExamVersions(questions, settings, seed);
   return {
     mappings,
     versions: versions.map((v) =>
@@ -80,6 +80,11 @@ describe("an exam edited on the Questions page reopens as the same exam", () => 
   edited[3] = fixLegacyFixed(uploaded[3], uploaded[3]); // repaired
   edited[4] = setOptionsLock(uploaded[4], true, uploaded[4]); // the pair inside (n)
   const editedExam: ExamData = { ...exam, questions: edited };
+  // The Exam Package, as Results builds it for this exam and seed.
+  const examData: ExamJSON = { setting: settings, exam: editedExam, options_order: {} };
+  const { versions, mappings } = generateExamVersions(edited, settings, "edit-seed");
+  const state: GenerationState = { settings, questions: edited, versions, mappings, seed: "edit-seed" };
+  const files = buildExamPackage(examData, state, true);
 
   it("the edits are the ones intended", () => {
     expect(edited[0].pinnedOptions).toEqual([0, 1, 2]);
@@ -92,36 +97,32 @@ describe("an exam edited on the Questions page reopens as the same exam", () => 
     // Only the unrepaired old pin (Q8) still has a note, with its answer from the letter; and
     // Q1's answer A is now pinned.
     expect(getQuestionNoteSummary(edited, settings.groups)).toEqual([
-      expect.stringMatching(/^Question 8 uses %\{#fixed-options:X\}.*This file has no app_version.*Q8 D\./),
+      expect.stringMatching(/^Question 8 came with %\{#fixed-options:X\}.*This file has no app_version.*Q8 D\./),
       "In Question 1 the correct answer is a pinned option, so it has the same letter in every version.",
     ]);
   });
 
   it("through _template.tex", () => {
-    const template = generateLatexTemplate(settings, editedExam, settings.numberofvestions);
-    const reopened = toExam(parseLatexTemplate(template));
+    const reopened = toExam(parseLatexTemplate(files.template));
     expect(reopened.settings.groups).toBe("3,(3),[3]");
+    expect(reopened.settings.seed).toBe("edit-seed");
     expect(generated(reopened.exam.questions, reopened.settings)).toEqual(generated(edited, settings));
     // A template is a current-version file: it states every answer and carries no markers.
     expect(reopened.exam.questions.some((q) => q.legacyPin || q.legacyFixed || q.answerAssumed)).toBe(false);
   });
 
   it("through _session.json, which keeps the markers and the checked answer", () => {
-    const examData: ExamJSON = { setting: settings, exam: editedExam, options_order: {} };
-    const saved = JSON.stringify({ ...examData, app_version: getTemplateVersion(), generation: { seed: "edit-seed" } });
-    const { examData: reopened, info } = importSessionJson(saved);
+    const { examData: reopened, info } = importSessionJson(files.session);
+    expect(reopened.setting.seed).toBe("edit-seed");
+    expect(JSON.parse(files.session).generation.seed).toBe("edit-seed");
     expect(generated(reopened.exam.questions, reopened.setting)).toEqual(generated(edited, settings));
     expect(reopened.exam.questions[2]).toMatchObject({ answerChecked: true, legacyPin: { answerFromLetter: true } });
     expect(getQuestionNoteSummary(reopened.exam.questions, reopened.setting.groups, info.source)).toEqual([
       expect.stringMatching(
-        /^Question 8 uses %\{#fixed-options:X\}.*These questions came from a file made before v1\.8 \(this file was saved by Examazej \d/
+        /^Question 8 came with %\{#fixed-options:X\}.*These questions came from a file made with the older Examazej \(this file was saved by Examazej \d/
       ),
       "In Question 1 the correct answer is a pinned option, so it has the same letter in every version.",
     ]);
-  });
-
-  it("an untouched exam gives the uploaded versions", () => {
-    expect(generated([...uploaded], settings)).toEqual(generated(uploaded, settings));
   });
 
   it("an answer-only edit changes only that question's answer letters", () => {

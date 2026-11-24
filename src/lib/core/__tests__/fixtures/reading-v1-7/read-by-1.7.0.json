@@ -1,0 +1,386 @@
+{
+ "A-shift-fixed.tex": [
+  {
+   "optionCount": 0,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "A2-shift-pin.tex": [
+  {
+   "optionCount": 0,
+   "fixed": false,
+   "fixedOptions": true,
+   "separatePage": false,
+   "answer": 1
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "A3-shift-sep.tex": [
+  {
+   "optionCount": 0,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": true,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "B-item-same-line.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "C-two-tags.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "D-tag-with-q.tex": [
+  {
+   "optionCount": 2,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "E-lowercase.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "G-trailing-space.tex": [
+  {
+   "optionCount": 3,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "G2-trailing-comment.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "H-uppercase.tex": [
+  {
+   "optionCount": 3,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "I-tag-after-text.tex": [
+  {
+   "optionCount": 2,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "K-trailing-tag.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 0,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": true,
+   "answer": 0
+  }
+ ],
+ "L-chain.tex": [
+  {
+   "optionCount": 0,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 0,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": true,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "P-two-lists.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 0,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "U-two-lines.tex": [
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": true,
+   "separatePage": true,
+   "answer": 1
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "V-open-own-tag.tex": [
+  {
+   "optionCount": 0,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": true,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 3,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ],
+ "W-crlf-shift.tex": [
+  {
+   "optionCount": 0,
+   "fixed": true,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  },
+  {
+   "optionCount": 2,
+   "fixed": false,
+   "fixedOptions": false,
+   "separatePage": false,
+   "answer": 0
+  }
+ ]
+}

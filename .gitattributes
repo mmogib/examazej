@@ -1,0 +1,2 @@
+# Test fixtures are read byte for byte (one keeps Windows line endings on purpose): never convert them.
+src/lib/core/__tests__/fixtures/** -text

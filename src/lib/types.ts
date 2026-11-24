@@ -55,6 +55,13 @@ export interface Question {
    */
   legacyFixed?: boolean;
   /**
+   * Set by the LaTeX reader on a question of a file made before v1.8 whose tags the older
+   * Examazej (1.6-1.7) read differently: it ignored a tag it could not read, or gave a tag
+   * written after an open-ended question to that question. What it read, never cleared. Such a
+   * question has no `legacyPin` / `legacyFixed`: this marker is its whole old-file story.
+   */
+  legacyRead?: LegacyReading;
+  /**
    * Set by the LaTeX reader when a pinned question has no `%{#correct:X}` and its answer fell
    * back to A (not the pre-1.8 single-letter case, which `legacyPin.answerFromLetter` records).
    * Records where the answer came from; never cleared.
@@ -112,6 +119,18 @@ export interface ImportInfo {
 }
 
 /** The kind of file an exam came from and its version stamp, for the wording of notes. */
+/** A question's tags as the older Examazej (1.6-1.7) read them. */
+export interface LegacyReading {
+  /** As written in the file: `fixed`, `fixed-options:X`, `separate-page`. */
+  tags: string[];
+  fixed: boolean;
+  /** `fixed-options:X` meant every option in order then. */
+  fixedOptions: boolean;
+  separatePage: boolean;
+  /** The answer it took: X of `fixed-options:X`, otherwise the first option. */
+  answer: number;
+}
+
 export interface NoteSource {
   format: "latex" | "spreadsheet" | "session";
   /** The file's `app_version` stamp as written; undefined when it has none. */

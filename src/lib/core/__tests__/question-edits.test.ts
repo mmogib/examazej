@@ -215,16 +215,19 @@ describe("immutability, Reset and Changed", () => {
   it("no edit mutates its input or the baseline", () => {
     const question = deepFreeze(q({ fixed: true, legacyFixed: true, pinnedOptions: [2] }));
     const baseline = deepFreeze(q({ fixed: true }));
+    const pinned = deepFreeze(q({ pinnedOptions: [2] }));
     expect(() => {
       setPositionLock(question, false, baseline);
       setOptionsLock(question, false, baseline);
-      togglePin(q({ pinnedOptions: [2] }), 1, baseline);
+      togglePin(pinned, 1, baseline);
       setCorrectAnswer(question, 3);
       setSeparatePage(question, true);
       fixLegacyPin(question, baseline);
       fixLegacyFixed(question, baseline);
       replaceQuestion(deepFreeze([question]), 0, q());
     }).not.toThrow();
+    expect(pinned.pinnedOptions).toEqual([2]);
+    expect(question).toMatchObject({ fixed: true, legacyFixed: true, pinnedOptions: [2] });
   });
 
   it("Reset gives a fresh copy of the uploaded question", () => {

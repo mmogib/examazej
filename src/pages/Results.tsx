@@ -45,17 +45,15 @@ import { ExamPreviewSheet } from "@/components/ui/exam-preview-dialog";
 import {
   generateExamVersions,
   generateCorrectnessSummary,
-  generateQuestionOptionMapping,
 } from "@/lib/core/versioning";
 import {
   generateLatexDocument,
-  generateMappingCSV,
   generateLatexTemplate,
   type GenerateLatexResult,
 } from "@/lib/core/latex";
 import { generateSettingsBlock } from "@/lib/core/settings";
+import { buildExamPackage } from "@/lib/core/exam-package";
 import { getLockLabels } from "@/lib/core/question-flags";
-import { getTemplateVersion } from "@/lib/core/app-version";
 import type { PageCountWarning } from "@/lib/utils/page-count-analyzer";
 import type {
   ExamJSON,
@@ -147,53 +145,14 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
 
     const base = getBaseFilename();
 
-    const { content: latexContent } = generateLatexDocument(
-      generationState.settings,
-      examData.exam,
-      generationState.versions,
-      generationState.mappings,
-      allowTrustedTex
-    );
-
-    const template = generateLatexTemplate(
-      generationState.settings,
-      examData.exam,
-      generationState.versions.length
-    );
-
-    const mappingCSV = generateMappingCSV(generationState.mappings);
-
-    const optionsMappingTable = generateQuestionOptionMapping(
-      generationState,
-      examData.exam
-    );
-    const optionsMappingCSV = optionsMappingTable
-      .map((row) => row.join(","))
-      .join("\n");
-
-    const sessionData = {
-      ...examData,
-      app_version: getTemplateVersion(),
-      generation: {
-        seed,
-        generated_at: new Date().toISOString(),
-        versions: generationState.versions.length,
-        complete_state: {
-          settings: generationState.settings,
-          questions: generationState.questions,
-          versions: generationState.versions,
-          mappings: generationState.mappings,
-          seed: generationState.seed,
-        },
-      },
-    };
+    const files = buildExamPackage(examData, generationState, allowTrustedTex);
 
     const zip = new JSZip();
-    zip.file(`${base}.tex`, latexContent);
-    zip.file(`${base}_template.tex`, template);
-    zip.file(`${base}_mapping.csv`, mappingCSV);
-    zip.file(`${base}_options_mapping.csv`, optionsMappingCSV);
-    zip.file(`${base}_session.json`, JSON.stringify(sessionData, null, 2));
+    zip.file(`${base}.tex`, files.latex);
+    zip.file(`${base}_template.tex`, files.template);
+    zip.file(`${base}_mapping.csv`, files.mapping);
+    zip.file(`${base}_options_mapping.csv`, files.optionsMapping);
+    zip.file(`${base}_session.json`, files.session);
 
     const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);

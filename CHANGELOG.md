@@ -12,19 +12,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Questions page**, between Details and Results: each question as it will print (an approximate preview), one at a time, with a group navigator whose question chips jump to that question, filters (all, tagged, changed, with notes) and Prev / Next in exam order. Change a question's tags without editing the file: keep its place in the group, keep all options in order, pin options, set the correct answer, put it on its own page. Every change is kept as you make it, a dot marks the questions that differ from the uploaded file, and Reset undoes a question. Switching a lock off and on again gives back exactly the uploaded tags, so the versions are the uploaded ones. Edits reach the Exam Package as before (template and session file).
 - Details offers **Next: Review questions** and **Generate now** (skips the Questions page).
 - Before generating, changed answers are listed for confirmation ("Q3: B → D"), on both routes; the same list is not asked again.
-- Questions from files made before v1.8 get a warning on the Questions page with a one-click fix: "Keep all options in order, as before v1.8" (for `%{#fixed-options:X}`) and "Shuffle the options, as before v1.8" (for `fixed` in a `(n)` group). The warning says how far the difference reaches (this question only, or other questions too) and goes away when the question's tags make the exams made before v1.8.
+- Questions from files made with the older Examazej get a warning on the Questions page with a one-click fix, "Match my old exams" (for `%{#fixed-options:X}`, for `fixed` in a `(n)` group, and for tags it read otherwise). The warning appears only on questions that still come out differently from the old exams, says how far the difference reaches (this question only, or other questions too) and goes away when the question's tags make the old exams.
 - An answer the file did not state (a pinned question without `%{#correct:X}`, or a pre-1.8 answer taken from the letter) keeps its note until it is set or confirmed with "Answer X is correct"; the confirmation is saved in the session file.
+- Files made with the older Examazej (before November 2026) whose tags it read otherwise than they are written now say so, question by question, and "Match my old exams" makes the old exams again. That older version ignored a tag on the same line as `\item`, `%{#q}` or another tag, a tag followed by a comment, and a small option letter (`%{#fixed-options:b}`), and gave a tag written after an open-ended question to that question; since v1.8 every tag is read where it is written, so such files gave different exams with no warning. Where it therefore took another answer, the new answer key keeps the file's answer and a note names the old one.
 
 ### Changed
 
 - The notes about questions on the Details page and the answer-key warning are worked out from the questions as they are now and the groups typed on Details, so they follow edits and group changes, and list only the questions still affected. Notes about the file itself (version stamp, redundant or ignored tags) are unchanged.
 - A session file saved by 1.8 or later that kept old-file markers shows the old-file notes again on Details, as its answer key already did.
+- Notes about old files speak of "the older Examazej (before November 2026)" and "your old exams" instead of version numbers, on Details, the Questions page and the answer key.
 - Documentation (header button and desktop Help menu) opens over the current step and returns to it, keeping Details' unsaved settings and the Questions page's place. Results' Back returns to the page it was opened from.
 
 ### Fixed
 
 - CSV files: quote characters in question and option text were dropped (`"Interpret ""a,b""."`, as Excel and Google Sheets save it, was read as `Interpret a,b.`). Doubled quotes are now read as one quote, and the CSV template writer doubles them.
 - A pre-1.8 `fixed` open-ended (or one-option) question inside a `(n)` group no longer gets an old-file warning: its versions never differed.
+- Old-file notes and the answer-key warning describe a question's current tags: after an edit they no longer tell you to replace a `fixed` tag the question no longer has, nor say that an answer taken from a pinned letter stays the same letter once that pin is removed.
+
+### Tests
+
+- A compatibility check: an exam of every kind (LaTeX, CSV, Excel, session file), made for 1.7 and made by 1.8.4, generated in four group settings and three seeds. Every file gives exactly the versions, answers, mapping files and documents of 1.8.4; a file made for 1.7 gives exactly the exams of 1.7.0 once its "Match my old exams" fixes are pressed, and differs from them only when a warning says so. The frozen copy of the 1.7 reader is checked against the real 1.7.0 output for every tag layout.
 
 ## [1.8.4] - 2026-11-24
 

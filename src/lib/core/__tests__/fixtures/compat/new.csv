@@ -1,0 +1,30 @@
+# settings
+app_version,1.8.4
+university,Test University
+department,Physics
+coursecode,PHYS 102
+examname,Quiz 4
+numberofvestions,4
+groups,3,(3),[3],2,1
+seed,new-csv-seed
+
+# instructions
+Answer every question.
+
+# preamble
+% no extra packages
+
+# questions
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
+"A ball is dropped. Its speed after 1 s is about","5 m/s","10 m/s","1 m/s","20 m/s","",B,""
+"The SI unit of force is","joule","watt","pascal","coulomb","newton",E,"fixed-position"
+"Light travels fastest in","water","vacuum","glass","","",B,""
+"Using the graph above, the slope is","2","4","1","0.5","",B,"fixed"
+"Then the area under it is","6","3","12","8","",C,"fixed-options:B"
+"So the average speed is","3","6","1.5","2","",A,"fixed-position, fixed-options"
+"Which is a scalar?","force","velocity","acceleration","All of the above","mass",E,"fixed-options:DE"
+"Which is conserved in every collision?","kinetic energy","momentum","speed","","",B,"fixed-options"
+"Same wording","one","two","three","four","",C,""
+"Same wording","uno","dos","tres","cuatro","",A,"fixed-options:A"
+"Ohm's law relates","mass and weight","voltage, current and resistance","power and time","","",B,"fixed"
+"Derive the period of a simple pendulum.","","","","","","","separate-page"

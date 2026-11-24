@@ -239,7 +239,7 @@ Which is correct?
       expect(result.questions[0].choices[1]).toBe(1);
       expect(result.questions[0].legacyPin).toEqual({ answerFromLetter: true });
       expect(getQuestionNoteSummary(result.questions, undefined)[0]).toMatch(
-        /^Question 1 uses %\{#fixed-options:X\}, which changed meaning in v1\.8/
+        /^Question 1 came with %\{#fixed-options:X\}, whose meaning has changed/
       );
     });
 

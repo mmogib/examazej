@@ -11,6 +11,8 @@
  */
 
 import type { Question } from "../types";
+import type { GroupMode } from "./group-config";
+import { legacyReadingTarget } from "./import-notes";
 import { areOptionsLocked, isPositionLocked } from "./question-flags";
 
 type LockState = Pick<Question, "fixed" | "fixedPosition" | "fixedOptions" | "pinnedOptions">;
@@ -103,9 +105,16 @@ export function pinsLeaveNothingToShuffle(question: Question): boolean {
   return pinned > 0 && count - pinned <= 1;
 }
 
-/** The file did not state this question's answer (assumed A, or taken from a pre-1.8 letter). */
+/**
+ * The answer needs checking: the file did not state it (assumed A, or taken from a pre-1.8
+ * letter), or the older Examazej read another one (`legacyRead`).
+ */
 export function isAnswerUnstated(question: Question): boolean {
-  return Boolean(question.answerAssumed || question.legacyPin?.answerFromLetter);
+  return Boolean(
+    question.answerAssumed ||
+      question.legacyPin?.answerFromLetter ||
+      (question.legacyRead && hasOptions(question) && question.legacyRead.answer !== question.choices[1])
+  );
 }
 
 /**
@@ -130,7 +139,7 @@ export function setSeparatePage(question: Question, on: boolean): Question {
   return { ...question, keepOnSeparatePage: on };
 }
 
-/** "Keep all options in order, as before v1.8" for a pre-1.8 `%{#fixed-options:X}`. */
+/** "Match my old exams" for a pre-1.8 `%{#fixed-options:X}`: every option in order, as v1.7 read it. */
 export function fixLegacyPin(question: Question, baseline?: Question): Question {
   if (!hasOptions(question)) return question;
   return settle(
@@ -144,7 +153,7 @@ export function fixLegacyPin(question: Question, baseline?: Question): Question 
   );
 }
 
-/** "Shuffle the options, as before v1.8" for a pre-1.8 `fixed` question in a `(n)` group. */
+/** "Match my old exams" for a pre-1.8 `fixed` question in a `(n)` group: options shuffled, as v1.7 did. */
 export function fixLegacyFixed(question: Question, baseline?: Question): Question {
   if (!hasOptions(question)) return question;
   return settle(
@@ -156,6 +165,26 @@ export function fixLegacyFixed(question: Question, baseline?: Question): Questio
     }),
     baseline
   );
+}
+
+/**
+ * "Match my old exams" for a question the older Examazej read differently (`legacyRead`): the
+ * tags that make the exam it made, in a group of this mode (`legacyReadingTarget`), pins
+ * cleared. The answer stays the one the file gives; an open-ended question takes the old one,
+ * which only its line of the mapping file shows.
+ */
+export function matchOldReading(question: Question, mode: GroupMode, baseline?: Question): Question {
+  const reading = question.legacyRead;
+  if (!reading) return question;
+  const target = legacyReadingTarget(reading, mode);
+  let next = settle(withLocks(question, { ...target, pinnedOptions: [] }), baseline);
+  if (Boolean(next.keepOnSeparatePage) !== target.keepOnSeparatePage) {
+    next = { ...next, keepOnSeparatePage: Boolean(target.keepOnSeparatePage) };
+  }
+  if (!hasOptions(question) && question.choices[1] !== reading.answer) {
+    next = { ...next, choices: [[], reading.answer, null] };
+  }
+  return editableState(next) === editableState(question) ? question : next;
 }
 
 /** Reset: a fresh copy of the question as uploaded, never the stored object itself. */

@@ -42,15 +42,20 @@ export function isTagged(question: Question): boolean {
 
 /**
  * What happens to this question in every version, e.g. "In every version: it moves within its
- * group; E stays E; A–D shuffle."
+ * group; E stays E; A–D shuffle." `othersCanMove`: another question of its group is free to
+ * move (not position-locked); without one, this question cannot move either.
  */
-export function describeEffect(question: Question, mode: GroupMode): string {
+export function describeEffect(question: Question, mode: GroupMode, othersCanMove = true): string {
   const groupMoves = mode !== "standard";
-  const place =
-    mode === "ordered" || isPositionLocked(question)
+  const stays = mode === "ordered" || isPositionLocked(question);
+  const place = stays
+    ? groupMoves
+      ? "it keeps its place in its group, and the group moves"
+      : "it keeps its place"
+    : !othersCanMove
       ? groupMoves
-        ? "it keeps its place in its group, and the group moves"
-        : "it keeps its place"
+        ? "it keeps its place in its group (no other question in it can move), and the group moves"
+        : "it keeps its place (no other question in its group can move)"
       : groupMoves
         ? "it moves within its group, and the group moves"
         : "it moves within its group";

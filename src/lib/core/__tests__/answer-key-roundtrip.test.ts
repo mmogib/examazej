@@ -124,9 +124,9 @@ describe("answer key of a pre-1.8 file whose key differs from v1.7's", () => {
       item(["%{#fixed-options:D}", "%{#correct:A}"], "Q3")
     );
     expect(page).toContain("\\begin{tcolorbox}[colback=red!6, colframe=red!75!black");
-    expect(page).toContain("WARNING: this answer key differs from keys made before Examazej 1.8");
+    expect(page).toContain("WARNING: this answer key differs from the keys the older Examazej made (before November 2026)");
     expect(page).toContain("Master questions 1 and 3 use \\texttt{\\%\\{\\#fixed-options:X\\}}");
-    expect(page).toContain("use the answer key and mapping files saved then");
+    expect(page).toContain("use the answer key and mapping files saved with them");
     expect(page).toContain("\\texttt{\\%\\{\\#fixed-options\\}} and \\texttt{\\%\\{\\#correct:X\\}} in master questions 1 and 3.");
     expect(page).toContain("no \\texttt{\\%\\{\\#correct:X\\}} for master question 1, so its answer was taken from the letter in the tag (1: B)");
   });
@@ -140,10 +140,10 @@ describe("answer key of a pre-1.8 file whose key differs from v1.7's", () => {
 
   it("warns about a fixed question inside a (n) group and suggests fixed-position", () => {
     const page = keyWithGroups("1,(2)", item([], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"));
-    expect(page).toContain("WARNING: this answer key differs from keys made before Examazej 1.8");
-    expect(page).toContain("Master question 2 is \\texttt{fixed} inside a (n) group");
+    expect(page).toContain("WARNING: this answer key differs from the keys the older Examazej made (before November 2026)");
+    expect(page).toContain("Master question 2 is inside a (n) group and was \\texttt{fixed}");
     expect(page).toContain("This does not affect the other questions.");
-    expect(page).toContain("use the tag \\texttt{fixed-position} instead of \\texttt{fixed} in master question 2.");
+    expect(page).toContain("use the tag \\texttt{fixed-position} and no other lock or pin tag in master question 2.");
     expect(page).not.toContain("fixed-options:X");
   });
 
@@ -161,14 +161,14 @@ describe("answer key of a pre-1.8 file whose key differs from v1.7's", () => {
     const { settings, exam } = toExam(parsed);
     settings.groups = "1,(2)";
     const { versions, mappings } = generateExamVersions(exam.questions, settings, settings.seed!);
-    expect(generateLatexDocument(settings, exam, versions, mappings).content).toContain("Master question 2 is \\texttt{fixed}");
+    expect(generateLatexDocument(settings, exam, versions, mappings).content).toContain("Master question 2 is inside a (n) group and was \\texttt{fixed}");
   });
 
   it("names both causes and both remedies when a file has both", () => {
     const page = keyWithGroups("1,(2)", item(["%{#fixed-options:C}"], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"));
     expect(page).toContain("Master question 1 uses");
-    expect(page).toContain("Master question 2 is \\texttt{fixed}");
-    expect(page).toContain("in master question 1; and use the tag \\texttt{fixed-position} instead of \\texttt{fixed} in master question 2.");
+    expect(page).toContain("Master question 2 is inside a (n) group and was \\texttt{fixed}");
+    expect(page).toContain("in master question 1; and use the tag \\texttt{fixed-position} and no other lock or pin tag in master question 2.");
   });
 
   it("no warning for a v1.8 file", () => {

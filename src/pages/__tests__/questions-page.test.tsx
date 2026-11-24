@@ -108,6 +108,32 @@ describe("Questions page", () => {
     expect($('[data-testid="group-3"]')?.textContent).toContain("group moves · questions shuffle");
   });
 
+  it("visiting the page without an edit never writes the exam", () => {
+    const uploaded = [q("Q1", { fixed: true, legacyFixed: true }), q("Q2", { pinnedOptions: [1] }), q("Q3")];
+    render(exam(uploaded, "(2),1"));
+    click($('[data-testid="chip-2"]'));
+    click(button("Next"));
+    click(button("Prev"));
+    click(button("With notes"));
+    click(button("All"));
+    press(document.body, "ArrowRight");
+    expect(latest).toBeUndefined();
+  });
+
+  it("the Changed and With notes filters follow the edits", () => {
+    render(exam([q("Q1"), q("Q2", { answerAssumed: true, pinnedOptions: [3] }), q("Q3")], "3"));
+    click(button("With notes"));
+    expect(chips()).toEqual(["2"]);
+    click($('[data-testid="chip-2"]'));
+    click(button("Answer A is correct"));
+    expect(chips()).toEqual([]);
+    click(button("Changed"));
+    expect(chips()).toEqual(["2"]);
+    click(button("Reset this question"));
+    expect(chips()).toEqual([]);
+    expect(title()).toBe("Question 2 of 3");
+  });
+
   it("filters narrow the navigator only; the shown question stays", () => {
     render(exam([q("Q1"), q("Q2", { fixedPosition: true }), q("Q3"), q("Q4")], "4"));
     click($('[data-testid="chip-3"]'));
@@ -148,13 +174,45 @@ describe("Questions page", () => {
   });
 
   it("pins options, says what moves, and warns when no option can move", () => {
-    render(exam([q("Q1")], "1"));
+    render(exam([q("Q1"), q("Q2")], "2"));
     click($('[aria-label="Pin option D"]'));
     expect($('[data-testid="effect"]')?.textContent).toBe("In every version: it moves within its group; D stays D; A–C shuffle.");
     click($('[aria-label="Pin option A"]'));
     click($('[aria-label="Pin option B"]'));
-    expect($('[data-testid="nothing-to-shuffle"]')).not.toBeNull();
+    expect($('[data-testid="nothing-to-shuffle"]')?.textContent).toContain("unpin one,");
     expect(latest?.exam.questions[0].pinnedOptions).toEqual([0, 1, 3]);
+    click($('[aria-label="Pin option C"]'));
+    expect($('[data-testid="nothing-to-shuffle"]')?.textContent).toContain("unpin two,");
+  });
+
+  it("says a question keeps its place when nothing else in its group can move", () => {
+    render(exam([q("Q1"), q("Q2"), q("Q3", { fixedPosition: true })], "1,2"));
+    expect($('[data-testid="effect"]')?.textContent).toBe(
+      "In every version: it keeps its place (no other question in its group can move); all options shuffle."
+    );
+    click($('[data-testid="chip-2"]'));
+    expect($('[data-testid="effect"]')?.textContent).toContain("it keeps its place (no other question in its group can move)");
+    click(switchFor("Keep its place in the group"));
+    expect($('[data-testid="effect"]')?.textContent).toContain("it keeps its place;");
+  });
+
+  it("an old fixed question, fixed and then pinned: the warning comes back and fits the pin", () => {
+    render(exam([q("Q1", { fixed: true, legacyFixed: true }), q("Q2")], "(2)"));
+    click(button("Match my old exams"));
+    expect($('[data-testid="note-legacy-fixed"]')).toBeNull();
+    click($('[aria-label="Pin option C"]'));
+    const note = $('[data-testid="note-legacy-fixed"]')?.textContent ?? "";
+    expect(note).toContain("With its current tags they do not shuffle as they did then");
+    expect(note).toContain("Lets the options shuffle and clears the pin on C.");
+  });
+
+  it("an old pinned answer, unpinned: no claim that it is the same letter in every version", () => {
+    render(exam([q("Q1", { pinnedOptions: [1], legacyPin: { answerFromLetter: true }, choices: [options(4), 1, null] })], "1"));
+    expect($('[data-testid="note-pinned-answer"]')?.textContent).toContain("B in every version");
+    click($('[aria-label="Unpin option B"]'));
+    expect($('[data-testid="note-pinned-answer"]')).toBeNull();
+    expect($('[data-testid="note-legacy-pin"]')?.textContent).toContain("With its current tags this question is not shuffled as it was then");
+    expect($('[data-testid="note-answer-from-letter"]')).not.toBeNull();
   });
 
   it("sets the correct answer with the radio buttons", () => {
@@ -174,10 +232,36 @@ describe("Questions page", () => {
   it("an old-file question gets a warning with its one-click fix", () => {
     render(exam([q("Q1", { fixed: true, legacyFixed: true }), q("Q2")], "(2)"));
     expect($('[data-testid="note-legacy-fixed"]')?.textContent).toContain("(the other questions are not affected)");
-    click(button("Shuffle the options, as before v1.8"));
+    click(button("Match my old exams"));
     expect(latest?.exam.questions[0]).toMatchObject({ fixedPosition: true, legacyFixed: true });
     expect(latest?.exam.questions[0].fixed).toBeUndefined();
     expect($('[data-testid="note-legacy-fixed"]')).toBeNull();
+  });
+
+  it("questions the older Examazej read differently: what it read, and one click to match the old exams", () => {
+    const read = (extra = {}) => ({ tags: [], fixed: false, fixedOptions: false, separatePage: false, answer: 0, ...extra });
+    render(
+      exam(
+        [
+          q("Q1 open", { choices: [[], 0, null], legacyRead: read({ tags: ["fixed"], fixed: true }) }),
+          q("Q2", { fixed: true, legacyRead: read() }),
+        ],
+        "2"
+      )
+    );
+    const note = () => $('[data-testid="note-legacy-read"]')?.textContent ?? "";
+    expect(note()).toContain("read this question with %{#fixed}; this version reads it as written in the file, with no tags");
+    click(button("Match my old exams"));
+    expect(latest?.exam.questions[0]).toMatchObject({ fixed: true });
+    expect($('[data-testid="note-legacy-read"]')).toBeNull();
+
+    click($('[data-testid="chip-2"]'));
+    expect(note()).toContain("read this question with no tags; this version reads it as written in the file, with %{#fixed}");
+    expect(note()).toContain("The answer stays A.");
+    click(button("Match my old exams"));
+    expect(latest?.exam.questions[1].fixed).toBeUndefined();
+    expect($('[data-testid="note-legacy-read"]')).toBeNull();
+    expect($('[data-testid="chip-2"]')?.getAttribute("aria-label")).toContain("changed");
   });
 
   it("confirms an assumed answer without changing it", () => {

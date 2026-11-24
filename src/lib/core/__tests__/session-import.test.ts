@@ -32,13 +32,13 @@ describe("importSessionJson", () => {
       session([q("Q1", { fixed: true }), q("Q2"), q("Q3", { fixed: true })], "1,(2)")
     );
     expect(examData.exam.questions.map((question) => question.legacyFixed)).toEqual([true, undefined, true]);
-    expect(info.madeWith).toBe("Examazej before 1.8 (no app_version)");
+    expect(info.madeWith).toBe("an older Examazej (no app_version)");
     expect(info.warnings).toEqual([]);
     expect(info.source).toEqual({ format: "session", appVersion: undefined });
     const notes = getQuestionNoteSummary(examData.exam.questions, examData.setting.groups, info.source);
     expect(notes).toHaveLength(1);
-    expect(notes[0]).toMatch(/^Question 3 is 'fixed' inside a \(n\) group/);
-    expect(notes[0]).toContain('"Shuffle the options, as before v1.8" on the Questions page');
+    expect(notes[0]).toMatch(/^Question 3 is inside a \(n\) group and was 'fixed'/);
+    expect(notes[0]).toContain('"Match my old exams" on the Questions page');
     expect(notes[0]).not.toContain("in the file:");
     expect(notes[0]).toContain("open the template from the Exam Package instead of this session file");
   });
@@ -48,7 +48,7 @@ describe("importSessionJson", () => {
     const { examData, info } = importSessionJson(session(saved, "1,(1)", "1.8.4"));
     expect(info.warnings).toEqual([]);
     expect(getQuestionNoteSummary(examData.exam.questions, examData.setting.groups, info.source)[0]).toMatch(
-      /^Question 2 is 'fixed' inside a \(n\) group/
+      /^Question 2 is inside a \(n\) group and was 'fixed'/
     );
   });
 
@@ -57,13 +57,14 @@ describe("importSessionJson", () => {
     const settings = examData.setting as ExamSettings;
     const { versions, mappings } = generateExamVersions(examData.exam.questions, settings, settings.seed!);
     const { content } = generateLatexDocument(settings, examData.exam, versions, mappings);
-    expect(content).toContain("Master question 2 is \\texttt{fixed} inside a (n) group");
+    expect(content).toContain("Master question 2 is inside a (n) group and was \\texttt{fixed}");
   });
 
   it("adds no note when no fixed question sits in a (n) group", () => {
     const { examData, info } = importSessionJson(session([q("Q1", { fixed: true }), q("Q2")], "2"));
     expect(examData.exam.questions[0].legacyFixed).toBe(true);
     expect(info.warnings).toEqual([]);
+    expect(getQuestionNoteSummary(examData.exam.questions, examData.setting.groups, info.source)).toEqual([]);
   });
 
   it("leaves a session saved by v1.8 as it is, including markers saved with it", () => {

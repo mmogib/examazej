@@ -24,13 +24,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { describeGroups, type GroupLayout, type GroupMode } from "@/lib/core/group-config";
 import { getQuestionNotes, type QuestionNote } from "@/lib/core/import-notes";
-import { areOptionsLocked, isPositionLocked } from "@/lib/core/question-flags";
+import { areOptionsLocked, getLockTags, isPositionLocked } from "@/lib/core/question-flags";
 import { activePins as pinsOf, describeEffect, isTagged, letter, letterRanges } from "@/lib/core/question-effect";
 import {
   areLocksChanged,
   fixLegacyFixed,
   fixLegacyPin,
   isQuestionChanged,
+  matchOldReading,
   pinsLeaveNothingToShuffle,
   replaceQuestion,
   resetQuestion,
@@ -101,8 +102,8 @@ export function QuestionsPage({
   const [filter, setFilter] = useState<Filter>("all");
 
   const notesOf = useMemo(
-    () => questions.map((q, i) => getQuestionNotes(q, groupOf(i).mode === "ordered")),
-    [questions, groupOf]
+    () => getQuestionNotes(questions, examData.setting.groups),
+    [questions, examData.setting.groups]
   );
   const changedOf = useMemo(
     () => questions.map((q, i) => isQuestionChanged(q, baseline[i])),
@@ -162,6 +163,11 @@ export function QuestionsPage({
   const hasOptions = options.length > 0;
   const optionsLocked = areOptionsLocked(question);
   const pins = pinsOf(question);
+  const othersCanMove = Array.from({ length: group.size }, (_, k) => group.start + k).some(
+    (i) => i !== current && !isPositionLocked(questions[i])
+  );
+  // Pins leave at most one option free; two must be free for any to move.
+  const toUnpin = 2 - (options.length - pins.length);
 
   const generateButton = (
     <Button onClick={onGenerate} disabled={separatePageErrors.length > 0} variant="hero" size="lg">
@@ -395,11 +401,12 @@ export function QuestionsPage({
 
             <div className="space-y-1">
               <p className="text-sm" data-testid="effect">
-                {describeEffect(question, group.mode)}
+                {describeEffect(question, group.mode, othersCanMove)}
               </p>
-              {pinsLeaveNothingToShuffle(question) && (
+              {pinsLeaveNothingToShuffle(question) && options.length >= 2 && (
                 <p className="text-sm text-muted-foreground" data-testid="nothing-to-shuffle">
-                  No option can move: unpin one, or turn on "Keep all options in order".
+                  No option can move: unpin {toUnpin > 1 ? "two" : "one"}, or turn on "Keep all options in
+                  order".
                 </p>
               )}
             </div>
@@ -411,8 +418,10 @@ export function QuestionsPage({
                     key={note.kind}
                     note={note}
                     question={question}
+                    uploaded={base}
                     onFixPin={() => update(current, fixLegacyPin(question, base))}
                     onFixFixed={() => update(current, fixLegacyFixed(question, base))}
+                    onMatchReading={() => update(current, matchOldReading(question, group.mode, base))}
                     onConfirmAnswer={() => update(current, setCorrectAnswer(question, question.choices[1]))}
                   />
                 ))}
@@ -517,17 +526,26 @@ function QuestionChip({
   );
 }
 
+/** Tags as written, e.g. "%{#fixed} %{#separate-page}", or "no tags". */
+function tagList(tags: string[]): string {
+  return tags.length > 0 ? tags.map((tag) => `%{#${tag}}`).join(" ") : "no tags";
+}
+
 function NoteBox({
   note,
   question,
+  uploaded,
   onFixPin,
   onFixFixed,
+  onMatchReading,
   onConfirmAnswer,
 }: {
   note: QuestionNote;
   question: Question;
+  uploaded: Question | undefined;
   onFixPin: () => void;
   onFixFixed: () => void;
+  onMatchReading: () => void;
   onConfirmAnswer: () => void;
 }) {
   const amber =
@@ -541,15 +559,16 @@ function NoteBox({
       return (
         <Alert className={amber} data-testid="note-legacy-pin">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Made before v1.8: %{"{"}#fixed-options:X{"}"} changed meaning</AlertTitle>
+          <AlertTitle>From an older Examazej: %{"{"}#fixed-options:X{"}"} changed meaning</AlertTitle>
           <AlertDescription className="space-y-2 text-sm">
             <p>
-              Before v1.8 this tag kept all options in order. Now only the pinned option stays in place and the
-              others shuffle, so this question comes out differently from the versions made before v1.8 with the
-              same seed, and other questions may differ too.
+              The older Examazej (before November 2026) read this tag as "keep all options in order"; now it keeps
+              only the pinned option in place. With its current tags this question is not shuffled as it was then,
+              so it comes out differently from your old exams with the same seed, and other questions may differ
+              too.
             </p>
             <Button size="sm" variant="outline" onClick={onFixPin}>
-              Keep all options in order, as before v1.8
+              Match my old exams
             </Button>
             <p className="text-xs">Turns on "Keep all options in order"{pinWords}. The answer stays {answer}.</p>
           </AlertDescription>
@@ -559,21 +578,63 @@ function NoteBox({
       return (
         <Alert className={amber} data-testid="note-legacy-fixed">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Made before v1.8: a fixed question in a (n) group</AlertTitle>
+          <AlertTitle>From an older Examazej: a fixed question in a (n) group</AlertTitle>
           <AlertDescription className="space-y-2 text-sm">
             <p>
-              Before v1.8 this question's options were shuffled by mistake. With its current tags they are not,
-              so its answers differ from the answer keys made before v1.8 with the same seed
+              The older Examazej (before November 2026) shuffled this question's options by mistake. With its
+              current tags they do not shuffle as they did then, so its answers differ from your old answer keys
+              with the same seed
               {note.reach === "wider"
-                ? ", and because it no longer draws the shuffle v1.7 drew, later questions in each version may differ too."
+                ? ", and because it no longer draws the shuffle the older Examazej drew, later questions in each version may differ too."
                 : " (the other questions are not affected)."}
             </p>
             <Button size="sm" variant="outline" onClick={onFixFixed}>
-              Shuffle the options, as before v1.8
+              Match my old exams
             </Button>
             <p className="text-xs">
               Lets the options shuffle{pinWords}. Its place in the group is kept.
             </p>
+          </AlertDescription>
+        </Alert>
+      );
+    case "legacyRead": {
+      const reading = question.legacyRead;
+      const written = uploaded ? [...getLockTags(uploaded), ...(uploaded.keepOnSeparatePage ? ["separate-page"] : [])] : [];
+      return (
+        <Alert className={amber} data-testid="note-legacy-read">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>From an older Examazej: its tags were read differently</AlertTitle>
+          <AlertDescription className="space-y-2 text-sm">
+            <p>
+              The older Examazej (before November 2026) read this question with {tagList(reading?.tags ?? [])}; this
+              version reads it as written in the file, with {tagList(written)}. So it comes out differently from
+              your old exams with the same seed
+              {note.reach === "wider" ? ", and other questions may differ too." : " (only its own page or its line of the mapping file)."}
+            </p>
+            <Button size="sm" variant="outline" onClick={onMatchReading}>
+              Match my old exams
+            </Button>
+            <p className="text-xs">
+              Gives it the tags the older Examazej read{pinWords}.
+              {question.choices[0].length > 0 ? ` The answer stays ${answer}.` : ""}
+            </p>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    case "legacyReadAnswer":
+      return (
+        <Alert data-testid="note-legacy-read-answer">
+          <Info className="h-4 w-4" />
+          <AlertTitle>The older Examazej took another answer</AlertTitle>
+          <AlertDescription className="space-y-2 text-sm">
+            <p>
+              It took {note.then} as the answer, because it did not read the tag that gives {answer}. Your old answer
+              keys were wrong for this question; the new ones show {answer}.
+            </p>
+            <Button size="sm" variant="outline" onClick={onConfirmAnswer}>
+              Answer {answer} is correct
+            </Button>
           </AlertDescription>
         </Alert>
       );
@@ -597,7 +658,7 @@ function NoteBox({
           <AlertTitle>Answer taken from the pinned letter</AlertTitle>
           <AlertDescription className="space-y-2 text-sm">
             <p>
-              The file (made before v1.8) gives no answer, so, as before v1.8, the answer was taken from the
+              The file (made with an older Examazej) gives no answer, so, as the older Examazej did, the answer was taken from the
               letter in %{"{"}#fixed-options:{note.letter}{"}"}.
             </p>
             <Button size="sm" variant="outline" onClick={onConfirmAnswer}>

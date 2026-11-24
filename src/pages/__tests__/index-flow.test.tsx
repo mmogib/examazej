@@ -9,7 +9,7 @@ import type { ExamJSON, ExamSettings, ImportInfo, Question } from "@/lib/types";
 // Documentation only show where we are and go back.
 vi.mock("../Start", () => ({
   StartPage: ({ onDataLoaded }: { onDataLoaded: (data: ExamJSON, info?: ImportInfo) => void }) => (
-    <button onClick={() => onDataLoaded(structuredClone(EXAM), { warnings: [] })}>Load test exam</button>
+    <button onClick={() => onDataLoaded(structuredClone(nextExam ?? EXAM), { warnings: [] })}>Load test exam</button>
   ),
 }));
 vi.mock("../Results", () => ({
@@ -54,6 +54,8 @@ const EXAM: ExamJSON = {
 };
 
 let root: Root | undefined;
+/** The exam the mocked Start page loads, when not the default one. */
+let nextExam: ExamJSON | undefined;
 
 beforeAll(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -65,6 +67,7 @@ afterEach(() => {
     root = undefined;
   }
   document.body.replaceChildren();
+  nextExam = undefined;
 });
 
 const $ = (selector: string) => document.querySelector(selector);
@@ -85,6 +88,7 @@ const type = (input: HTMLInputElement, value: string) => {
 };
 const heading = () => document.querySelector("h1:not(header h1)")?.textContent;
 const dialog = () => $('[data-testid="confirm-answers"]');
+const chips = () => Array.from(document.querySelectorAll('[data-testid^="chip-"]')).map((c) => c.textContent);
 
 function start() {
   const container = document.createElement("div");
@@ -162,14 +166,21 @@ describe("Details → Questions → Results", () => {
     expect((document.getElementById("groups") as HTMLInputElement).value).toBe("1,(");
   });
 
-  it("Documentation from the Questions page keeps the question shown and the edits", () => {
+  it("Documentation from the Questions page keeps the question shown, the filter and the edits", () => {
     start();
     click(button("Next: Review questions"));
     click($('[data-testid="chip-2"]'));
     click($('[aria-label="Option B is the correct answer"]'));
+    click(button("Changed"));
+    expect(chips()).toEqual(["2"]);
     click(button("Documentation"));
+    // The hidden page does not take the arrow keys meanwhile.
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+    });
     click(button("Back from docs"));
     expect($('[data-testid="question-title"]')?.textContent).toBe("Question 2 of 2");
+    expect(chips()).toEqual(["2"]);
     expect($('[aria-label="Option B is the correct answer"]')?.getAttribute("aria-checked")).toBe("true");
   });
 
@@ -177,13 +188,32 @@ describe("Details → Questions → Results", () => {
     start();
     click(button("Next: Review questions"));
     click($('[aria-label="Option C is the correct answer"]'));
+    click(button("Generate"));
+    click(button("Generate with these answers"));
+    expect($('[data-testid="results"]')).not.toBeNull();
     click(button("Start Over"));
     expect(button("Load test exam")).toBeDefined();
     click(button("Load test exam"));
     click(button("Next: Review questions"));
     expect($('[aria-label="Option A is the correct answer"]')?.getAttribute("aria-checked")).toBe("true");
+    // The same change as before is asked again: the confirmed list went with Start over.
+    click($('[aria-label="Option C is the correct answer"]'));
     click(button("Generate"));
-    expect(dialog()).toBeNull();
-    expect($('[data-testid="results"]')).not.toBeNull();
+    expect(dialog()?.textContent).toContain("Q1: A → C");
+  });
+
+  it("Details notes follow the groups typed there, and leave out the group notes while they cannot be read", () => {
+    nextExam = structuredClone(EXAM);
+    nextExam.exam.questions[1] = { ...nextExam.exam.questions[1], fixed: true, legacyFixed: true };
+    start();
+    const notes = () => $('[data-testid="import-warnings"]')?.textContent ?? "";
+    const groups = document.getElementById("groups") as HTMLInputElement;
+    expect(notes()).toBe("");
+    type(groups, "1,(1)");
+    expect(notes()).toContain("Question 2 is inside a (n) group and was %{#fixed}");
+    type(groups, "1,(");
+    expect(notes()).not.toContain("Question 2 is inside a (n) group");
+    type(groups, "2");
+    expect(notes()).toBe("");
   });
 });

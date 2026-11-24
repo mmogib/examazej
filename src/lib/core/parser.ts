@@ -17,6 +17,7 @@ import {
   PINNED_OPTIONS_VERSION,
   readFileVersion,
 } from "./app-version";
+import { readQuestionsAsV17 } from "./reader-v1-7";
 
 const logger = createLogger("PARSER");
 
@@ -222,6 +223,50 @@ function createQuestionObject(
   if (flags.fixed && pins.legacyFixed) question.legacyFixed = true;
 
   return question;
+}
+
+/**
+ * A file made before v1.8 was read by the older Examazej (1.6-1.7), which ignored some tags and
+ * gave a tag written after an open-ended question to that question. Where it read a question's
+ * tags differently from the reading above, mark the question with what it read (`legacyRead`),
+ * so a note can say so and the Questions page can make the old exams again. Nothing is marked
+ * when the older reader refused the file (no exams were made from it then).
+ */
+function markLegacyReading(
+  content: string,
+  questions: Omit<Question, "group" | "order">[],
+  warnings: string[]
+): void {
+  const old = readQuestionsAsV17(content);
+  if (!old) return;
+  if (old.length !== questions.length || old.some((q, i) => q.optionCount !== questions[i].choices[0].length)) {
+    warnings.push(
+      `The older Examazej (before November 2026) read ${old.length} question${old.length === 1 ? "" : "s"} in this file ` +
+        `where this version reads ${questions.length}, or read their options differently, so the exams made with it ` +
+        `cannot be made again from this file. To make them again, open the session file saved with them.`
+    );
+    return;
+  }
+  old.forEach((then, i) => {
+    const question = questions[i];
+    // What the older rules (legacyPin, legacyFixed) assume it read: these tags, as written.
+    const sameTags =
+      then.fixed === Boolean(question.fixed) &&
+      then.fixedOptions === Boolean(question.fixedOptions || (question.pinnedOptions?.length ?? 0) > 0) &&
+      then.separatePage === Boolean(question.keepOnSeparatePage) &&
+      !question.fixedPosition &&
+      (question.choices[0].length === 0 || then.answer === question.choices[1]);
+    if (sameTags) return;
+    question.legacyRead = {
+      tags: then.tags,
+      fixed: then.fixed,
+      fixedOptions: then.fixedOptions,
+      separatePage: then.separatePage,
+      answer: then.answer,
+    };
+    delete question.legacyPin;
+    delete question.legacyFixed;
+  });
 }
 
 export function parseLatexTemplate(content: string): ParsedLatexTemplate {
@@ -577,6 +622,10 @@ export function parseLatexTemplate(content: string): ParsedLatexTemplate {
   // Save the last question if exists and complete
   if (currentQuestion !== null) {
     saveCurrentQuestion();
+  }
+
+  if (pins.legacy && allValidationErrors.length === 0) {
+    markLegacyReading(content, result.questions, allWarnings);
   }
 
   // Notes about the file itself: the version stamp first, then each question's tag problems.

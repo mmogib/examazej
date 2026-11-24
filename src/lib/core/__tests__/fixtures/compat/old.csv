@@ -1,0 +1,29 @@
+# settings
+university,Test University
+department,Physics
+coursecode,PHYS 101
+examname,Quiz 3
+numberofvestions,4
+groups,3,(3),[3],2,1
+seed,old-csv-seed
+
+# instructions
+Answer every question.
+
+# preamble
+% no extra packages
+
+# questions
+Question Text,Option A,Option B,Option C,Option D,Option E,Correct,Tags
+"A ball is dropped. Its speed after 1 s is about","10 m/s","5 m/s","1 m/s","20 m/s","",A,""
+"The SI unit of force is","newton","joule","watt","pascal","coulomb",A,"fixed"
+"Light travels fastest in","vacuum","water","glass","","",A,""
+"Using the graph above, the slope is","2","4","1","0.5","",B,"fixed"
+"Then the area under it is","6","3","12","8","",C,"fixed-options"
+"So the average speed is","3","6","1.5","2","",A,""
+"Which is a scalar?","mass","force","velocity","acceleration","",A,"fixed-options"
+"Which is conserved in every collision?","momentum","kinetic energy","speed","","",A,""
+"Sign here to confirm you read the instructions.","Signed","","","","",A,"fixed-options"
+"Describe one source of error.","","","","","","",""
+"Ohm's law relates","voltage, current and resistance","mass and weight","power and time","","",A,"fixed"
+"Derive the period of a simple pendulum.","","","","","","","separate-page"

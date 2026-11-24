@@ -303,7 +303,25 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
       expect(q.fixedOptions, tag).toBeFalsy();
       expect(q.choices[1], tag).toBe(1);
       expect(q.answerAssumed, tag).toBeUndefined();
-      expect(notesOf(result), tag).toHaveLength(1);
+    }
+    expect(notesOf(parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options:B}"]))))).toHaveLength(1);
+  });
+
+  it("notes where the older Examazej read the tag otherwise: a small letter, or capitals", () => {
+    // It ignored %{#fixed-options:b}; it read %{#Fixed-Options:B} as every option in order but
+    // took A as the answer.
+    const small = parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options:b}"])));
+    expect(small.questions[0].legacyRead).toEqual({ tags: [], fixed: false, fixedOptions: false, separatePage: false, answer: 0 });
+    expect(small.questions[0].legacyPin).toBeUndefined();
+    const capitals = parseLatexTemplate(doc(mcq("Q", ["%{#Fixed-Options:B}"])));
+    expect(capitals.questions[0].legacyRead).toMatchObject({ fixedOptions: true, answer: 0 });
+    for (const result of [small, capitals]) {
+      expect(getQuestionNoteSummary(result.questions, "1")).toEqual([
+        expect.stringMatching(/^The older Examazej \(before November 2026\) read the tags of Question 1 differently/),
+        "The older Examazej took another answer for Question 1, because it did not read the tag that gives the " +
+          "answer: Q1 A, now B. The answer keys made with it were wrong for this question. Check it on the Questions page.",
+        "In Question 1 the correct answer is a pinned option, so it has the same letter in every version.",
+      ]);
     }
   });
 
@@ -313,13 +331,13 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
     );
     expect(notesOf(result)).toHaveLength(1);
     const note = notesOf(result)[0];
-    expect(note).toMatch(/^Questions 1 and 3 use %\{#fixed-options:X\}, which changed meaning in v1\.8/);
+    expect(note).toMatch(/^Questions 1 and 3 came with %\{#fixed-options:X\}, whose meaning has changed/);
     expect(note).toContain("This file has no app_version");
     expect(note).toContain("Q1 B, Q3 C.");
     expect(note).toContain(
-      "differ from the versions made before v1.8 with the same seed, in these questions and possibly in the other questions too"
+      "differ from your old exams with the same seed, in these questions and possibly in the other questions too"
     );
-    expect(note).toContain('"Keep all options in order, as before v1.8" on the Questions page');
+    expect(note).toContain('"Match my old exams" on the Questions page');
     expect(note).toContain(
       "replace %{#fixed-options:X} with %{#fixed-options} and %{#correct:X} in these questions"
     );
@@ -364,7 +382,7 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
     const result = parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options:C}", "%{#correct:A}"])));
     expect(result.questions[0].choices[1]).toBe(0);
     expect(notesOf(result)).toHaveLength(1);
-    expect(notesOf(result)[0]).toMatch(/^Question 1 uses %\{#fixed-options:X\}/);
+    expect(notesOf(result)[0]).toMatch(/^Question 1 came with %\{#fixed-options:X\}/);
     expect(notesOf(result)[0]).not.toContain("the answer was taken from the letter");
   });
 
@@ -372,8 +390,10 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
     const result = parseLatexTemplate(doc(mcq("Q", ["%{#fixed-options:BC}"], 4)));
     expect(result.questions[0].choices[1]).toBe(0);
     expect(result.questions[0].answerAssumed).toBe(true);
-    expect(notesOf(result)).toEqual([
-      expect.stringMatching(/^Question 1 uses %\{#fixed-options:X\}/),
+    // The older Examazej ignored a tag with two letters.
+    expect(result.questions[0].legacyRead).toMatchObject({ tags: [], fixedOptions: false });
+    expect([...(result.warnings ?? []), ...getQuestionNoteSummary(result.questions, "1")]).toEqual([
+      expect.stringMatching(/^The older Examazej \(before November 2026\) read the tags of Question 1 differently/),
       expect.stringMatching(/^Question 1 pins an option .* so the answer is A/),
     ]);
   });
@@ -398,12 +418,12 @@ describe("%{#fixed} inside a (n) group in a file from before v1.8", () => {
     expect(notesOf(result)).toHaveLength(1);
     const note = notesOf(result)[0];
     expect(note).toMatch(
-      /^Question 3 is %\{#fixed\} inside a \(n\) group in a file made before v1\.8\. Before v1\.8 the options/
+      /^Question 3 is inside a \(n\) group and was %\{#fixed\} in a file made with the older Examazej \(before November 2026\), which shuffled the options/
     );
     expect(note).toContain("(the other questions are not affected)");
-    expect(note).toContain('"Shuffle the options, as before v1.8" on the Questions page');
+    expect(note).toContain('"Match my old exams" on the Questions page');
     expect(note).toContain("This file has no app_version");
-    expect(note).toContain("using %{#fixed-position} instead of %{#fixed} in this question");
+    expect(note).toContain("(in the file: %{#fixed-position} and no other lock or pin tag in this question)");
   });
 
   it("says nothing for a v1.8 file", () => {
@@ -425,8 +445,8 @@ describe("%{#fixed} inside a (n) group in a file from before v1.8", () => {
     const result = convertToLatexFormat(parseCSV(csv));
     expect(result.questions[0].legacyFixed).toBe(true);
     const [note] = notesOf(result, "spreadsheet");
-    expect(note).toMatch(/^Question 1 is 'fixed' inside a \(n\) group/);
-    expect(note).toContain("using 'fixed-position' instead of 'fixed'");
+    expect(note).toMatch(/^Question 1 is inside a \(n\) group and was 'fixed'/);
+    expect(note).toContain("(in the file: 'fixed-position' and no other lock or pin tag");
     expect(note).toContain("add an app_version row with 1.8.0 to the settings");
     const stamped = convertToLatexFormat(parseCSV(csv.replace("# settings", "# settings\napp_version,1.8.0")));
     expect(stamped.questions[0].legacyFixed).toBeUndefined();
@@ -457,7 +477,7 @@ describe("app_version stamp", () => {
 
   it("describes where a file came from for the Details page", () => {
     expect(describeFileVersion(readFileVersion("1.8.0"))).toBe("Examazej 1.8.0");
-    expect(describeFileVersion(readFileVersion(undefined))).toBe("Examazej before 1.8 (no app_version)");
+    expect(describeFileVersion(readFileVersion(undefined))).toBe("an older Examazej (no app_version)");
   });
 });
 

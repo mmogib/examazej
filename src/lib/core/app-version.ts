@@ -76,7 +76,8 @@ export function isFileBefore(file: FileVersion, version: string): boolean {
 export function getFileVersionNotes(file: FileVersion): string[] {
   if (file.raw !== undefined && !file.version) {
     return [
-      `app_version "${file.raw}" is not a version number (like 1.8.0), so the file was read as one made before v1.8.`,
+      `app_version "${file.raw}" is not a version number (like 1.8.0), so the file was read as one made with ` +
+        `the older Examazej (before November 2026).`,
     ];
   }
   const known = parseVersion(getTemplateVersion()) as Version;
@@ -97,14 +98,14 @@ export function getFileVersionNotes(file: FileVersion): string[] {
 export function describeFileVersion(file: FileVersion): string {
   if (file.version) return `Examazej ${formatVersion(file.version)}`;
   return file.raw === undefined
-    ? "Examazej before 1.8 (no app_version)"
-    : "Examazej before 1.8 (unreadable app_version)";
+    ? "an older Examazej (no app_version)"
+    : "an older Examazej (unreadable app_version)";
 }
 
 /** Short description of where a file's version came from, for notes. */
 export function describeFileOrigin(file: FileVersion): string {
   if (file.version) return `This file was made with Examazej ${formatVersion(file.version)}`;
   return file.raw === undefined
-    ? "This file has no app_version, so it was read as a file from before v1.8"
-    : "This file was read as a file from before v1.8";
+    ? "This file has no app_version, so it was read as a file made with the older Examazej"
+    : "This file was read as a file made with the older Examazej";
 }
