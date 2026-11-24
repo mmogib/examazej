@@ -655,13 +655,13 @@ export function DetailsPage({
               <div className="text-sm">
                 <div className="font-medium">Groups</div>
                 <div className="text-muted-foreground">
-                  {groupSizes.length} groups
+                  {groupSizes.length} {groupSizes.length === 1 ? "group" : "groups"}
                 </div>
               </div>
               <div className="text-sm">
                 <div className="font-medium">Versions</div>
                 <div className="text-muted-foreground">
-                  {versions} variations
+                  {versions} {versions === 1 ? "variation" : "variations"}
                 </div>
               </div>
               <div className="text-sm">

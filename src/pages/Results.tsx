@@ -350,7 +350,7 @@ export function ResultsPage({ examData, seed, onBack, olderFile = false }: Resul
                   <CardTitle>Generation Summary</CardTitle>
                   <CardDescription>
                     Successfully generated {generationState.versions.length}{" "}
-                    exam versions
+                    {generationState.versions.length === 1 ? "exam version" : "exam versions"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

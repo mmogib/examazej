@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CSV files: quote characters in question and option text were dropped (`"Interpret ""a,b""."`, as Excel and Google Sheets save it, was read as `Interpret a,b.`). Doubled quotes are now read as one quote, and the CSV template writer doubles them.
 - A pre-1.8 `fixed` open-ended (or one-option) question inside a `(n)` group no longer gets an old-file warning: its versions never differed.
+- One group and one version are counted in the singular ("1 group", "1 variation", "1 exam version").
 - Old-file notes and the answer-key warning describe a question's current tags: after an edit they no longer tell you to replace a `fixed` tag the question no longer has, nor say that an answer taken from a pinned letter stays the same letter once that pin is removed.
 
 ### Tests

@@ -65,6 +65,13 @@ function renderDetails(importWarnings?: string[], madeWith?: string, importSourc
 }
 
 describe("Details page import warnings", () => {
+  it("counts one group and one version in the singular", () => {
+    renderDetails([]);
+    const summary = document.body.textContent ?? "";
+    expect(summary).toMatch(/Groups\s*1 group(?!s)/);
+    expect(summary).toMatch(/Versions\s*1 variation(?!s)/);
+  });
+
   it("warns about a file made with an older Examazej, and only then", () => {
     const warning = () => document.querySelector('[data-testid="older-file-warning"]')?.textContent ?? "";
     renderDetails([], undefined, { format: "latex" });
