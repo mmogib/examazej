@@ -33,15 +33,16 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
-      # package-lock.json is written by npm 11. Node 22 ships npm 10, which reads the nested
+      # package-lock.json is written by npm 11. npm 10 (bundled with Node 22) reads the nested
       # "overrides" in package.json differently and rejects the lock file (v1.8.0's build failed
       # this way). npm 11 must also run directly: launched by npm 10 (`npx npm@11 ci`), it gets
       # .npmrc's allow-scripts as an environment setting and refuses (v1.8.1 failed this way).
-      # So install npm 11 globally, outside the project so npm 10 never reads its .npmrc, then
-      # run a plain `npm ci`. The release gate runs the same check first
+      # Node comes from .nvmrc (26, which bundles npm 11); npm 11 is still installed globally,
+      # outside the project, so the build never depends on which npm a Node release ships. Then
+      # a plain `npm ci`. The release gate runs the same check first
       # (scripts/check-lockfile.mjs, CI_NPM_SPEC), and a test keeps the two in step.
       - name: Use npm 11 (the npm that writes package-lock.json)
         working-directory: ${{ runner.temp }}

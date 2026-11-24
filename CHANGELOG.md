@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Dependencies updated within their current major versions: Electron 43.8.12 (Chromium security fixes for the desktop app), electron-updater 6.8.11, Vite 6.4.6, React Router 7.18.6, TipTap 3.35.0, TypeScript 5.9.3, ESLint 9.39, Radix UI, TanStack Query, React Hook Form and others. `npm audit` reports 0 vulnerabilities.
+- Builds use Node 26, named in `.nvmrc`: the GitHub workflows read it, and so does Netlify.
+
 ## [1.8.3] - 2026-11-06
 
 ### Added

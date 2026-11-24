@@ -144,6 +144,9 @@ describe("lock file check", () => {
       const workflow = readFileSync(resolve(repositoryRoot, ".github", "workflows", file), "utf8")
         .replace(/\r/g, "");
       expect(workflow).toContain(`run: npm install -g ${CI_NPM_SPEC}`);
+      // Node comes from .nvmrc, the same file Netlify and local version managers read.
+      expect(workflow).toContain("node-version-file: .nvmrc");
+      expect(workflow).not.toMatch(/node-version:\s/);
       expect(workflow).toMatch(/working-directory: \$\{\{ runner\.temp \}\}\s+run: npm install -g/);
       expect(workflow).toMatch(/^\s+npm ci$/m);
       expect(workflow).not.toMatch(/run: npm ci\b/);
@@ -223,6 +226,10 @@ describe("release integration", () => {
     expect(eslintConfig).toMatch(/ignores:\s*\[[^\]]*"coverage"/s);
   });
 
+  it(".nvmrc names one Node major version for CI, Netlify and local tools", () => {
+    expect(readFileSync(resolve(repositoryRoot, ".nvmrc"), "utf8").trim()).toMatch(/^\d+$/);
+  });
+
   it("pins every reviewed dependency install script", () => {
     const npmConfig = readFileSync(
       resolve(repositoryRoot, ".npmrc"),
@@ -260,7 +267,7 @@ describe("release integration", () => {
     expect(workflow).toContain("push:");
     expect(workflow).toContain("main");
     expect(workflow).toContain("new-feat");
-    expect(workflow).toContain("node-version: 22");
+    expect(workflow).toContain("node-version-file: .nvmrc");
     expect(workflow).toContain("npm ci");
     expect(workflow).toContain("npm run verify:release");
   });
