@@ -55,7 +55,8 @@ export interface Run {
   templateHash?: string;
 }
 
-function createExamFromTemplate(template: ParsedLatexTemplate): ExamJSON {
+/** The exam as the Start page builds it from a read template. */
+export function createExamFromTemplate(template: ParsedLatexTemplate): ExamJSON {
   return {
     setting: mergeSettingsWithDefaults(template.settings),
     exam: {
@@ -112,7 +113,8 @@ const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 export function normalizeDocument(text: string): string {
   return text
     .replace(/Examazej \d+\.\d+\.\d+/g, "Examazej X")
-    .replace(/%app_version=\S+/g, "%app_version=X")
+    // The settings block writes "%", tabs, then "app_version=" (settings.ts).
+    .replace(/%[ \t]*app_version=\S+/g, "%app_version=X")
     .replace(/\n?\\begin\{tcolorbox\}\[colback=red!6[\s\S]*?\\end\{tcolorbox\}\n\\vspace\{0\.5cm\}\n/g, "");
 }
 

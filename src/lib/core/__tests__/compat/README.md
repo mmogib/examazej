@@ -26,8 +26,11 @@ generates as Results does, in four group settings (the file's own, then three th
 `(n)` and `[n]` groups, the last with no `(n)` group) and three seeds. For each run it records
 the version mappings (readable), the answers, and SHA-256 hashes of `_mapping.csv`,
 `_options_mapping.csv`, the exam document and `_template.tex`. The documents are compared with
-the app version taken out, and with the red warning box 1.8 put on the answer key of an old file
-taken out (1.9 no longer prints it; the key is otherwise the same).
+the app version taken out (the "Made with Examazej" line and the settings block's
+`app_version` stamp, written `%`, tabs, `app_version=`), so the check passes before and after the
+version number changes; and with the red warning box 1.8 put on the answer key of an old file
+taken out (1.9 no longer prints it; the key is otherwise the same). A test checks that a
+version-only change is ignored and a change of seed, groups or answer is not.
 
 `golden-1.8.4.json` holds every fixture, recorded by 1.8.4. 1.9 and later must match it exactly.
 

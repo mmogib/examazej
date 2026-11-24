@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Before generating, changed answers are listed for confirmation ("Q3: B → D"), on both routes; the same list is not asked again.
 - An answer the file did not state (a pinned question without `%{#correct:X}`, or an answer taken from the letter of an old `%{#fixed-options:X}`) keeps its note until it is set or confirmed with "Answer X is correct"; the confirmation is saved in the session file.
 - A file made with an older Examazej (no `app_version`) gets a warning at the top of the Details page, and a reminder on the Results page: exams made from it now may not be the ones printed back then, even with the same seed (the shuffle itself changed in 1.5.1, and the way tags are read in 1.8), so those are graded with the answer key printed with them. Making new exams from such a file is not affected.
-- Documentation: "Grading exams made with an older Examazej", with a ready prompt for an AI assistant that turns an old exam PDF into the `_mapping.csv` the Regrade Tool reads.
+- Documentation: "Grading exams made with an older Examazej", with a ready prompt for an AI assistant that turns an old exam PDF into the `_mapping.csv` the Regrade Tool reads. It keeps each version's name exactly as printed (A, 1 or II) and tells the assistant to leave an option it cannot match empty rather than guess.
 
 ### Changed
 
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests
 
-- A compatibility check: an exam of every kind (LaTeX, CSV, Excel, session file), made for an older Examazej and made by 1.8.4, generated in four group settings and three seeds. Every file gives exactly the versions, answers, mapping files and documents of 1.8.4.
+- A compatibility check: an exam of every kind (LaTeX, CSV, Excel, session file), made for an older Examazej and made by 1.8.4, generated in four group settings and three seeds. Every file gives exactly the versions, answers, mapping files and documents of 1.8.4, with the version stamps left out of the comparison (so the check passes before and after the version number changes), and its Exam Package reopens to the same question text, options and answers.
 
 ## [1.8.4] - 2026-11-24
 
