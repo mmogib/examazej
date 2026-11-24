@@ -77,7 +77,7 @@ export function getFileVersionNotes(file: FileVersion): string[] {
   if (file.raw !== undefined && !file.version) {
     return [
       `app_version "${file.raw}" is not a version number (like 1.8.0), so the file was read as one made with ` +
-        `the older Examazej (before November 2026).`,
+        `an older Examazej.`,
     ];
   }
   const known = parseVersion(getTemplateVersion()) as Version;

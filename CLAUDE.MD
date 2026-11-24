@@ -30,7 +30,7 @@
 - **State**: TanStack Query, React Hook Form + Zod
 - **Rich Text**: TipTap editor + KaTeX (LaTeX math)
 - **Routing**: React Router v6
-- **Testing**: Vitest (531 tests)
+- **Testing**: Vitest (534 tests)
 - **Node**: 26 with npm 11, named in `.nvmrc` (the GitHub workflows and Netlify read it)
 
 ## Architecture Constraints
@@ -84,6 +84,7 @@ Lock tags are independent; "position" means the slot within the question's group
 - Rule 1: in a pre-1.8 LaTeX file, `fixed-options:X` without `correct:` takes X as the answer (v1.7 meaning), with one explanatory note. Such questions get `legacyPin`, and the answer key page shows a red warning: their option shuffle consumes RNG draws v1.7 never made, so the whole exam differs from v1.7's for the same seed. `fixed-options` + `correct:X` reproduces v1.7 exactly (verified against the v1.7.0 code)
 - Rule 3 (LaTeX): 1.6-1.7 read a tag only alone on its line with a capital option letter, and gave a tag written after an open-ended question to that question. For a pre-1.8 file the parser also runs `src/lib/core/reader-v1-7.ts` (a frozen copy of the 1.7.0 reader; never "fix" it, tests compare it with the real 1.7.0 output) and marks each question it read differently with `legacyRead` (what it read); such a question gets no `legacyPin` / `legacyFixed`. `legacyReadReach` compares what the shuffle does now with what it did then; "Match my old exams" (`matchOldReading`) applies the old reading, keeping the file's answer
 - All three old-file fixes are labelled "Match my old exams"; a warning shows only on a question that still comes out differently from the old exams
+- Exams printed by older releases are not reproduced in general (D15): the shuffle changed in 1.5.1 (seed hashing) and the file does not say which release printed it. A file without `app_version` gets `OlderFileWarning` on Details and `OlderFileReminder` on Results (`isOlderFile`); the docs tell users to grade old exams with the answer key printed with them. Never word a note as if the old exams can be made again; never add dates
 - `getTemplateVersion()` stamps max(package version, newest rules version), so dev builds before the release bump still write a v1.8 stamp
 - **Grouping rule**: A `separate-page` question must be alone in its own size-1 group. Sharing a group with other questions causes version-dependent page counts (Details page hard-errors this)
 

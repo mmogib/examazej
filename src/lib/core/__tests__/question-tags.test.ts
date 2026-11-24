@@ -317,7 +317,7 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
     expect(capitals.questions[0].legacyRead).toMatchObject({ fixedOptions: true, answer: 0 });
     for (const result of [small, capitals]) {
       expect(getQuestionNoteSummary(result.questions, "1")).toEqual([
-        expect.stringMatching(/^The older Examazej \(before November 2026\) read the tags of Question 1 differently/),
+        expect.stringMatching(/^The older Examazej read the tags of Question 1 differently/),
         "The older Examazej took another answer for Question 1, because it did not read the tag that gives the " +
           "answer: Q1 A, now B. The answer keys made with it were wrong for this question. Check it on the Questions page.",
         "In Question 1 the correct answer is a pinned option, so it has the same letter in every version.",
@@ -393,7 +393,7 @@ describe("LaTeX: %{#fixed-options:X} in a file from before v1.8", () => {
     // The older Examazej ignored a tag with two letters.
     expect(result.questions[0].legacyRead).toMatchObject({ tags: [], fixedOptions: false });
     expect([...(result.warnings ?? []), ...getQuestionNoteSummary(result.questions, "1")]).toEqual([
-      expect.stringMatching(/^The older Examazej \(before November 2026\) read the tags of Question 1 differently/),
+      expect.stringMatching(/^The older Examazej read the tags of Question 1 differently/),
       expect.stringMatching(/^Question 1 pins an option .* so the answer is A/),
     ]);
   });
@@ -418,7 +418,7 @@ describe("%{#fixed} inside a (n) group in a file from before v1.8", () => {
     expect(notesOf(result)).toHaveLength(1);
     const note = notesOf(result)[0];
     expect(note).toMatch(
-      /^Question 3 is inside a \(n\) group and was %\{#fixed\} in a file made with the older Examazej \(before November 2026\), which shuffled the options/
+      /^Question 3 is inside a \(n\) group and was %\{#fixed\} in a file made with the older Examazej, which shuffled the options/
     );
     expect(note).toContain("(the other questions are not affected)");
     expect(note).toContain('"Match my old exams" on the Questions page');

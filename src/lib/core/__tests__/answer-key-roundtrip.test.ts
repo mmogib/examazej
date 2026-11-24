@@ -124,7 +124,7 @@ describe("answer key of a pre-1.8 file whose key differs from v1.7's", () => {
       item(["%{#fixed-options:D}", "%{#correct:A}"], "Q3")
     );
     expect(page).toContain("\\begin{tcolorbox}[colback=red!6, colframe=red!75!black");
-    expect(page).toContain("WARNING: this answer key differs from the keys the older Examazej made (before November 2026)");
+    expect(page).toContain("WARNING: this answer key differs from the keys an older Examazej made");
     expect(page).toContain("Master questions 1 and 3 use \\texttt{\\%\\{\\#fixed-options:X\\}}");
     expect(page).toContain("use the answer key and mapping files saved with them");
     expect(page).toContain("\\texttt{\\%\\{\\#fixed-options\\}} and \\texttt{\\%\\{\\#correct:X\\}} in master questions 1 and 3.");
@@ -140,7 +140,7 @@ describe("answer key of a pre-1.8 file whose key differs from v1.7's", () => {
 
   it("warns about a fixed question inside a (n) group and suggests fixed-position", () => {
     const page = keyWithGroups("1,(2)", item([], "Q1"), item(["%{#fixed}"], "Q2"), item([], "Q3"));
-    expect(page).toContain("WARNING: this answer key differs from the keys the older Examazej made (before November 2026)");
+    expect(page).toContain("WARNING: this answer key differs from the keys an older Examazej made");
     expect(page).toContain("Master question 2 is inside a (n) group and was \\texttt{fixed}");
     expect(page).toContain("This does not affect the other questions.");
     expect(page).toContain("use the tag \\texttt{fixed-position} and no other lock or pin tag in master question 2.");

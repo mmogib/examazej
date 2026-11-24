@@ -39,7 +39,8 @@ import { normalizeAcademicIntegrityPledgeText } from "@/lib/core/academic-integr
 import { generateDynamicSeed, isDefaultSeed } from "@/lib/utils/seed-generator";
 import { validateSeparatePageGrouping } from "@/lib/utils/tag-validator";
 import { getGroupPartitionErrors } from "@/lib/core/group-config";
-import { getQuestionNoteSummary } from "@/lib/core/import-notes";
+import { getQuestionNoteSummary, isOlderFile } from "@/lib/core/import-notes";
+import { OlderFileWarning } from "@/components/ui/older-file-warning";
 
 interface DetailsPageProps {
   examData: ExamJSON;
@@ -228,6 +229,8 @@ export function DetailsPage({
           </p>
         </div>
       </div>
+
+      {isOlderFile(importSource) && <OlderFileWarning />}
 
       {notes.length > 0 && (
         <Alert

@@ -241,9 +241,9 @@ function markLegacyReading(
   if (!old) return;
   if (old.length !== questions.length || old.some((q, i) => q.optionCount !== questions[i].choices[0].length)) {
     warnings.push(
-      `The older Examazej (before November 2026) read ${old.length} question${old.length === 1 ? "" : "s"} in this file ` +
+      `The older Examazej read ${old.length} question${old.length === 1 ? "" : "s"} in this file ` +
         `where this version reads ${questions.length}, or read their options differently, so the exams made with it ` +
-        `cannot be made again from this file. To make them again, open the session file saved with them.`
+        `cannot be made again from this file. To grade them, use the answer keys and mapping files saved with them.`
     );
     return;
   }

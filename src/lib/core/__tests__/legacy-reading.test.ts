@@ -136,7 +136,7 @@ describe("the answer key and the session file", () => {
     const { questions } = parseLatexTemplate(file);
     const key = legacyAnswerKeyWarning(questions as Question[], "2") ?? "";
     expect(key).toContain("read the tags of master questions 1 and 2 differently");
-    expect(key).toContain("``Match my old exams'' on the Questions page does the same, for master questions 1 and 2.");
+    expect(key).toContain("``Match my old exams'' on the Questions page undoes them, for master questions 1 and 2.");
     expect(key).toContain("The older Examazej took another answer for master question 2");
     expect(key).toContain("(2: A, now B)");
   });

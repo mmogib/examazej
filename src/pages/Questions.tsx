@@ -562,7 +562,7 @@ function NoteBox({
           <AlertTitle>From an older Examazej: %{"{"}#fixed-options:X{"}"} changed meaning</AlertTitle>
           <AlertDescription className="space-y-2 text-sm">
             <p>
-              The older Examazej (before November 2026) read this tag as "keep all options in order"; now it keeps
+              The older Examazej read this tag as "keep all options in order"; now it keeps
               only the pinned option in place. With its current tags this question is not shuffled as it was then,
               so it comes out differently from your old exams with the same seed, and other questions may differ
               too.
@@ -581,7 +581,7 @@ function NoteBox({
           <AlertTitle>From an older Examazej: a fixed question in a (n) group</AlertTitle>
           <AlertDescription className="space-y-2 text-sm">
             <p>
-              The older Examazej (before November 2026) shuffled this question's options by mistake. With its
+              The older Examazej shuffled this question's options by mistake. With its
               current tags they do not shuffle as they did then, so its answers differ from your old answer keys
               with the same seed
               {note.reach === "wider"
@@ -606,7 +606,7 @@ function NoteBox({
           <AlertTitle>From an older Examazej: its tags were read differently</AlertTitle>
           <AlertDescription className="space-y-2 text-sm">
             <p>
-              The older Examazej (before November 2026) read this question with {tagList(reading?.tags ?? [])}; this
+              The older Examazej read this question with {tagList(reading?.tags ?? [])}; this
               version reads it as written in the file, with {tagList(written)}. So it comes out differently from
               your old exams with the same seed
               {note.reach === "wider" ? ", and other questions may differ too." : " (only its own page or its line of the mapping file)."}

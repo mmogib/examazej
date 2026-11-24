@@ -42,6 +42,7 @@ import {
   Anchor,
   Info,
   Pin,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -538,7 +539,7 @@ export function DocumentationPage({ onBack }: DocumentationPageProps) {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {highlightText(
-                          "See each question as it will print and change its tags without editing the file: keep its place, keep the options in order, pin options, set the correct answer, or put it on its own page. Every change is kept as you make it; Reset undoes a question. Questions from files made with the older Examazej (before November 2026) that would come out differently show a warning with a one-click fix, Match my old exams. To skip this step, press Generate now on the Details page."
+                          "See each question as it will print and change its tags without editing the file: keep its place, keep the options in order, pin options, set the correct answer, or put it on its own page. Every change is kept as you make it; Reset undoes a question. Questions from files made with an older Examazej that come out differently show a warning with a one-click fix, Match my old exams. To skip this step, press Generate now on the Details page."
                         )}
                       </p>
                     </div>
@@ -726,7 +727,7 @@ Option text goes here
                         <Alert className="mt-3">
                           <Info className="h-4 w-4" />
                           <AlertDescription>
-                            The older Examazej (before November 2026) did not read some
+                            The older Examazej did not read some
                             tags: a tag on the same line as <code>\item</code>,{" "}
                             <code>%{`{#q}`}</code> or another tag, a tag followed by a
                             comment, and a small option letter such as{" "}
@@ -735,8 +736,9 @@ Option text goes here
                             every tag where it is written, so a file made before v1.8 with
                             such a tag can give different exams than it did then. The Details
                             page names those questions, and &quot;Match my old exams&quot; on
-                            the Questions page makes the old exams again. Opening the session
-                            file saved with the old exams does the same.
+                            the Questions page undoes the difference. Exams printed with an
+                            older Examazej may still differ (see &quot;Grading exams made with an
+                            older Examazej&quot;).
                           </AlertDescription>
                         </Alert>
                       </CollapsibleContent>
@@ -2352,6 +2354,63 @@ Which is largest?
                       <br />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {shouldShowContent(
+              "Grading exams made with an older Examazej old exams seed answer key mapping Regrade Tool AI"
+            ) && (
+              <Card className="border-l-4 border-l-amber-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    {highlightText("Grading exams made with an older Examazej")}
+                  </CardTitle>
+                  <CardDescription>
+                    Use the answer key printed with them, not a new one
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                  <p>
+                    {highlightText(
+                      "A file made with an older Examazej (it has no app_version) can still be used to make new exams. But if you want the exams you printed back then, the exams made from it now may not be the same, even with the same seed: the way exams are shuffled and tags are read has changed over time. The Details page says so when you upload such a file."
+                    )}
+                  </p>
+                  <p>
+                    {highlightText(
+                      "To grade the exams printed then, use the answer key printed with them: the answer key page of the old exam document or PDF lists each version's answers, with the master question number in small print. Keep the full exam document or the Exam Package of every exam you give."
+                    )}
+                  </p>
+                  <p>
+                    {highlightText(
+                      "The Regrade Tool reads the _mapping.csv file of the Exam Package. If you have only the PDF of an old exam, an AI assistant can write that file from it: attach the PDF and give it the prompt below. Use an AI tool your university allows, only for exams already given, and check every row against the PDF before you use the file."
+                    )}
+                  </p>
+                  <pre className="text-xs bg-muted p-3 rounded whitespace-pre-wrap" data-testid="older-exam-prompt">
+                    {`The attached PDF is a complete exam made by Examazej: the master version,
+every version and the answer key page. Write a CSV file with exactly these
+columns:
+
+Group,Master Q#,Version,Version Q#,Permutation,Correct,Points
+
+One row for every question of every version (not the master), in version order.
+- Version: the version letter (A, B, ...).
+- Version Q#: the question's number in that version.
+- Master Q#: the number of the same question in the master version. The answer
+  key page prints it in small type next to each answer.
+- Group: the group of the master question. If I give you the group setting
+  (for example 3,(2),[4]: master questions 1-3 are group 1, 4-5 group 2, 6-9
+  group 3), use it; otherwise write 1.
+- Permutation: the version's options in order, each written as the letter that
+  option has in the master version (DEBAC means the version's option A is the
+  master's option D). Leave it empty for a question with no options.
+- Correct: the correct letter in that version, from the answer key page; @ for
+  a question with no options.
+- Points: 1.
+
+Check every row against the answer key page before you answer.`}
+                  </pre>
                 </CardContent>
               </Card>
             )}

@@ -9,13 +9,13 @@ import type { ExamJSON, ExamSettings, ImportInfo, Question } from "@/lib/types";
 // Documentation only show where we are and go back.
 vi.mock("../Start", () => ({
   StartPage: ({ onDataLoaded }: { onDataLoaded: (data: ExamJSON, info?: ImportInfo) => void }) => (
-    <button onClick={() => onDataLoaded(structuredClone(nextExam ?? EXAM), { warnings: [] })}>Load test exam</button>
+    <button onClick={() => onDataLoaded(structuredClone(nextExam ?? EXAM), nextInfo ?? { warnings: [] })}>Load test exam</button>
   ),
 }));
 vi.mock("../Results", () => ({
-  ResultsPage: ({ examData, onBack }: { examData: ExamJSON; onBack: () => void }) => (
+  ResultsPage: ({ examData, onBack, olderFile }: { examData: ExamJSON; onBack: () => void; olderFile?: boolean }) => (
     <div data-testid="results">
-      answers {examData.exam.questions.map((q) => q.choices[1]).join(",")}
+      {olderFile ? "older file; " : ""}answers {examData.exam.questions.map((q) => q.choices[1]).join(",")}
       <button onClick={onBack}>Back from results</button>
     </div>
   ),
@@ -56,6 +56,7 @@ const EXAM: ExamJSON = {
 let root: Root | undefined;
 /** The exam the mocked Start page loads, when not the default one. */
 let nextExam: ExamJSON | undefined;
+let nextInfo: ImportInfo | undefined;
 
 beforeAll(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -68,6 +69,7 @@ afterEach(() => {
   }
   document.body.replaceChildren();
   nextExam = undefined;
+  nextInfo = undefined;
 });
 
 const $ = (selector: string) => document.querySelector(selector);
@@ -200,6 +202,22 @@ describe("Details → Questions → Results", () => {
     click($('[aria-label="Option C is the correct answer"]'));
     click(button("Generate"));
     expect(dialog()?.textContent).toContain("Q1: A → C");
+  });
+
+  it("a file made with an older Examazej: the warning on Details and the reminder on Results", () => {
+    nextInfo = { warnings: [], source: { format: "latex" } };
+    start();
+    expect($('[data-testid="older-file-warning"]')).not.toBeNull();
+    click(button("Generate now"));
+    expect($('[data-testid="results"]')?.textContent).toContain("older file;");
+  });
+
+  it("a file stamped by v1.8 or later: no warning, no reminder", () => {
+    nextInfo = { warnings: [], source: { format: "latex", appVersion: "1.8.4" } };
+    start();
+    expect($('[data-testid="older-file-warning"]')).toBeNull();
+    click(button("Generate now"));
+    expect($('[data-testid="results"]')?.textContent).not.toContain("older file;");
   });
 
   it("Details notes follow the groups typed there, and leave out the group notes while they cannot be read", () => {

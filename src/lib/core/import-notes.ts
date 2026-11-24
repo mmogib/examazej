@@ -255,6 +255,14 @@ export function isLegacyAnswerChanged(question: NoteFields): boolean {
   );
 }
 
+/**
+ * The uploaded file has no `app_version` (or an unreadable one): it was made with an older
+ * Examazej, whose exams may not come out the same now, even with the same seed.
+ */
+export function isOlderFile(source: NoteSource | undefined): boolean {
+  return Boolean(source) && isFileBefore(readFileVersion(source?.appVersion), PINNED_OPTIONS_VERSION);
+}
+
 /** The correct answer is a pinned option, so it has the same letter in every version. */
 export function isAnswerPinned(question: NoteFields): boolean {
   return (
@@ -399,13 +407,13 @@ export function legacyPinNote(
       ? `add %{#correct:X} to ${these} and %app_version=1.8.0 to the setting block, or download the template again from the Exam Package`
       : stopAdvice(source);
   return (
-    `${list} came with %{#fixed-options:X}, whose meaning has changed: the older Examazej (before November 2026) ` +
+    `${list} came with %{#fixed-options:X}, whose meaning has changed: the older Examazej ` +
     `kept all options in order and made X the answer; now it keeps only option X in place and shuffles the other ` +
     `options. ${originSentence(source)}${answers} ` +
     `With ${plural ? "their" : "its"} current tags, the exams made from this file differ from your old exams with ` +
     `the same seed, in ${these} and possibly in the other questions too, so the answer key page carries a warning. ` +
-    `To grade your old exams, use the answer keys and mapping files saved with them, or make the same ` +
-    `exams again with "Match my old exams" on the Questions page${inFile}. ` +
+    `To grade your old exams, use the answer keys and mapping files saved with them. To undo this ` +
+    `difference, press "Match my old exams" on the Questions page${inFile}. ` +
     `To keep the new meaning and stop this note, ${stop}.`
   );
 }
@@ -440,13 +448,13 @@ export function legacyFixedNote(entries: Affected[], source: NoteSource): string
       : ` (in the file: ${tag("fixed-position")} and no other lock or pin tag in ${these})`;
   return (
     `${formatQuestionList(numbers)} ${plural ? "are" : "is"} inside a (n) group and ${plural ? "were" : "was"} ` +
-    `${tag("fixed")} in a file made with the older Examazej (before November 2026), which shuffled the options of ` +
+    `${tag("fixed")} in a file made with the older Examazej, which shuffled the options of ` +
     `such a question by mistake. With ${plural ? "their" : "its"} current tags they do not shuffle as they did ` +
     `then, so ${plural ? "their" : "its"} answers differ ` +
     `from your old answer keys with the same seed${scope}, and the answer key page carries a ` +
     `warning. ${originSentence(source)}. To grade your old exams, ` +
-    `use the answer keys saved with them, or make the same exams again with "Match my old exams" on the ` +
-    `Questions page${inFile}. To keep the current tags and stop this note, ${stopAdvice(source)}.`
+    `use the answer keys and mapping files saved with them. To undo this difference, press "Match my old ` +
+    `exams" on the Questions page${inFile}. To keep the current tags and stop this note, ${stopAdvice(source)}.`
   );
 }
 
@@ -454,12 +462,13 @@ export function legacyFixedNote(entries: Affected[], source: NoteSource): string
 export function legacyReadNote(numbers: number[], source: NoteSource): string {
   const plural = numbers.length > 1;
   return (
-    `The older Examazej (before November 2026) read the tags of ${formatQuestionList(numbers)} differently: it ` +
+    `The older Examazej read the tags of ${formatQuestionList(numbers)} differently: it ` +
     `ignored a tag it could not read (one on the same line as \\item, %{#q} or another tag, one followed by a ` +
     `comment, or one with a small option letter, as in %{#fixed-options:b}), or gave a tag written after an ` +
     `open-ended question to that question. So the exams made with it differ from these, in ${plural ? "these questions" : "this question"} and ` +
-    `possibly in the other questions too, and the answer key page carries a warning. ${originSentence(source)}. To make ` +
-    `the same exams again, press "Match my old exams" on the Questions page, or open the session file saved with them. ` +
+    `possibly in the other questions too, and the answer key page carries a warning. ${originSentence(source)}. To grade ` +
+    `your old exams, use the answer keys and mapping files saved with them. To undo this difference, press "Match ` +
+    `my old exams" on the Questions page. ` +
     `To keep the tags as written and stop this note, ${stopAdvice(source)}.`
   );
 }
@@ -530,7 +539,7 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
   if (pinned.length > 0) {
     reasons.push(
       `${Masters(pinned)} ${pinned.length > 1 ? "use" : "uses"} ${tag("fixed-options:X")} in a file made ` +
-        `with the older Examazej (before November 2026), which kept all options in order for this tag; now it ` +
+        `with the older Examazej, which kept all options in order for this tag; now it ` +
         `keeps only option X in place and shuffles the other options. With ` +
         `${pinned.length > 1 ? "their" : "its"} current tags, the versions and this key differ from the ones ` +
         `the older Examazej made from the same file, even with the ` +
@@ -550,7 +559,7 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
           `the older Examazej drew, the later questions in each version may differ too.`;
     reasons.push(
       `${Masters(fixedNumbers)} ${many ? "are" : "is"} inside a (n) group and ${many ? "were" : "was"} ` +
-        `${code("fixed")} in a file made with the older Examazej (before November 2026), which shuffled the ` +
+        `${code("fixed")} in a file made with the older Examazej, which shuffled the ` +
         `options of such a question by mistake. With ${many ? "their" : "its"} current tags they do not shuffle ` +
         `as they did then, so ${many ? "their answers" : "its answers"} in this key differ from the ones it made ` +
         `with the same seed. ${scope}`
@@ -562,19 +571,19 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
     const readNumbers = read.map((r) => r.number);
     const many = readNumbers.length > 1;
     reasons.push(
-      `The older Examazej (before November 2026) read the tags of ${masters(readNumbers)} differently: it ignored ` +
+      `The older Examazej read the tags of ${masters(readNumbers)} differently: it ignored ` +
         `a tag it could not read, or gave a tag written after an open-ended question to that question. So the ` +
         `versions and this key differ from the ones it made from the same file, even with the same seed: in ` +
         `${many ? "these questions" : "this question"} and possibly in the other questions too.`
     );
-    remedies.push(`open the session file saved with those exams`);
     buttons.push(...readNumbers);
   }
 
   const items = [
     `To grade the exams the older Examazej made, use the answer key and mapping files saved with them, not ` +
-      `this key, or make the same exams again: ${remedies.join("; and ")}.`,
-    `In Examazej, \`\`Match my old exams'' on the Questions page does the same, for ${masters(
+      `this key.` +
+      (remedies.length > 0 ? ` To undo these differences in the file: ${remedies.join("; and ")}.` : ""),
+    `In Examazej, \`\`Match my old exams'' on the Questions page undoes them, for ${masters(
       [...new Set(buttons)].sort((a, b) => a - b)
     )}.`,
   ];
@@ -598,7 +607,7 @@ export function legacyAnswerKeyWarning(questions: NoteFields[], groups: string |
   }
   return `
 \\begin{tcolorbox}[colback=red!6, colframe=red!75!black, coltitle=white, fonttitle=\\bfseries,
-  title={WARNING: this answer key differs from the keys the older Examazej made (before November 2026)}]
+  title={WARNING: this answer key differs from the keys an older Examazej made}]
 ${reasons.join("\n\n\\medskip\n")}
 \\begin{itemize}
 ${items.map((item) => `\\item ${item}`).join("\n")}

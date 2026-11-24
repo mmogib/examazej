@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getDefaultSettings } from "@/lib/core/settings";
-import type { ExamJSON, ExamSettings } from "@/lib/types";
+import type { ExamJSON, ExamSettings, NoteSource } from "@/lib/types";
 import { DetailsPage } from "../Details";
 
 const examData: ExamJSON = {
@@ -45,7 +45,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-function renderDetails(importWarnings?: string[], madeWith?: string) {
+function renderDetails(importWarnings?: string[], madeWith?: string, importSource?: NoteSource) {
   const container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -58,12 +58,27 @@ function renderDetails(importWarnings?: string[], madeWith?: string) {
         onContinue={vi.fn()}
         importWarnings={importWarnings}
         madeWith={madeWith}
+        importSource={importSource}
       />,
     );
   });
 }
 
 describe("Details page import warnings", () => {
+  it("warns about a file made with an older Examazej, and only then", () => {
+    const warning = () => document.querySelector('[data-testid="older-file-warning"]')?.textContent ?? "";
+    renderDetails([], undefined, { format: "latex" });
+    expect(warning()).toContain("Made with an older Examazej");
+    expect(warning()).toContain("If you are making new exams, ignore this.");
+    expect(warning()).toContain("use the answer key printed with them");
+    act(() => root?.unmount());
+    renderDetails([], undefined, { format: "spreadsheet", appVersion: "1.8.4" });
+    expect(warning()).toBe("");
+    act(() => root?.unmount());
+    renderDetails([], undefined, undefined);
+    expect(warning()).toBe("");
+  });
+
   it("lists every warning from the uploaded file", () => {
     renderDetails([
       "Question 3 uses %{#fixed-options:X}, which changed meaning in v1.8.",

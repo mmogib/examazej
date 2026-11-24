@@ -176,7 +176,7 @@ describe("a pre-1.8 fixed question in (n): the explanation and the remedy fit it
   it.each(states)("%s", (_name, flags) => {
     const exam = [q("Q1"), q("Q2", { legacyFixed: true, ...flags }), q("Q3")];
     const [note] = getQuestionNoteSummary(exam, "1,(2)");
-    expect(note).toMatch(/^Question 2 is inside a \(n\) group and was %\{#fixed\} in a file made with the older Examazej \(before November 2026\)/);
+    expect(note).toMatch(/^Question 2 is inside a \(n\) group and was %\{#fixed\} in a file made with the older Examazej/);
     expect(note).toContain("With its current tags they do not shuffle as they did then");
     expect(note).toContain("(in the file: %{#fixed-position} and no other lock or pin tag in this question)");
     expect(note).not.toContain("instead of");

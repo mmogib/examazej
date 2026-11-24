@@ -53,6 +53,7 @@ import {
 } from "@/lib/core/latex";
 import { generateSettingsBlock } from "@/lib/core/settings";
 import { buildExamPackage } from "@/lib/core/exam-package";
+import { OlderFileReminder } from "@/components/ui/older-file-warning";
 import { getLockLabels } from "@/lib/core/question-flags";
 import type { PageCountWarning } from "@/lib/utils/page-count-analyzer";
 import type {
@@ -66,9 +67,11 @@ interface ResultsPageProps {
   examData: ExamJSON;
   seed: string;
   onBack: () => void;
+  /** The exam came from a file of an older Examazej (no app_version). */
+  olderFile?: boolean;
 }
 
-export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
+export function ResultsPage({ examData, seed, onBack, olderFile = false }: ResultsPageProps) {
   const [generationState, setGenerationState] =
     useState<GenerationState | null>(null);
   const [allowTrustedTex, setAllowTrustedTex] = useState(true);
@@ -278,6 +281,8 @@ export function ResultsPage({ examData, seed, onBack }: ResultsPageProps) {
           </p>
         </div>
       </div>
+
+      {olderFile && <OlderFileReminder />}
 
       {/* Page Count Variation Warning */}
       {pageCountWarning && (

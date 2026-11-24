@@ -17,6 +17,7 @@ import { QuestionsPage } from './Questions';
 import { ResultsPage } from './Results';
 import { DocumentationPage } from './Documentation';
 import { answerChangesKey, copyQuestions, findChangedAnswers, type AnswerChange } from '@/lib/core/question-edits';
+import { isOlderFile } from '@/lib/core/import-notes';
 import type { ExamJSON, ImportInfo, Question } from '@/lib/types';
 
 type Step = 'start' | 'details' | 'questions' | 'results';
@@ -141,6 +142,7 @@ const Index = () => {
               examData={examData}
               seed={generationSeed}
               onBack={() => setCurrentStep(resultsFrom)}
+              olderFile={isOlderFile(importInfo.source)}
             />
           )}
         </div>
